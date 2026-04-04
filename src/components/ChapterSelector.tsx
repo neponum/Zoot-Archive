@@ -249,18 +249,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           }
         });
         setEpisodeImages(prev => ({ ...prev, ...images }));
-
-        // Load PRTS images asynchronously in chunks
-        const chunkSize = 5;
-        for (let i = 0; i < nonMainline.length; i += chunkSize) {
-          const chunk = nonMainline.slice(i, i + chunkSize);
-          await Promise.all(chunk.map(async (ep) => {
-            const url = await getPrtsWikiImageUrl(ep.name, ep.id, ep.chineseName);
-            if (url) {
-              setEpisodeImages(prev => ({ ...prev, [ep.id]: url }));
-            }
-          }));
-        }
       };
 
       loadBatch(list);

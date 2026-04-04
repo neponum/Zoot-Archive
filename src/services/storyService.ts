@@ -618,30 +618,43 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
   return episodes;
 }
 
+const scriptExistenceCache: Record<string, boolean> = {};
+
 export async function checkScriptExists(storyPath: string, lang: Language): Promise<boolean> {
   const isOfficial = ['zh_CN', 'zh_TW', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
   
-  let url;
+  // For official languages, if it's in the story_review_table, the script almost certainly exists.
+  // Skip the network request to save bandwidth and reduce the number of requests.
   if (isOfficial) {
-    const baseUrl = getBaseUrl(lang);
-    url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
-  } else {
-    url = `/translations/${lang}/${storyPath}.txt`;
+    return true;
+  }
+
+  const cacheKey = `${lang}_${storyPath}`;
+  if (cacheKey in scriptExistenceCache) {
+    return scriptExistenceCache[cacheKey];
   }
   
+  const url = `/translations/${lang}/${storyPath}.txt`;
+  
   try {
-    // Use GET instead of HEAD to check content-type more reliably in some environments
-    const response = await fetchWithTimeout(url, { method: 'GET' }, 3000);
-    if (!response.ok) return false;
+    // Use HEAD to save bandwidth, fallback to GET if needed
+    const response = await fetchWithTimeout(url, { method: 'HEAD' }, 3000);
+    if (!response.ok) {
+      scriptExistenceCache[cacheKey] = false;
+      return false;
+    }
     
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('text/html')) {
       // This is likely a SPA fallback (index.html)
+      scriptExistenceCache[cacheKey] = false;
       return false;
     }
     
+    scriptExistenceCache[cacheKey] = true;
     return true;
   } catch (e) {
+    scriptExistenceCache[cacheKey] = false;
     return false;
   }
 }
@@ -748,111 +761,7 @@ export async function checkImageExists(url: string): Promise<boolean> {
 }
 
 export async function getPrtsWikiImageUrl(episodeName: string, episodeId?: string, chineseName?: string): Promise<string | null> {
-  const cacheKey = `prts_${episodeId || ''}_${episodeName}`;
-  if (prtsWikiCache[cacheKey]) return prtsWikiCache[cacheKey];
-
-  try {
-    const namesToTry = [episodeName];
-    if (chineseName && chineseName !== episodeName) {
-      namesToTry.unshift(chineseName);
-    }
-
-    const filenames: string[] = [];
-    for (const name of namesToTry) {
-      filenames.push(`File:情报处理室_${name}.png`);
-      filenames.push(`File:${name}.png`);
-      filenames.push(`File:情报处理室_${name}_icon.png`);
-      
-      if (name.includes('主线')) {
-        const cleanName = name.replace('主线 ', '').replace('主线', '');
-        filenames.push(`File:情报处理室_主线_${cleanName}.png`);
-      } else {
-        filenames.push(`File:情报处理室_插曲_${name}.png`);
-        filenames.push(`File:情报处理室_别传_${name}.png`);
-        filenames.push(`File:情报处理室_故事集_${name}.png`);
-      }
-    }
-
-    if (episodeId) {
-      filenames.push(`File:情报处理室_${episodeId}.png`);
-      if (episodeId.startsWith('main_')) {
-        const chapterNum = episodeId.replace('main_', '');
-        filenames.push(`File:情报处理室_主线_${chapterNum}.png`);
-      }
-      if (episodeId.startsWith('char_')) {
-        filenames.push(`File:情报处理室_干员密录_${episodeName}.png`);
-        filenames.push(`File:情报处理室_干员密录_${episodeName}_1.png`);
-      }
-    }
-
-    const titles = filenames.join('|');
-    const prtsApiUrl = `https://prts.wiki/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    const proxyUrl = `/api/proxy?url=${encodeURIComponent(prtsApiUrl)}`;
-    
-    const response = await fetchWithRetry(proxyUrl);
-    if (!response.ok) {
-      console.warn(`Proxy returned ${response.status} for PRTS API call for ${episodeName}`);
-      prtsWikiCache[cacheKey] = null;
-      saveCache();
-      return null;
-    }
-
-    const contentType = response.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-      const text = await response.text();
-      console.error(`Expected JSON from proxy but got ${contentType} for ${episodeName}. Content: ${text.substring(0, 100)}`);
-      prtsWikiCache[cacheKey] = null;
-      saveCache();
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (data && data.query && data.query.pages) {
-      const pages = data.query.pages;
-      // Find the first page that actually has imageinfo
-      for (const pageId of Object.keys(pages)) {
-        const page = pages[pageId];
-        if (pageId !== '-1' && page.imageinfo && page.imageinfo.length > 0) {
-          const imageUrl = page.imageinfo[0].url;
-          // Proxy the image URL as well to avoid CORS issues
-          const proxiedUrl = `/api/proxy?url=${encodeURIComponent(imageUrl)}`;
-          prtsWikiCache[cacheKey] = proxiedUrl;
-          saveCache();
-          return proxiedUrl;
-        }
-      }
-    }
-    
-    // If direct titles failed, try a search as a fallback
-    const searchTerms = episodeId ? `${episodeName} ${episodeId}` : episodeName;
-    const searchUrl = `https://prts.wiki/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(`情报处理室 ${searchTerms}`)}&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    const searchProxyUrl = `/api/proxy?url=${encodeURIComponent(searchUrl)}`;
-    
-    const searchResponse = await fetchWithRetry(searchProxyUrl);
-    if (searchResponse.ok) {
-      const searchData = await searchResponse.json();
-      if (searchData && searchData.query && searchData.query.pages) {
-        const pages = searchData.query.pages;
-        for (const pageId of Object.keys(pages)) {
-          const page = pages[pageId];
-          if (page.imageinfo && page.imageinfo.length > 0) {
-            const imageUrl = page.imageinfo[0].url;
-            const proxiedUrl = `/api/proxy?url=${encodeURIComponent(imageUrl)}`;
-            prtsWikiCache[cacheKey] = proxiedUrl;
-            saveCache();
-            return proxiedUrl;
-          }
-        }
-      }
-    }
-
-  } catch (error) {
-    console.error(`Failed to fetch PRTS Wiki image for ${episodeName}:`, error);
-  }
-  
-  prtsWikiCache[cacheKey] = null;
-  saveCache();
+  // PRTS Wiki image fetching has been disabled to reduce proxy requests
   return null;
 }
 
