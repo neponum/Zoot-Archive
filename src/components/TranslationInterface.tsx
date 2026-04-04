@@ -368,8 +368,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       
       const matchEpisode = ep.name.toLowerCase().includes(query) || ep.id.toLowerCase().includes(query);
       const matchChapter = ep.chapters.some(ch => 
-        (ch.storyName && ch.storyName.toLowerCase().includes(query)) || 
-        (ch.storyCode && ch.storyCode.toLowerCase().includes(query)) ||
+        (ch.name && ch.name.toLowerCase().includes(query)) || 
+        (ch.code && ch.code.toLowerCase().includes(query)) ||
         ch.storyTxt.toLowerCase().includes(query)
       );
       
@@ -1033,11 +1033,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setSubmitStatus('idle');
 
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const safeTranslatorName = activeProfile.replace(/[^a-z0-9]/gi, '_');
-      const safeChapterName = (selectedChapter.storyName || selectedChapter.storyCode || 'chapter').replace(/[^a-z0-9]/gi, '_');
+      const safeTranslatorName = activeProfile.replace(/[^a-z0-9а-яё]/gi, '_');
+      const safeChapterName = (selectedChapter.name || selectedChapter.code || 'chapter').replace(/[^a-z0-9а-яё]/gi, '_');
       
-      const baseFileName = `[${safeTranslatorName}]_${safeChapterName}_${timestamp}`;
+      const baseFileName = `${safeChapterName}_${safeTranslatorName}`;
       
       // 1. Prepare TXT file
       const exportText = generateExportText();
@@ -1056,7 +1055,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       // Prepare form data for Discord
       const formData = new FormData();
       const payload = {
-        content: `🚀 **New Translation Submission**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode?.name || 'Unknown'}\n**Chapter:** ${selectedChapter.storyName || selectedChapter.storyCode}\n**Language:** ${LANGUAGES.find(l => l.id === targetLang)?.label}`,
+        content: `🚀 **New Translation Submission**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode?.name || 'Unknown'}\n**Chapter:** ${selectedChapter.name || selectedChapter.code}\n**Language:** ${LANGUAGES.find(l => l.id === targetLang)?.label}`,
         username: "Zoot Archive Bot"
       };
       
@@ -1091,9 +1090,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     const a = document.createElement('a');
     a.href = url;
     
-    // Extract filename from path (e.g. "level_act11d0_st01.txt")
-    const baseName = selectedChapter.storyTxt.split('/').pop()?.replace(/\.txt$/, '') || 'translation';
-    const filename = `${baseName}.txt`;
+    const safeTranslatorName = activeProfile.replace(/[^a-z0-9а-яё]/gi, '_');
+    const safeChapterName = (selectedChapter.name || selectedChapter.code || 'chapter').replace(/[^a-z0-9а-яё]/gi, '_');
+    const filename = `${safeChapterName}_${safeTranslatorName}.txt`;
+    
     a.download = filename;
     document.body.appendChild(a);
     a.click();
@@ -1348,7 +1348,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                     : 'text-white/50 hover:bg-white/10 hover:text-white/80'
                                 }`}
                               >
-                                <span className="truncate">{ch.storyName || ch.storyCode || ch.storyTxt.split('/').pop()}</span>
+                                <span className="truncate">{ch.name || ch.code || ch.storyTxt.split('/').pop()}</span>
                                 <span className={`text-[8px] px-1 rounded-full ${chProgress === 100 ? 'bg-[#4ade80]/20 text-[#4ade80]' : 'bg-white/10 text-white/30'}`}>
                                   {chProgress}%
                                 </span>
@@ -1402,7 +1402,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
                   <div className="h-4 w-px bg-white/10 mx-1 hidden md:block" />
 
-                  <span className="text-[10px] md:text-xs font-bold text-white/70 truncate">{selectedChapter.storyName || selectedChapter.storyCode}</span>
+                  <span className="text-[10px] md:text-xs font-bold text-white/70 truncate">{selectedChapter.name || selectedChapter.code}</span>
                   
                   {/* Progress Bar (Desktop) */}
                   <div className="hidden md:flex items-center gap-2 ml-2">
