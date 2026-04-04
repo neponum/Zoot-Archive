@@ -26,8 +26,6 @@ app.get("/api/auth/discord/url", (req, res) => {
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.get('host');
   const redirectUri = `${protocol}://${host}/auth/discord/callback`;
-  
-  console.log(`Generating Discord Auth URL with redirect_uri: ${redirectUri}`);
 
   const params = new URLSearchParams({
     client_id: DISCORD_CLIENT_ID,
@@ -49,8 +47,6 @@ app.get("/auth/discord/callback", async (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers['x-forwarded-host'] || req.get('host');
     const redirectUri = `${protocol}://${host}/auth/discord/callback`;
-    
-    console.log(`Exchanging Discord code with redirect_uri: ${redirectUri}`);
 
     const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
@@ -156,8 +152,6 @@ app.get("/api/proxy", async (req, res) => {
   }
 
   try {
-    console.log(`Proxying request to: ${targetUrl}`);
-    
     const headers: Record<string, string> = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "Accept": "*/*",

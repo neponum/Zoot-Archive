@@ -517,14 +517,12 @@ function getArknightsYear(timestamp: number): number {
 
 export async function fetchChapterList(): Promise<StoryEpisode[]> {
   if (cachedEpisodes[currentLanguage]) {
-    console.log(`Returning cached chapter list for ${currentLanguage}`);
     return cachedEpisodes[currentLanguage]!;
   }
 
   const fetchList = async (lang: Language) => {
     const baseUrl = getBaseUrl(lang);
     const url = `${baseUrl}/${lang}/gamedata/excel/story_review_table.json`;
-    console.log(`Fetching chapter list from: ${url}`);
     const response = await fetchWithTimeout(url);
     if (!response.ok) throw new Error(`Failed to fetch ${lang} story review table: ${response.status}`);
     return await response.json();
@@ -558,8 +556,6 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
       throw err;
     }
   }
-  
-  console.log('Data fetched, keys:', Object.keys(data).length);
   
   const episodes: StoryEpisode[] = [];
   
@@ -613,7 +609,6 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
     }
   }
 
-  console.log(`Processed ${episodes.length} episodes for ${currentLanguage}`);
   cachedEpisodes[currentLanguage] = episodes;
   return episodes;
 }
