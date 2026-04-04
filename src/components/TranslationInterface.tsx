@@ -192,24 +192,30 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
   const handleDiscordLogin = async () => {
     try {
-      const response = await fetch('/api/auth/discord/url');
-      if (!response.ok) throw new Error('Failed to get auth URL');
-      const { url } = await response.json();
-      
       const width = 600;
       const height = 800;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
       
+      // Open window immediately to avoid popup blockers
       const authWindow = window.open(
-        url,
+        '',
         'discord_auth',
         `width=${width},height=${height},left=${left},top=${top}`
       );
 
       if (!authWindow) {
         alert('Please allow popups to login with Discord');
+        return;
       }
+
+      authWindow.document.write('<div style="font-family: sans-serif; padding: 20px; text-align: center; background: #0a0a0a; color: white;">Loading Discord login...</div>');
+
+      const response = await fetch('/api/auth/discord/url');
+      if (!response.ok) throw new Error('Failed to get auth URL');
+      const { url } = await response.json();
+      
+      authWindow.location.href = url;
     } catch (error) {
       console.error('Discord login error:', error);
     }
@@ -1187,7 +1193,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
               ) : (
                 <button 
                   onClick={handleDiscordLogin}
-                  className="flex items-center justify-center gap-2 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[10px] font-bold rounded-sm transition-colors uppercase tracking-wider"
+                  className="flex items-center justify-center gap-2 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[10px] font-bold rounded-sm transition-colors uppercase tracking-wider cursor-pointer"
                 >
                   <MessageSquare className="w-3.5 h-3.5" /> Login with Discord
                 </button>
@@ -1472,7 +1478,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                             {!discordUser ? (
                               <button 
                                 onClick={handleDiscordLogin}
-                                className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest"
+                                className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest cursor-pointer"
                               >
                                 <MessageSquare className="w-4 h-4" /> Login to Submit
                               </button>
