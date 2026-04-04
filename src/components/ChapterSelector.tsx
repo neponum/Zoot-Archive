@@ -385,6 +385,11 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
               <div className="px-8 md:px-12 pt-10 pb-4 flex items-center justify-between z-20 relative shrink-0">
                 <div className="flex items-center gap-8 md:gap-12">
                   <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Database</span>
+                    <span className="text-xl md:text-2xl font-black text-white tracking-widest uppercase">ZOOT ARCHIVE</span>
+                  </div>
+                  <div className="w-px h-10 bg-white/10" />
+                  <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Current Sector</span>
                     <span className="text-xl md:text-2xl font-black text-white tracking-widest uppercase">
                       {viewMode === 'ALL' ? 'ALL ARCHIVES' : (viewMode === 'STORYLINE' 

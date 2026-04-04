@@ -33,7 +33,7 @@ export const UI_STRINGS: Record<Language, any> = {
     report_description: '如有任何问题，请在置顶帖子的评论区留言：',
   },
   en_US: {
-    archive: 'Archive',
+    archive: 'Zoot Archive',
     search: 'Search...',
     all: 'All',
     mainline: 'Main Story',
@@ -126,7 +126,7 @@ export const UI_STRINGS: Record<Language, any> = {
     report_description: '문제나 질문이 있는 경우 고정된 게시물의 댓글 섹션에 남겨주세요:',
   },
   ru_RU: {
-    archive: 'Архив',
+    archive: 'Zoot Archive',
     search: 'Поиск...',
     all: 'Все',
     mainline: 'Основной сюжет',

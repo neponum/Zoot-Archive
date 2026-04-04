@@ -442,7 +442,7 @@ function getBaseUrl(lang: Language): string {
   return lang === 'zh_CN' ? BASE_DATA_URL_CN : BASE_DATA_URL_YOSTAR;
 }
 
-let cachedEpisodes: Record<Language, StoryEpisode[] | null> = {
+let cachedEpisodes: Partial<Record<Language, StoryEpisode[] | null>> = {
   zh_CN: null,
   en_US: null,
   ja_JP: null,

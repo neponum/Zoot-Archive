@@ -319,7 +319,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     const total = chapterStats[storyTxt];
     if (!total) return 0;
     const translations = allTranslations[storyTxt] || {};
-    const translatedCount = Object.values(translations).filter(t => t.text?.trim()).length;
+    const translatedCount = Object.values(translations).filter((t: any) => t.text?.trim()).length;
     return Math.round((translatedCount / total) * 100);
   };
 
@@ -333,7 +333,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           totalProgress += 1; // Empty chapter is 100% done
         } else {
           const translations = allTranslations[ch.storyTxt] || {};
-          const translatedCount = Object.values(translations).filter(t => t.text?.trim()).length;
+          const translatedCount = Object.values(translations).filter((t: any) => t.text?.trim()).length;
           totalProgress += (translatedCount / total);
         }
       }
@@ -1051,7 +1051,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const formData = new FormData();
       const payload = {
         content: `🚀 **New Translation Submission**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode?.name || 'Unknown'}\n**Chapter:** ${selectedChapter.storyName || selectedChapter.storyCode}\n**Language:** ${LANGUAGES.find(l => l.id === targetLang)?.label}`,
-        username: "Arknights Translator Bot"
+        username: "Zoot Archive Bot"
       };
       
       formData.append('payload_json', JSON.stringify(payload));
