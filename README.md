@@ -14,9 +14,18 @@ A professional web-based tool designed for Arknights fans and translators to par
 - **Export Options**: Export your translations back to Arknights-compatible script formats or clean JSON/TXT.
 - **Responsive Dark UI**: A sleek, high-performance interface inspired by the Arknights "Rhodes Island" aesthetic.
 
-## 🚀 Getting Started
+## 🚀 Deployment
 
-### Prerequisites
+### Deploying to Vercel (Recommended)
+
+Since this is a full-stack app, Vercel is the easiest way to host it:
+
+1. **Export to GitHub**: Use the AI Studio export tool.
+2. **Import to Vercel**: Connect your GitHub repository to Vercel.
+3. **Configure Environment Variables**: In Vercel Project Settings, add all variables from `.env.example`.
+4. **Update Discord Redirect URI**: Add `https://your-app.vercel.app/auth/discord/callback` to your Discord Application settings.
+
+The project includes a `vercel.json` file that automatically configures the routing for the Express backend and Vite frontend.
 
 - Node.js 18+
 - A Google Gemini API Key (get it from [Google AI Studio](https://aistudio.google.com/))
