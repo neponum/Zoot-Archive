@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +13,19 @@ const DISCORD_GUILD_ID = process.env.VITE_DISCORD_GUILD_ID;
 
 const app = express();
 const PORT = 3000;
+
+// Trust Vercel's proxy to get the correct client IP
+app.set('trust proxy', 1);
+
+// Global rate limiter to prevent general abuse
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again after 15 minutes"
+});
+app.use(globalLimiter);
 
 app.use(cookieParser());
 app.use(express.json());
@@ -144,11 +158,47 @@ app.post("/api/auth/discord/logout", (req, res) => {
   res.json({ success: true });
 });
 
+// Stricter rate limiter for proxy
+const proxyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 proxy requests per windowMs
+  message: { error: "Too many proxy requests from this IP" }
+});
+
 // Proxy endpoint to fetch game data from GitHub/CDNs
-app.get("/api/proxy", async (req, res) => {
+app.get("/api/proxy", proxyLimiter, async (req, res) => {
   const targetUrl = req.query.url as string;
   if (!targetUrl) {
     return res.status(400).json({ error: "Missing url parameter" });
+  }
+
+  // Security: Check Referer/Origin to ensure request comes from our frontend
+  const referer = req.headers.referer || '';
+  const origin = req.headers.origin || '';
+  const host = req.headers.host || '';
+  
+  // In production, enforce that the request originates from our own domain
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+    if (!referer.includes(host) && !origin.includes(host)) {
+      return res.status(403).json({ error: "Forbidden: Invalid origin" });
+    }
+  }
+
+  // Security: Restrict allowed domains to prevent open proxy abuse
+  try {
+    const urlObj = new URL(targetUrl);
+    const allowedDomains = [
+      'raw.githubusercontent.com', 
+      'prts.wiki', 
+      'torappu.prts.wiki', 
+      'github.com'
+    ];
+    
+    if (!allowedDomains.some(domain => urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain))) {
+      return res.status(403).json({ error: "Forbidden: Target domain not allowed" });
+    }
+  } catch (e) {
+    return res.status(400).json({ error: "Invalid target URL" });
   }
 
   try {

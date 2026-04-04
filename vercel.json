@@ -12,6 +12,18 @@
       }
     }
   ],
+  "redirects": [
+    {
+      "source": "/server.ts",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/src/(.*)",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
