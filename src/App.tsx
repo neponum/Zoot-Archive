@@ -4,6 +4,7 @@ import { StoryViewer } from './components/StoryViewer';
 import { TranslationInterface } from './components/TranslationInterface';
 import { StoryChapter, StoryEpisode } from './types';
 import { AnimatePresence, motion } from 'motion/react';
+import { OrientationOverlay } from './components/story/OrientationOverlay';
 
 function App() {
   const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
@@ -34,6 +35,7 @@ function App() {
 
   return (
     <div className="w-screen h-screen bg-black overflow-hidden font-sans select-none relative">
+      {selectedChapter && <OrientationOverlay />}
       <AnimatePresence mode="wait">
         {!selectedChapter ? (
           <motion.div

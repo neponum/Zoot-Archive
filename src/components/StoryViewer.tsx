@@ -45,6 +45,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     isShaking,
     shakeConfig,
     isFlashing,
+    cameraEffect,
     blocker,
     isAuto,
     isSkipping,
@@ -313,6 +314,23 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             dispatch({ type: 'SET_FLASH', payload: true });
             setTimeout(() => dispatch({ type: 'SET_FLASH', payload: false }), (line.duration || 0.5) * 1000);
             break;
+          case 'cameraeffect':
+            if (line.effect === 'none' || !line.effect) {
+              dispatch({ type: 'SET_CAMERA_EFFECT', payload: null });
+            } else {
+              dispatch({ 
+                type: 'SET_CAMERA_EFFECT', 
+                payload: { 
+                  effect: line.effect, 
+                  duration: line.duration || 0, 
+                  amount: line.a || 1 
+                } 
+              });
+            }
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+            }
+            break;
           case 'blocker':
             dispatch({ 
               type: 'SET_BLOCKER', 
@@ -546,6 +564,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
         <CinematicEffectsLayer 
           isFlashing={isFlashing} 
+          cameraEffect={cameraEffect}
           blocker={blocker} 
           activeAnimText={activeAnimText} 
         />

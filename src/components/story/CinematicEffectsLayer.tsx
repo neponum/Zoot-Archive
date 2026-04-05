@@ -6,12 +6,14 @@ import { parseTags } from '../../lib/textUtils';
 
 interface CinematicEffectsLayerProps {
   isFlashing: boolean;
+  cameraEffect: { effect: string, duration: number, amount: number } | null;
   blocker: { a: number, r: number, g: number, b: number, duration: number } | null;
   activeAnimText: StoryLine | null;
 }
 
 export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
   isFlashing,
+  cameraEffect,
   blocker,
   activeAnimText,
 }) => {
@@ -25,6 +27,43 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
           transition: blocker ? `background-color ${blocker.duration}s ease-in-out` : 'none'
         }}
       />
+
+      {/* Camera Effects Layer */}
+      <AnimatePresence>
+        {cameraEffect?.effect === 'record' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: [-1, 1, -1, 1, 0],
+              y: [-0.5, 0.5, -0.5, 0.5, 0]
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ 
+              opacity: { duration: 1 },
+              x: { duration: 0.8, repeat: Infinity, ease: "linear" }, // Reduced frequency as requested
+              y: { duration: 1.2, repeat: Infinity, ease: "linear" }  // Reduced frequency as requested
+            }}
+            className="absolute inset-0 z-[30] pointer-events-none overflow-hidden"
+          >
+            {/* Scanlines */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,118,0.03))] bg-[length:100%_4px,3px_100%]" />
+            
+            {/* REC Indicator */}
+            <div className="absolute top-8 left-8 flex items-center gap-3">
+              <motion.div 
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="w-4 h-4 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)]"
+              />
+              <span className="text-white/80 font-mono text-xl tracking-widest font-bold drop-shadow-md">REC</span>
+            </div>
+
+            {/* Timecode placeholder */}
+            <Timecode />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AnimText Layer */}
       <AnimatePresence>
@@ -91,5 +130,29 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
         )}
       </AnimatePresence>
     </>
+  );
+};
+
+const Timecode: React.FC = () => {
+  const [time, setTime] = React.useState(0);
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(t => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `00:${h}:${m}:${s}`;
+  };
+
+  return (
+    <div className="absolute bottom-32 right-8 font-mono text-white/60 text-lg tracking-wider">
+      {formatTime(time)}
+    </div>
   );
 };

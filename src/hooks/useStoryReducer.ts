@@ -31,6 +31,7 @@ export interface StoryState {
   isShaking: boolean;
   shakeConfig: { x: number; y: number; vibrato: number } | null;
   isFlashing: boolean;
+  cameraEffect: { effect: string; duration: number; amount: number } | null;
   blocker: { a: number; r: number; g: number; b: number; duration: number } | null;
   isAuto: boolean;
   isSkipping: boolean;
@@ -62,6 +63,7 @@ export type StoryAction =
   | { type: 'SET_IMAGE'; payload: { url: string | null; tween?: any } }
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
   | { type: 'SET_FLASH'; payload: boolean }
+  | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
   | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
   | { type: 'TOGGLE_AUTO' }
@@ -97,6 +99,7 @@ export const initialState: StoryState = {
   isShaking: false,
   shakeConfig: null,
   isFlashing: false,
+  cameraEffect: null,
   blocker: null,
   isAuto: false,
   isSkipping: false,
@@ -206,6 +209,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, isShaking: action.payload.isShaking };
     case 'SET_FLASH':
       return { ...state, isFlashing: action.payload };
+    case 'SET_CAMERA_EFFECT':
+      return { ...state, cameraEffect: action.payload };
     case 'SET_BLOCKER':
       return { ...state, blocker: action.payload };
     case 'SET_ANIM_TEXT':

@@ -83,6 +83,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [selectedYear, setSelectedYear] = useState<number>(1); // Default to Year 1
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showEpisodesOnMobile, setShowEpisodesOnMobile] = useState(false);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
@@ -223,6 +225,15 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
         label: t.year_n(year as number)
       }));
   }, [episodes, t]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const loadEpisodes = async () => {
     try {
@@ -370,29 +381,29 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           <div className="flex-1 flex flex-col overflow-hidden h-full">
             {/* Top Header */}
             {activeTab !== 'NONE' && (
-              <div className="px-8 md:px-12 pt-10 pb-4 flex items-center justify-between z-20 relative shrink-0">
-                <div className="flex items-center gap-8 md:gap-12">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Database</span>
-                    <span className="text-xl md:text-2xl font-black text-white tracking-widest uppercase">ZOOT ARCHIVE</span>
+              <div className="px-6 md:px-12 pt-8 md:pt-10 pb-4 flex flex-col md:flex-row items-start md:items-center justify-between z-20 relative shrink-0 gap-6 md:gap-0">
+                <div className="flex items-center gap-6 md:gap-12 w-full md:w-auto overflow-x-auto no-scrollbar">
+                  <div className="flex flex-col min-w-max">
+                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Database</span>
+                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">ZOOT ARCHIVE</span>
                   </div>
-                  <div className="w-px h-10 bg-white/10" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Current Sector</span>
-                    <span className="text-xl md:text-2xl font-black text-white tracking-widest uppercase">
+                  <div className="w-px h-8 md:h-10 bg-white/10 shrink-0" />
+                  <div className="flex flex-col min-w-max">
+                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Current Sector</span>
+                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">
                       {viewMode === 'ALL' ? 'ALL ARCHIVES' : (viewMode === 'STORYLINE' 
                         ? STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.topText 
                         : t.year_n(selectedYear))}
                     </span>
                   </div>
-                  <div className="w-px h-10 bg-white/10" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Records Found</span>
-                    <span className="text-xl md:text-2xl font-black text-white tracking-widest uppercase">{filteredEpisodes.length.toString().padStart(3, '0')}</span>
+                  <div className="w-px h-8 md:h-10 bg-white/10 shrink-0" />
+                  <div className="flex flex-col min-w-max">
+                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Records Found</span>
+                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">{filteredEpisodes.length.toString().padStart(3, '0')}</span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
                   <div className="hidden lg:flex flex-col items-end max-w-[180px] mr-4 border-r border-white/10 pr-4">
                     <span className="text-[8px] font-bold text-white/20 leading-tight text-right uppercase tracking-[0.1em]">
                       {t.disclaimer}
@@ -400,10 +411,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   </div>
                   <button 
                     onClick={() => setViewMode(viewMode === 'ALL' ? 'STORYLINE' : 'ALL')}
-                    className={`px-6 md:px-8 py-3 border transition-all flex items-center gap-3 group rounded-sm ${viewMode === 'ALL' ? 'bg-white border-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'border-white/20 text-white hover:bg-white/10 hover:border-white/40'}`}
+                    className={`px-4 md:px-8 py-2 md:py-3 border transition-all flex items-center gap-3 group rounded-sm ${viewMode === 'ALL' ? 'bg-white border-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'border-white/20 text-white hover:bg-white/10 hover:border-white/40'}`}
                   >
-                    <LayoutGrid className={`w-4 h-4 ${viewMode === 'ALL' ? 'text-black' : 'text-white/40 group-hover:text-white'}`} />
-                    <span className="text-[10px] font-black tracking-[0.3em] uppercase">All</span>
+                    <LayoutGrid className={`w-3.5 h-3.5 md:w-4 md:h-4 ${viewMode === 'ALL' ? 'text-black' : 'text-white/40 group-hover:text-white'}`} />
+                    <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase">All</span>
                   </button>
                 </div>
               </div>
@@ -421,9 +432,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                 <div className="flex-1 flex overflow-hidden h-full">
                   {/* LEFT MENU */}
                   {viewMode !== 'ALL' && (
-                    <div className="w-72 shrink-0 flex flex-col overflow-y-auto custom-scrollbar relative z-20 bg-black/60 backdrop-blur-md border-r border-white/5 h-full">
+                    <div className={`${isMobile && showEpisodesOnMobile ? 'hidden' : 'flex'} w-full md:w-72 shrink-0 flex-col overflow-y-auto custom-scrollbar relative z-20 bg-black/60 backdrop-blur-md border-r border-white/5 h-full`}>
                        {/* View Mode Toggle */}
-                       <div className="flex border-b border-white/5">
+                       <div className="flex border-b border-white/5 shrink-0">
                          <button 
                            onClick={() => setViewMode('STORYLINE')}
                            className={`flex-1 py-4 text-[10px] font-black tracking-[0.2em] uppercase transition-all ${viewMode === 'STORYLINE' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
@@ -438,72 +449,86 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                          </button>
                        </div>
 
-                       <div className="py-4 px-6 mb-2">
+                       <div className="py-4 px-6 mb-2 shrink-0">
                          <span className="text-[10px] font-bold text-white/20 tracking-[0.2em] uppercase">
                            {viewMode === 'STORYLINE' ? 'Storyline Selection' : 'Year Selection'}
                          </span>
                        </div>
 
-                       {viewMode === 'STORYLINE' ? (
-                         STORY_LINES_DATA.map(line => (
-                           <button 
-                             key={line.id} 
-                             onClick={() => setSelectedStoryLine(line.id)} 
-                             className={`group relative flex items-center gap-4 py-5 px-8 transition-all border-r-4 ${selectedStoryLine === line.id ? 'border-white bg-white/10' : 'border-transparent hover:bg-white/5'}`}
-                           >
-                             {selectedStoryLine === line.id && (
-                               <div className="absolute left-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
-                             )}
-                             <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-transform duration-300 ${selectedStoryLine === line.id ? 'scale-110' : 'group-hover:scale-105'}`}>
-                               <img 
-                                 src={`https://raw.githubusercontent.com/fexli/ArknightsResource/main/camplogo/logo_${line.logo}.png`} 
-                                 alt={line.topText}
-                                 className={`max-w-full max-h-full object-contain brightness-0 invert transition-opacity duration-300 ${selectedStoryLine === line.id ? 'opacity-100' : 'opacity-30 group-hover:opacity-60'}`} 
-                                 onError={(e) => {
-                                   (e.target as HTMLImageElement).style.display = 'none';
-                                 }}
-                               />
-                             </div>
-                             <div className="flex flex-col items-start overflow-hidden">
-                               <span className={`text-[11px] font-black tracking-[0.15em] text-left uppercase transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{line.topText}</span>
-                               <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>{line.bottomText}</span>
-                             </div>
-                             
-                             {selectedStoryLine === line.id && (
-                               <div className="ml-auto">
-                                 <div className="w-1.5 h-1.5 bg-white rotate-45" />
+                       <div className="flex-1 overflow-y-auto custom-scrollbar">
+                         {viewMode === 'STORYLINE' ? (
+                           STORY_LINES_DATA.map(line => (
+                             <button 
+                               key={line.id} 
+                               onClick={() => {
+                                 setSelectedStoryLine(line.id);
+                                 if (isMobile) setShowEpisodesOnMobile(true);
+                               }} 
+                               className={`group relative w-full flex items-center gap-4 py-6 px-8 transition-all border-r-4 ${selectedStoryLine === line.id ? 'border-white bg-white/10' : 'border-transparent hover:bg-white/5'}`}
+                             >
+                               {selectedStoryLine === line.id && (
+                                 <>
+                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                                   <div className="absolute right-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                                 </>
+                               )}
+                               <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-transform duration-300 ${selectedStoryLine === line.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                                 <img 
+                                   src={`https://raw.githubusercontent.com/fexli/ArknightsResource/main/camplogo/logo_${line.logo}.png`} 
+                                   alt={line.topText}
+                                   className={`max-w-full max-h-full object-contain brightness-0 invert transition-opacity duration-300 ${selectedStoryLine === line.id ? 'opacity-100' : 'opacity-30 group-hover:opacity-60'}`} 
+                                   onError={(e) => {
+                                     (e.target as HTMLImageElement).style.display = 'none';
+                                   }}
+                                 />
                                </div>
-                             )}
-                           </button>
-                         ))
-                       ) : (
-                         arkYears.map(year => (
-                           <button 
-                             key={year.value} 
-                             onClick={() => setSelectedYear(year.value)} 
-                             className={`group relative flex items-center gap-4 py-6 px-8 transition-all border-r-4 ${selectedYear === year.value ? 'border-white bg-white/10' : 'border-transparent hover:bg-white/5'}`}
-                           >
-                             {selectedYear === year.value && (
-                               <div className="absolute left-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
-                             )}
-                             <div className="flex flex-col items-start overflow-hidden">
-                               <span className={`text-2xl font-black tracking-[0.2em] text-left uppercase transition-colors duration-300 ${selectedYear === year.value ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
-                                 {year.label}
-                               </span>
-                               <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedYear === year.value ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
-                                 Arknights Era
-                               </span>
-                             </div>
-                             
-                             {selectedYear === year.value && (
-                               <div className="ml-auto">
-                                 <div className="w-1.5 h-1.5 bg-white rotate-45" />
+                               <div className="flex flex-col items-start overflow-hidden">
+                                 <span className={`text-[11px] font-black tracking-[0.15em] text-left uppercase transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{line.topText}</span>
+                                 <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>{line.bottomText}</span>
                                </div>
-                             )}
-                           </button>
-                         ))
-                       )}
-                       <div className="mt-auto p-8 opacity-20">
+                               
+                               {selectedStoryLine === line.id && (
+                                 <div className="ml-auto">
+                                   <div className="w-1.5 h-1.5 bg-white rotate-45" />
+                                 </div>
+                               )}
+                             </button>
+                           ))
+                         ) : (
+                           arkYears.map(year => (
+                             <button 
+                               key={year.value} 
+                               onClick={() => {
+                                 setSelectedYear(year.value);
+                                 if (isMobile) setShowEpisodesOnMobile(true);
+                               }} 
+                               className={`group relative w-full flex items-center gap-4 py-6 px-8 transition-all border-r-4 ${selectedYear === year.value ? 'border-white bg-white/10' : 'border-transparent hover:bg-white/5'}`}
+                             >
+                               {selectedYear === year.value && (
+                                 <>
+                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                                   <div className="absolute right-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                                 </>
+                               )}
+                               <div className="flex flex-col items-start overflow-hidden">
+                                 <span className={`text-2xl font-black tracking-[0.2em] text-left uppercase transition-colors duration-300 ${selectedYear === year.value ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
+                                   {year.label}
+                                 </span>
+                                 <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedYear === year.value ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
+                                   Arknights Era
+                                 </span>
+                               </div>
+                               
+                               {selectedYear === year.value && (
+                                 <div className="ml-auto">
+                                   <div className="w-1.5 h-1.5 bg-white rotate-45" />
+                                 </div>
+                               )}
+                             </button>
+                           ))
+                         )}
+                       </div>
+                       <div className="mt-auto p-8 opacity-20 shrink-0">
                           <div className="flex flex-col gap-1">
                             <div className="h-px w-full bg-white" />
                             <div className="h-px w-2/3 bg-white" />
@@ -514,9 +539,18 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   )}
 
                   {/* Vertical Grid Area */}
-                  <div className="flex-1 overflow-y-auto px-8 md:px-12 py-8 custom-scrollbar h-full bg-[#050505]/50">
+                  <div className={`${isMobile && !showEpisodesOnMobile && viewMode !== 'ALL' ? 'hidden' : 'flex'} flex-1 flex-col overflow-y-auto px-6 md:px-12 py-8 custom-scrollbar h-full bg-[#050505]/50`}>
+                    {isMobile && showEpisodesOnMobile && viewMode !== 'ALL' && (
+                      <button 
+                        onClick={() => setShowEpisodesOnMobile(false)}
+                        className="flex items-center gap-2 mb-6 text-white/40 hover:text-white transition-colors"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase">Back to Storylines</span>
+                      </button>
+                    )}
                     {filteredEpisodes.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6 pb-32">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4 md:gap-6 pb-32">
                         {filteredEpisodes.map((episode, index) => {
                           const isMainline = episode.id.toLowerCase().startsWith('main_') || episode.entryType === 'MAINLINE';
                           return (
@@ -700,124 +734,62 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
       </div>
 
       {/* Bottom Navigation Bar */}
-      <div className="h-24 border-t border-white/5 z-20 relative bg-black/80 backdrop-blur-xl flex items-center px-8 md:px-16 justify-between">
-        <div className="flex items-center gap-4 md:gap-8 lg:gap-12 overflow-x-auto no-scrollbar">
+      <div className="h-20 md:h-24 border-t border-white/5 z-20 relative bg-black/80 backdrop-blur-xl flex items-center px-6 md:px-16 justify-between shrink-0">
+        <div className="flex items-center gap-4 md:gap-8 lg:gap-12 overflow-x-auto no-scrollbar flex-1 md:flex-none">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => {
                 setActiveTab(tab.id);
                 setSelectedEpisode(null);
+                if (isMobile) setShowEpisodesOnMobile(false);
               }}
-              className={`group flex flex-col items-center min-w-[80px] transition-all relative ${
+              className={`group flex flex-col items-center min-w-[70px] md:min-w-[80px] transition-all relative ${
                 activeTab === tab.id ? 'text-white' : 'text-white/30 hover:text-white/60'
               }`}
             >
               <div className="flex flex-col items-center">
-                <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'text-white' : ''}`}>
+                <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'text-white' : ''}`}>
                   {tab.label}
                 </span>
-                <span className={`text-[8px] font-bold opacity-40 transition-all ${activeTab === tab.id ? 'opacity-100 text-white/60' : ''}`}>
+                <span className={`text-[7px] md:text-[8px] font-bold opacity-40 transition-all ${activeTab === tab.id ? 'opacity-100 text-white/60' : ''}`}>
                   {tab.subLabel}
                 </span>
               </div>
               
               {/* Active Indicator */}
               {activeTab === tab.id && (
-                <div className="absolute -bottom-8 left-0 right-0 h-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.6)]" />
+                <div className="absolute -bottom-6 md:-bottom-8 left-0 right-0 h-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.6)]" />
               )}
-              
-              {/* Hover Indicator */}
-              <div className={`absolute -bottom-8 left-0 right-0 h-1 bg-white/10 scale-x-0 group-hover:scale-x-100 transition-transform ${activeTab === tab.id ? 'hidden' : ''}`} />
             </button>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-8">
-          {/* Search Bar */}
-          <div className="relative group">
+        <div className="flex items-center gap-4 md:gap-8">
+          {/* Search Bar - Hidden on small mobile, shown on tablet+ */}
+          <div className="hidden sm:relative group sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/60 transition-colors" />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="SEARCH RECORDS..."
-              className="w-48 lg:w-64 bg-white/5 border border-white/10 rounded-sm py-2 pl-9 pr-4 text-[10px] font-black tracking-[0.2em] text-white placeholder:text-white/10 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all uppercase"
+              placeholder="SEARCH..."
+              className="w-32 md:w-48 lg:w-64 bg-white/5 border border-white/10 rounded-sm py-2 pl-9 pr-4 text-[9px] md:text-[10px] font-black tracking-[0.2em] text-white placeholder:text-white/10 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all uppercase"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Report Button */}
+            {/* Language Toggle - Mobile Friendly */}
             <div className="relative">
               <button 
-                onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
-              className={`w-10 h-10 flex items-center justify-center border transition-all rounded-sm ${isReportMenuOpen ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
-              title="Report Issue"
-            >
-              <Flag className="w-4 h-4" />
-            </button>
-
-            {/* Report Menu Placeholder */}
-            {isReportMenuOpen && (
-              <div className="absolute bottom-14 right-0 w-64 bg-[#0a0a0a] border border-white/10 shadow-2xl p-4 animate-in slide-in-from-bottom-2 duration-300 z-50">
-                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
-                  <span className="text-[10px] font-black tracking-widest text-white uppercase">{t.report_issue}</span>
-                  <button onClick={() => setIsReportMenuOpen(false)}>
-                    <X className="w-3 h-3 text-white/40 hover:text-white" />
-                  </button>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <p className="text-[9px] text-white/40 leading-relaxed uppercase tracking-wider">
-                    Found an error in the archives?
-                  </p>
-                  <div className="h-px bg-white/5" />
-                  <p className="text-[9px] text-white/70 font-bold leading-relaxed uppercase tracking-tight">
-                    {t.report_description}
-                  </p>
-                  <div className="flex flex-col items-center py-4 bg-white/5 border border-white/10 rounded-sm">
-                    <div className="p-2 bg-white rounded-sm shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                      <QRCodeSVG 
-                        value="https://www.skport.com/profile?id=9963327784768"
-                        size={120}
-                        level="H"
-                        includeMargin={false}
-                        imageSettings={{
-                          src: "https://www.google.com/s2/favicons?domain=skport.com&sz=128",
-                          height: 28,
-                          width: 28,
-                          excavate: true,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <a 
-                    href="https://www.skport.com/profile?id=9963327784768" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 py-3 px-3 bg-white/5 border border-white/10 text-[10px] font-black text-white hover:bg-white/10 hover:border-white/30 transition-all uppercase tracking-[0.2em] text-center justify-center"
-                  >
-                    SKPORT PROFILE
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
-          </div>
-
-          {/* Language Selector */}
-          <div className="relative mr-4">
-            <button
-              onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-sm hover:bg-white/10 transition-all text-white/70 hover:text-white"
-            >
-              <Globe className="w-4 h-4" />
-              <span className="text-[12px] font-medium">{LANGUAGES.find(l => l.id === lang)?.label || 'Language'}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isLangMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-md shadow-2xl overflow-hidden z-50">
-                <div className="max-h-[300px] overflow-y-auto py-1 custom-scrollbar">
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border transition-all rounded-sm ${isLangMenuOpen ? 'bg-white border-white text-black' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
+              >
+                <Globe className="w-4 h-4" />
+              </button>
+              
+              {isLangMenuOpen && (
+                <div className="absolute bottom-12 md:bottom-14 right-0 w-48 bg-[#0a0a0a] border border-white/10 shadow-2xl p-2 z-50 max-h-[60vh] overflow-y-auto custom-scrollbar">
                   {LANGUAGES.map((l) => (
                     <button
                       key={l.id}
@@ -825,34 +797,78 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         handleLanguageChange(l.id);
                         setIsLangMenuOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-all ${
-                        lang === l.id 
-                          ? 'bg-[#2a3f3a] text-[#4ade80]' 
-                          : 'text-white/80 hover:bg-white/5 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${lang === l.id ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
                     >
-                      <span>{l.label}</span>
-                      {lang === l.id && <Check className="w-4 h-4" />}
+                      {l.label}
+                      {lang === l.id && <Check className="w-3 h-3" />}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] text-white/20 font-mono uppercase tracking-widest">Total Stories</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black text-white/60">{filteredEpisodes.length}</span>
-              <span className="text-[10px] text-white/20 font-bold">/ {episodes.length}</span>
+            {/* Report Button */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
+                className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border transition-all rounded-sm ${isReportMenuOpen ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
+              >
+                <Flag className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Background Decorative Elements */}
-      <div className="absolute bottom-0 right-0 w-1/3 h-1/2 bg-gradient-to-tl from-white/5 to-transparent pointer-events-none z-0" />
-      <div className="absolute top-0 left-0 w-1/4 h-1/4 bg-gradient-to-br from-white/5 to-transparent pointer-events-none z-0" />
+      {/* Report Menu Overlay */}
+      {isReportMenuOpen && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+          <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 shadow-2xl p-6 animate-in zoom-in-95 duration-300 relative">
+            <button 
+              onClick={() => setIsReportMenuOpen(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+              <span className="text-xs font-black tracking-widest text-white uppercase">{t.report_issue}</span>
+            </div>
+            <div className="flex flex-col gap-4">
+              <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-wider">
+                Found an error in the archives?
+              </p>
+              <div className="h-px bg-white/5" />
+              <p className="text-[10px] text-white/70 font-bold leading-relaxed uppercase tracking-tight">
+                {t.report_description}
+              </p>
+              <div className="flex flex-col items-center py-6 bg-white/5 border border-white/10 rounded-sm">
+                <div className="p-3 bg-white rounded-sm shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                  <QRCodeSVG 
+                    value="https://www.skport.com/profile?id=9963327784768"
+                    size={140}
+                    level="H"
+                    includeMargin={false}
+                    imageSettings={{
+                      src: "https://www.google.com/s2/favicons?domain=skport.com&sz=128",
+                      height: 32,
+                      width: 32,
+                      excavate: true,
+                    }}
+                  />
+                </div>
+              </div>
+              <a 
+                href="https://www.skport.com/profile?id=9963327784768" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 py-4 px-4 bg-white/5 border border-white/10 text-[11px] font-black text-white hover:bg-white/10 hover:border-white/30 transition-all uppercase tracking-[0.2em] text-center justify-center"
+              >
+                SKPORT PROFILE
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
