@@ -37,6 +37,15 @@ export interface StoryState {
   skipSpeed: number;
   showUI: boolean;
   showBackConfirm: boolean;
+  showSettings: boolean;
+  showLog: boolean;
+  history: { speaker: string | null; text: string }[];
+  settings: {
+    fontSize: number;
+    bgmVolume: number;
+    sfxVolume: number;
+    voiceVolume: number;
+  };
 }
 
 export type StoryAction =
@@ -60,7 +69,11 @@ export type StoryAction =
   | { type: 'SET_SKIPPING'; payload: boolean }
   | { type: 'SET_SKIP_SPEED'; payload: number }
   | { type: 'SET_SHOW_UI'; payload: boolean }
-  | { type: 'SET_SHOW_BACK_CONFIRM'; payload: boolean };
+  | { type: 'SET_SHOW_BACK_CONFIRM'; payload: boolean }
+  | { type: 'SET_SHOW_SETTINGS'; payload: boolean }
+  | { type: 'SET_SHOW_LOG'; payload: boolean }
+  | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string } }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> };
 
 export const initialState: StoryState = {
   lines: [],
@@ -90,6 +103,15 @@ export const initialState: StoryState = {
   skipSpeed: 2,
   showUI: true,
   showBackConfirm: false,
+  showSettings: false,
+  showLog: false,
+  history: [],
+  settings: {
+    fontSize: 100, // Percentage
+    bgmVolume: 1.0,
+    sfxVolume: 1.0,
+    voiceVolume: 1.0,
+  },
 };
 
 export function storyReducer(state: StoryState, action: StoryAction): StoryState {
@@ -200,6 +222,14 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, showUI: action.payload };
     case 'SET_SHOW_BACK_CONFIRM':
       return { ...state, showBackConfirm: action.payload };
+    case 'SET_SHOW_SETTINGS':
+      return { ...state, showSettings: action.payload };
+    case 'SET_SHOW_LOG':
+      return { ...state, showLog: action.payload };
+    case 'ADD_TO_HISTORY':
+      return { ...state, history: [...state.history, action.payload] };
+    case 'UPDATE_SETTINGS':
+      return { ...state, settings: { ...state.settings, ...action.payload } };
     default:
       return state;
   }

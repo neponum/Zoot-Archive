@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
+import { Settings, History } from 'lucide-react';
 
 interface ControlsOverlayProps {
   showUI: boolean;
@@ -8,10 +9,11 @@ interface ControlsOverlayProps {
   skipSpeed: number;
   isHoldingSkip: boolean;
   activeAnimText: any;
-  scriptContent: string | null;
   onToggleAuto: () => void;
   onToggleSkip: () => void;
   onBackClick: () => void;
+  onSettingsClick: () => void;
+  onLogClick: () => void;
   setShowUI: (show: boolean) => void;
   t: any;
 }
@@ -23,10 +25,11 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   skipSpeed,
   isHoldingSkip,
   activeAnimText,
-  scriptContent,
   onToggleAuto,
   onToggleSkip,
   onBackClick,
+  onSettingsClick,
+  onLogClick,
   setShowUI,
   t,
 }) => {
@@ -43,59 +46,50 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
       onPointerDown={(e) => e.stopPropagation()}
       onPointerUp={(e) => e.stopPropagation()}
       >
-        <div className="flex gap-6 items-center mt-2 ml-2">
+        <div className="flex gap-8 items-center">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onSettingsClick(); }}
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg"
+          >
+            <Settings className="w-8 h-8" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onLogClick(); }}
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg"
+          >
+            <History className="w-8 h-8" />
+          </button>
           <button 
             onClick={(e) => { e.stopPropagation(); setShowUI(false); }}
-            className="p-2 opacity-80 hover:opacity-100 transition-opacity"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg"
           >
-            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-none stroke-white drop-shadow-md" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
               <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
               <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
               <line x1="2" y1="2" x2="22" y2="22" />
             </svg>
           </button>
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              if (scriptContent) {
-                const newWindow = window.open('', '_blank');
-                if (newWindow) {
-                  newWindow.document.write(`<pre>${scriptContent}</pre>`);
-                } else {
-                  alert(t.popup_blocked);
-                }
-              } else {
-                alert(t.script_not_loaded);
-              }
-            }}
-            className="p-2 opacity-80 hover:opacity-100 transition-opacity text-white font-bold text-xl drop-shadow-md"
-          >
-            LOG
-          </button>
         </div>
 
-        <div className="flex gap-8 items-center mt-2 mr-4 relative">
+        <div className="flex gap-10 items-center">
           <button 
             onClick={(e) => { e.stopPropagation(); onToggleAuto(); }}
             className={cn(
-              "p-2 font-bold text-[20px] tracking-widest drop-shadow-md transition-colors",
+              "font-bold text-[20px] tracking-[0.2em] transition-all drop-shadow-lg",
               isAuto ? "text-white" : "text-white/60 hover:text-white"
             )}
           >
-            AUTO
+            AUTO <span className="text-[12px] opacity-60">{isAuto ? 'ON' : 'OFF'}</span>
           </button>
-          <div className="relative">
-            <button 
-              onClick={(e) => { e.stopPropagation(); onBackClick(); }}
-              className={cn(
-                "p-2 flex items-center gap-1 font-bold text-[20px] tracking-widest drop-shadow-md transition-colors",
-                isSkipping ? "text-white" : "text-white/60 hover:text-white"
-              )}
-            >
-              SKIP
-            </button>
-          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onBackClick(); }}
+            className={cn(
+              "font-bold text-[20px] tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg"
+            )}
+          >
+            SKIP
+          </button>
         </div>
       </div>
 

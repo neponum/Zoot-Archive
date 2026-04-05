@@ -7,6 +7,8 @@ interface StoryControlsProps {
   isHoldingSkip: boolean;
   currentDecision: any;
   showBackConfirm: boolean;
+  showSettings: boolean;
+  showLog: boolean;
   showUI: boolean;
   isTypewriterFinished: boolean;
   advance: () => void;
@@ -23,6 +25,8 @@ export const useStoryControls = ({
   isHoldingSkip,
   currentDecision,
   showBackConfirm,
+  showSettings,
+  showLog,
   showUI,
   isTypewriterFinished,
   advance,
@@ -39,7 +43,7 @@ export const useStoryControls = ({
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (currentDecision || showBackConfirm) return;
+    if (currentDecision || showBackConfirm || showSettings || showLog) return;
     
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
     pointerDownTime.current = Date.now();
@@ -51,7 +55,7 @@ export const useStoryControls = ({
       setIsAuto(false);
       setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
     }, LONG_PRESS_DELAY);
-  }, [currentDecision, showBackConfirm, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
+  }, [currentDecision, showBackConfirm, showSettings, showLog, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!longPressTimer.current && !isHoldingSkip) return;
@@ -83,23 +87,23 @@ export const useStoryControls = ({
       setIsHoldingSkip(false);
       setIsSkipping(false);
       setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
-    } else if (!showBackConfirm && !currentDecision && showUI) {
+    } else if (!showBackConfirm && !currentDecision && !showSettings && !showLog && showUI) {
       if (e.pointerType !== 'mouse' || e.button === 0) {
         advance();
       }
     }
-  }, [isHoldingSkip, showBackConfirm, currentDecision, showUI, isTypewriterFinished, advance, setIsHoldingSkip, setIsSkipping, setSkipSpeed, setShouldSkipTypewriter]);
+  }, [isHoldingSkip, showBackConfirm, currentDecision, showSettings, showLog, showUI, isTypewriterFinished, advance, setIsHoldingSkip, setIsSkipping, setSkipSpeed, setShouldSkipTypewriter]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showBackConfirm || currentDecision) return;
+      if (showBackConfirm || currentDecision || showSettings || showLog) return;
       if (e.code === 'Space' || e.code === 'Enter') {
         advance();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [advance, showBackConfirm, currentDecision]);
+  }, [advance, showBackConfirm, currentDecision, showSettings, showLog]);
 
   return {
     handlePointerDown,

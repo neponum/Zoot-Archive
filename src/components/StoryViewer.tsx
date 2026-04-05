@@ -11,6 +11,8 @@ import { DialogueUI } from './story/DialogueUI';
 import { ControlsOverlay } from './story/ControlsOverlay';
 import { CinematicEffectsLayer } from './story/CinematicEffectsLayer';
 import { BackConfirmation } from './story/BackConfirmation';
+import { SettingsModal } from './story/SettingsModal';
+import { LogModal } from './story/LogModal';
 import { storyReducer, initialState, CharacterSlotData } from '../hooks/useStoryReducer';
 import { useStoryControls } from '../hooks/useStoryControls';
 import { AUTO_ADVANCE_DELAY, SKIP_SPEEDS } from '../constants';
@@ -48,7 +50,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     isSkipping,
     skipSpeed,
     showUI,
-    showBackConfirm
+    showBackConfirm,
+    showSettings,
+    showLog,
+    history,
+    settings
   } = state;
 
   const [loading, setLoading] = React.useState(true);
@@ -103,6 +109,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
           case 'subtitle':
             if (line.text) {
+              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: null, text: line.text } });
               dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: line.text, isSubtitle: true, line } });
               if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
               return;
@@ -113,6 +120,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
 
           case 'dialogue':
+            dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text || '' } });
             dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.characterName || null, text: line.text || '' } });
             if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
             return;
@@ -374,6 +382,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     isHoldingSkip,
     currentDecision,
     showBackConfirm,
+    showSettings,
+    showLog,
     showUI,
     isTypewriterFinished,
     advance,
@@ -387,7 +397,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Auto advance logic
   useEffect(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    if (isAuto && !isSkipping && !currentDecision && !showBackConfirm && isTypewriterFinished) {
+    if (isAuto && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && isTypewriterFinished) {
       autoAdvanceTimer.current = setTimeout(() => {
         advance();
       }, AUTO_ADVANCE_DELAY);
@@ -395,18 +405,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     };
-  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm]);
+  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog]);
 
   // Skip logic
   useEffect(() => {
-    if (isSkipping) {
+    if (isSkipping && !showSettings && !showLog) {
       const delay = 100 / skipSpeed;
       const timer = setTimeout(() => {
         advance();
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isSkipping, currentIndex, advance, skipSpeed]);
+  }, [isSkipping, currentIndex, advance, skipSpeed, showSettings, showLog]);
 
   useEffect(() => {
     const loadStory = async () => {
@@ -430,6 +440,19 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     
     loadStory();
   }, [storyTxt, customScript]);
+
+  // Initialize volumes from audioManager
+  useEffect(() => {
+    const volumes = audioManager.getVolumes();
+    dispatch({ 
+      type: 'UPDATE_SETTINGS', 
+      payload: { 
+        bgmVolume: volumes.bgm, 
+        sfxVolume: volumes.sfx, 
+        voiceVolume: volumes.voice 
+      } 
+    });
+  }, []);
 
   useEffect(() => {
     if (lines.length > 0 && currentIndex === 0 && !loading) {
@@ -538,6 +561,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentDecision={currentDecision}
           currentSubtitle={currentSubtitle}
           activeAnimText={activeAnimText}
+          fontSize={settings.fontSize}
+          showSettings={showSettings}
           onChoice={(val) => {
             selectedChoicesRef.current.add(val);
             dispatch({ type: 'SET_DECISION', payload: null });
@@ -554,11 +579,33 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           skipSpeed={skipSpeed}
           isHoldingSkip={isHoldingSkip}
           activeAnimText={activeAnimText}
-          scriptContent={scriptContent}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
           onToggleSkip={() => {}}
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}
+          onSettingsClick={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })}
+          onLogClick={() => dispatch({ type: 'SET_SHOW_LOG', payload: true })}
           setShowUI={(val) => dispatch({ type: 'SET_SHOW_UI', payload: val })}
+          t={t}
+        />
+
+        <LogModal 
+          show={showLog}
+          history={lines
+            .filter(line => line.type === 'dialogue' || line.type === 'subtitle')
+            .map(line => ({
+              speaker: line.type === 'dialogue' ? line.characterName || null : null,
+              text: line.text || ''
+            }))
+          }
+          onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
+          t={t}
+        />
+
+        <SettingsModal 
+          show={showSettings}
+          settings={settings}
+          onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
+          onClose={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
           t={t}
         />
 

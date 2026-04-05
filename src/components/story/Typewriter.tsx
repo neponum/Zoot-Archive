@@ -6,6 +6,7 @@ interface TypewriterProps {
   speed?: number;
   onFinished?: () => void;
   skip?: boolean;
+  paused?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -15,6 +16,7 @@ export const Typewriter: React.FC<TypewriterProps> = ({
   speed = 30,
   onFinished,
   skip = false,
+  paused = false,
   className,
   style,
 }) => {
@@ -26,6 +28,7 @@ export const Typewriter: React.FC<TypewriterProps> = ({
 
   const [visibleChars, setVisibleChars] = useState(0);
   const finishedCalledRef = useRef<string | null>(null);
+  const currentCharsRef = useRef(0);
   
   const handleFinished = () => {
     if (finishedCalledRef.current !== text) {
@@ -37,32 +40,43 @@ export const Typewriter: React.FC<TypewriterProps> = ({
   useEffect(() => {
     if (skip) {
       setVisibleChars(totalVisibleLength);
+      currentCharsRef.current = totalVisibleLength;
       handleFinished();
       return;
     }
 
-    setVisibleChars(0);
-    finishedCalledRef.current = null;
+    if (paused) return;
+
+    if (currentCharsRef.current >= totalVisibleLength && finishedCalledRef.current === text) {
+      return;
+    }
+
+    if (currentCharsRef.current === 0 || finishedCalledRef.current !== null) {
+      setVisibleChars(0);
+      currentCharsRef.current = 0;
+      finishedCalledRef.current = null;
+    }
     
     if (totalVisibleLength === 0) {
       handleFinished();
       return;
     }
 
-    let current = 0;
     const interval = setInterval(() => {
-      current++;
-      if (current >= totalVisibleLength) {
+      if (paused) return;
+      
+      currentCharsRef.current++;
+      if (currentCharsRef.current >= totalVisibleLength) {
         setVisibleChars(totalVisibleLength);
         clearInterval(interval);
         handleFinished();
       } else {
-        setVisibleChars(current);
+        setVisibleChars(currentCharsRef.current);
       }
     }, speed);
 
     return () => clearInterval(interval);
-  }, [text, speed, totalVisibleLength, skip]);
+  }, [text, speed, totalVisibleLength, skip, paused]);
 
   const renderSegments = () => {
     let charsLeft = visibleChars;

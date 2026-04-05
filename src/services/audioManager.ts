@@ -7,10 +7,27 @@ class AudioManager {
   private bgmUrl: string | null = null;
   private bgmVolume: number = 0.5;
   
+  private masterBGMVolume: number = 1.0;
+  private masterSFXVolume: number = 1.0;
+  private masterVoiceVolume: number = 1.0;
+  
   private sfx: Map<string, Howl> = new Map();
   private voice: Howl | null = null;
   
-  private constructor() {}
+  private constructor() {
+    // Load volumes from localStorage if available
+    try {
+      const saved = localStorage.getItem('arknights_avg_volumes');
+      if (saved) {
+        const { bgm, sfx, voice } = JSON.parse(saved);
+        this.masterBGMVolume = bgm ?? 1.0;
+        this.masterSFXVolume = sfx ?? 1.0;
+        this.masterVoiceVolume = voice ?? 1.0;
+      }
+    } catch (e) {
+      console.error('Failed to load volumes', e);
+    }
+  }
 
   public static getInstance(): AudioManager {
     if (!AudioManager.instance) {
@@ -19,13 +36,33 @@ class AudioManager {
     return AudioManager.instance;
   }
 
+  public setVolumes(bgm: number, sfx: number, voice: number) {
+    this.masterBGMVolume = bgm;
+    this.masterSFXVolume = sfx;
+    this.masterVoiceVolume = voice;
+    
+    if (this.bgm) {
+      this.bgm.volume(this.bgmVolume * this.masterBGMVolume);
+    }
+    
+    localStorage.setItem('arknights_avg_volumes', JSON.stringify({ bgm, sfx, voice }));
+  }
+
+  public getVolumes() {
+    return {
+      bgm: this.masterBGMVolume,
+      sfx: this.masterSFXVolume,
+      voice: this.masterVoiceVolume
+    };
+  }
+
   /**
    * Play background music with optional crossfade
    */
   public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000) {
     if (this.bgmUrl === url) {
       if (this.bgm) {
-        this.bgm.volume(volume);
+        this.bgm.volume(volume * this.masterBGMVolume);
       }
       return;
     }
@@ -52,7 +89,7 @@ class AudioManager {
     });
 
     this.bgm.play();
-    this.bgm.fade(0, volume, fadeDuration);
+    this.bgm.fade(0, volume * this.masterBGMVolume, fadeDuration);
   }
 
   /**
@@ -77,7 +114,7 @@ class AudioManager {
   public playSFX(url: string, volume: number = 1.0) {
     const sound = new Howl({
       src: [url],
-      volume,
+      volume: volume * this.masterSFXVolume,
       onend: () => {
         sound.unload();
       }
@@ -96,7 +133,7 @@ class AudioManager {
 
     this.voice = new Howl({
       src: [url],
-      volume,
+      volume: volume * this.masterVoiceVolume,
       onend: () => {
         this.voice = null;
       }
