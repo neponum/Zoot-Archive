@@ -62,6 +62,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const selectedChoicesRef = useRef<Set<string>>(new Set());
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAdvanceTime = useRef<number>(0);
+  const lastSkipTime = useRef<number>(0);
 
   // Sync ref with state for callbacks
   useEffect(() => {
@@ -357,8 +358,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     
     if (!isTypewriterFinished && !isSkipping) {
       dispatch({ type: 'SET_SKIP_TYPEWRITER', payload: true });
+      lastSkipTime.current = now;
       return;
     }
+
+    // If we just skipped the typewriter, prevent immediate advance to next line
+    if (now - lastSkipTime.current < 250) return;
 
     processLine(currentIndexRef.current + 1);
   }, [lines, processLine, isSkipping, onBack, currentDecision, isTypewriterFinished]);

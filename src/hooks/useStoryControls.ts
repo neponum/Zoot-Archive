@@ -85,18 +85,7 @@ export const useStoryControls = ({
       setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
     } else if (!showBackConfirm && !currentDecision && showUI) {
       if (e.pointerType !== 'mouse' || e.button === 0) {
-        if (isSwipe) {
-          if (!isTypewriterFinished) {
-            setShouldSkipTypewriter(true);
-          }
-          advance();
-        } else {
-          if (!isTypewriterFinished) {
-            setShouldSkipTypewriter(true);
-          } else {
-            advance();
-          }
-        }
+        advance();
       }
     }
   }, [isHoldingSkip, showBackConfirm, currentDecision, showUI, isTypewriterFinished, advance, setIsHoldingSkip, setIsSkipping, setSkipSpeed, setShouldSkipTypewriter]);

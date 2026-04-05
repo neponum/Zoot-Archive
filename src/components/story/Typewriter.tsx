@@ -38,19 +38,12 @@ export const Typewriter: React.FC<TypewriterProps> = ({
     if (skip) {
       setVisibleChars(totalVisibleLength);
       handleFinished();
-    }
-  }, [skip, totalVisibleLength, text]);
-
-  useEffect(() => {
-    setVisibleChars(0);
-    finishedCalledRef.current = null;
-    
-    if (skip) {
-      setVisibleChars(totalVisibleLength);
-      handleFinished();
       return;
     }
 
+    setVisibleChars(0);
+    finishedCalledRef.current = null;
+    
     if (totalVisibleLength === 0) {
       handleFinished();
       return;
@@ -69,7 +62,7 @@ export const Typewriter: React.FC<TypewriterProps> = ({
     }, speed);
 
     return () => clearInterval(interval);
-  }, [text, speed, totalVisibleLength]);
+  }, [text, speed, totalVisibleLength, skip]);
 
   const renderSegments = () => {
     let charsLeft = visibleChars;
