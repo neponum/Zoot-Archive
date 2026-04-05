@@ -1,38 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Smartphone } from 'lucide-react';
 
 export const OrientationOverlay: React.FC = () => {
-  const [isPortrait, setIsPortrait] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
-      const portrait = window.innerHeight > window.innerWidth;
-      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isNarrow = window.innerWidth < 1024;
       
-      setIsPortrait(portrait);
-      setIsMobile(mobile);
+      // Show overlay if it's portrait AND narrow (covers all phones/tablets and narrow desktop windows)
+      const shouldShow = isPortrait && isNarrow;
+      
+      setShowOverlay(shouldShow);
     };
 
     checkOrientation();
+    
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
+    
+    const mql = window.matchMedia('(orientation: portrait)');
+    const mqlListener = () => checkOrientation();
+    mql.addEventListener('change', mqlListener);
+
+    const interval = setInterval(checkOrientation, 1000);
 
     return () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+      mql.removeEventListener('change', mqlListener);
+      clearInterval(interval);
     };
   }, []);
 
-  return (
+  const overlay = (
     <AnimatePresence>
-      {isMobile && isPortrait && (
+      {showOverlay && (
         <motion.div
+          key="orientation-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center p-8 text-center"
+          transition={{ duration: 0.3 }}
+          style={{ zIndex: 999999 }}
+          className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center p-8 text-center touch-none select-none pointer-events-auto"
         >
           <motion.div
             animate={{ rotate: 90 }}
@@ -51,4 +65,6 @@ export const OrientationOverlay: React.FC = () => {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(overlay, document.body);
 };

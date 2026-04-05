@@ -17,6 +17,8 @@ import { storyReducer, initialState, CharacterSlotData } from '../hooks/useStory
 import { useStoryControls } from '../hooks/useStoryControls';
 import { AUTO_ADVANCE_DELAY, SKIP_SPEEDS } from '../constants';
 
+import { OrientationOverlay } from './story/OrientationOverlay';
+
 interface StoryViewerProps {
   storyTxt: string;
   customScript?: string;
@@ -637,6 +639,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}
           t={t}
         />
+
+        <OrientationOverlay />
       </motion.div>
     </div>
   );
