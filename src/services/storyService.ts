@@ -449,6 +449,8 @@ let cachedEpisodes: Partial<Record<Language, StoryEpisode[] | null>> = {
   ko_KR: null
 };
 
+let enReferenceData: any = null;
+let zhReferenceData: any = null;
 let characterMappingCache: Record<string, string> | null = null;
 
 export async function fetchCharacterMapping(): Promise<Record<string, string>> {
@@ -529,26 +531,31 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
   };
 
   let data;
-  let zhData: any = null;
   
   try {
     data = await fetchList(currentLanguage);
-    // If not in Chinese, fetch Chinese table for mapping names (used for PRTS Wiki)
-    if (currentLanguage !== 'zh_CN') {
+    
+    // Fetch reference data for search and fallback
+    if (!zhReferenceData) {
       try {
-        zhData = await fetchList('zh_CN');
+        zhReferenceData = await fetchList('zh_CN');
       } catch (e) {
-        console.warn('Failed to fetch zh_CN table for mapping, PRTS Wiki lookups might be less accurate.');
+        console.warn('Failed to fetch zh_CN reference data');
       }
-    } else {
-      zhData = data;
+    }
+    if (!enReferenceData) {
+      try {
+        enReferenceData = await fetchList('en_US');
+      } catch (e) {
+        console.warn('Failed to fetch en_US reference data');
+      }
     }
   } catch (err) {
     console.warn(`Failed to fetch ${currentLanguage} data, falling back to zh_CN:`, err);
     if (currentLanguage !== 'zh_CN') {
       try {
         data = await fetchList('zh_CN');
-        zhData = data;
+        zhReferenceData = data;
       } catch (fallbackErr) {
         throw new Error(`Failed to fetch both ${currentLanguage} and zh_CN data.`);
       }
@@ -575,7 +582,7 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
         
       if (chapters.length > 0) {
         // Use CN startTime as source of truth for "Arknights Age"
-        const originalObj = (zhData && zhData[key]) || obj;
+        const originalObj = (zhReferenceData && zhReferenceData[key]) || obj;
         const startTime = originalObj.startTime ? parseInt(originalObj.startTime) : 0;
         let year = getArknightsYear(startTime);
         
@@ -593,12 +600,22 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
           }
         }
         
-        const chineseName = zhData && zhData[key] ? zhData[key].name : undefined;
+        const chineseName = zhReferenceData && zhReferenceData[key] ? zhReferenceData[key].name : undefined;
+        const englishName = enReferenceData && enReferenceData[key] ? enReferenceData[key].name : undefined;
+
+        // If current language is English and name is Chinese, try to use englishName if it's different
+        let displayName = obj.name || key;
+        if (currentLanguage === 'en_US' && englishName && /[\u4e00-\u9fa5]/.test(displayName)) {
+          if (!/[\u4e00-\u9fa5]/.test(englishName)) {
+            displayName = englishName;
+          }
+        }
 
         episodes.push({
           id: obj.id || key,
-          name: obj.name || key,
+          name: displayName,
           chineseName,
+          englishName,
           entryType: obj.entryType || 'MAINLINE',
           storyEntryPicId: obj.storyEntryPicId,
           startTime,

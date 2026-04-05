@@ -114,6 +114,7 @@ export interface StoryEpisode {
   id: string;
   name: string;
   chineseName?: string;
+  englishName?: string;
   entryType: string;
   storyEntryPicId?: string;
   startTime?: number;

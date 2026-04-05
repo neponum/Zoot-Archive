@@ -167,6 +167,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
         if (!query) return true;
         return (ep.name || '').toLowerCase().includes(query) || 
                (ep.chineseName || '').toLowerCase().includes(query) || 
+               (ep.englishName || '').toLowerCase().includes(query) || 
                ep.id.toLowerCase().includes(query);
       })
       .sort((a, b) => {
@@ -384,8 +385,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
               <div className="px-6 md:px-12 pt-8 md:pt-10 pb-4 flex flex-col md:flex-row items-start md:items-center justify-between z-20 relative shrink-0 gap-6 md:gap-0">
                 <div className="flex items-center gap-6 md:gap-12 w-full md:w-auto overflow-x-auto no-scrollbar">
                   <div className="flex flex-col min-w-max">
-                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Database</span>
-                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">ZOOT ARCHIVE</span>
+                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">{t.stories_found_label}</span>
+                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase leading-none">{filteredEpisodes.length.toString().padStart(3, '0')}</span>
                   </div>
                   <div className="w-px h-8 md:h-10 bg-white/10 shrink-0" />
                   <div className="flex flex-col min-w-max">
@@ -396,19 +397,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         : t.year_n(selectedYear))}
                     </span>
                   </div>
-                  <div className="w-px h-8 md:h-10 bg-white/10 shrink-0" />
-                  <div className="flex flex-col min-w-max">
-                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Records Found</span>
-                    <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">{filteredEpisodes.length.toString().padStart(3, '0')}</span>
-                  </div>
                 </div>
                 
                 <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-                  <div className="hidden lg:flex flex-col items-end max-w-[180px] mr-4 border-r border-white/10 pr-4">
-                    <span className="text-[8px] font-bold text-white/20 leading-tight text-right uppercase tracking-[0.1em]">
-                      {t.disclaimer}
-                    </span>
-                  </div>
                   <button 
                     onClick={() => setViewMode(viewMode === 'ALL' ? 'STORYLINE' : 'ALL')}
                     className={`px-4 md:px-8 py-2 md:py-3 border transition-all flex items-center gap-3 group rounded-sm ${viewMode === 'ALL' ? 'bg-white border-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'border-white/20 text-white hover:bg-white/10 hover:border-white/40'}`}
@@ -449,9 +440,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                          </button>
                        </div>
 
-                       <div className="py-4 px-6 mb-2 shrink-0">
+                       <div className="py-4 px-6 mb-2 shrink-0 flex flex-col gap-1">
                          <span className="text-[10px] font-bold text-white/20 tracking-[0.2em] uppercase">
                            {viewMode === 'STORYLINE' ? 'Storyline Selection' : 'Year Selection'}
+                         </span>
+                         <span className="text-[8px] font-medium text-white/40 tracking-wider uppercase md:hidden">
+                           {t.select_hint}
                          </span>
                        </div>
 
@@ -528,12 +522,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                            ))
                          )}
                        </div>
-                       <div className="mt-auto p-8 opacity-20 shrink-0">
-                          <div className="flex flex-col gap-1">
-                            <div className="h-px w-full bg-white" />
-                            <div className="h-px w-2/3 bg-white" />
-                            <div className="h-px w-1/3 bg-white" />
-                          </div>
+                       <div className="mt-auto p-6 shrink-0 border-t border-white/5 bg-white/[0.02]">
+                          <p className="text-[7px] font-medium text-white/20 leading-relaxed uppercase tracking-wider text-justify">
+                            {t.disclaimer}
+                          </p>
                        </div>
                     </div>
                   )}
