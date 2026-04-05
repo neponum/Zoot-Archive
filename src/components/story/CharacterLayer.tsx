@@ -21,14 +21,17 @@ interface CharacterLayerProps {
 
 export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ characterSlots }) => {
   return (
-    <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end">
+    <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end overflow-hidden">
       {(Object.entries(characterSlots) as [string, CharacterSlot][])
         .filter(([_, data]) => data.url && data.name)
         .map(([slot, data]) => {
           // Animation logic
-          let initial: any = {};
-          let animate: any = {};
-          let transition: any = { duration: 0.3, ease: "linear" };
+          const initial: any = {};
+          const animate: any = {};
+          const transition: any = { duration: 0.3, ease: "easeOut" };
+
+          const hasPosAnim = data.animation?.posFrom || data.animation?.posTo;
+          const hasAlphaAnim = data.animation?.aFrom !== undefined || data.animation?.aTo !== undefined;
 
           if (data.animation) {
             const parsePos = (pos: string) => {
@@ -57,15 +60,19 @@ export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ chara
             }
           }
 
+          // Dimming logic: use opacity instead of brightness for better performance and less flickering
+          const isDimmed = !data.focus && !Object.values(characterSlots).every((s: any) => !s.focus);
+          animate.filter = isDimmed ? 'brightness(0.7)' : 'brightness(1)';
+          
           return (
             <motion.div
               key={slot}
-              initial={initial}
+              initial={data.animation ? initial : false}
               animate={animate}
               transition={transition}
               style={{ 
                 zIndex: data.focus ? 20 : 10,
-                filter: data.focus || Object.values(characterSlots).every((s: any) => !s.focus) ? 'brightness(1)' : 'brightness(0.5)'
+                willChange: 'transform, opacity, filter'
               }}
               className={cn(
                 "absolute bottom-[-40%] h-[135%]",
@@ -75,9 +82,10 @@ export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ chara
               <img 
                 src={data.url!} 
                 alt={`Character ${slot}`} 
-                className="h-full w-auto max-w-none object-contain drop-shadow-[0_0_30px_rgba(0,0,0,0.5)]"
+                className="h-full w-auto max-w-none object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.3)]"
                 referrerPolicy="no-referrer"
                 draggable="false"
+                loading="eager"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
