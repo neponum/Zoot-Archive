@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExists, getPrtsWikiImageUrl, checkScriptExists } from '../services/storyService';
+import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists } from '../services/storyService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
 import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
@@ -247,17 +247,21 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
       // Load images in background
       const loadBatch = async (items: StoryEpisode[]) => {
         const images: Record<string, string> = {};
-        const nonMainline: StoryEpisode[] = [];
 
         items.forEach(ep => {
-          const isMainline = ep.id.toLowerCase().startsWith('main_') || ep.entryType === 'MAINLINE';
           const imageId = ep.storyEntryPicId || ep.id;
-          if (isMainline) {
-            images[ep.id] = `https://r2.m31ns.top/img/icons/${imageId}.png`;
+          const chineseName = ep.chineseName || ep.name;
+          
+          // Try to guess the most likely filename based on what the user added
+          if (ep.id.startsWith('main_')) {
+            const num = ep.id.replace('main_', '');
+            const paddedNum = num.length === 1 ? `0${num}` : num;
+            images[ep.id] = `/banners/main_${paddedNum}.png`;
+          } else if (chineseName && !/[\u4e00-\u9fa5]/.test(imageId)) {
+            // If we have a Chinese name and the ID is just a code, try the Chinese name format first
+            images[ep.id] = `/banners/情报处理室_${chineseName}.png`;
           } else {
-            nonMainline.push(ep);
-            // Fallback while loading
-            images[ep.id] = `https://r2.m31ns.top/img/banners/${imageId}.png`;
+            images[ep.id] = `/banners/${imageId}.png`;
           }
         });
         setEpisodeImages(prev => ({ ...prev, ...images }));
@@ -553,51 +557,83 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               onMouseLeave={() => setHoveredEpisodeId(null)}
                               className="relative group transition-all duration-500 w-full text-left"
                             >
-                              <div className={`w-full ${isMainline ? 'aspect-square' : 'aspect-[4/5]'} border border-white/10 group-hover:border-white/40 transition-all duration-500 overflow-hidden relative bg-black/80 shadow-2xl rounded-sm`}>
+                              <div className={`w-full ${isMainline ? 'aspect-square' : 'aspect-[4/5]'} transition-all duration-500 overflow-hidden relative shadow-2xl rounded-sm z-10 bg-black`}>
                                 {/* Background Image */}
                                 {episodeImages[episode.id] && !failedImages[episode.id] ? (
                                   <img 
                                     src={episodeImages[episode.id]!} 
                                     alt={episode.name} 
-                                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
+                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-out"
                                     referrerPolicy="no-referrer"
-                                    onError={() => {
-                                      setFailedImages(prev => ({ ...prev, [episode.id]: true }));
+                                    onError={(e) => {
+                                      const img = e.currentTarget;
+                                      const currentSrc = img.src;
+                                      const chineseName = episode.chineseName || episode.name;
+                                      const imageId = episode.storyEntryPicId || episode.id;
+                                      
+                                      // Fallback chain logic
+                                      if (currentSrc.includes(`/banners/情报处理室_${chineseName}.png`)) {
+                                        // If 情报处理室_ failed, try just the ID
+                                        img.src = `/banners/${imageId}.png`;
+                                      } else if (currentSrc.includes(`/banners/main_`) && episode.id.startsWith('main_')) {
+                                        // If main_XX failed, try just main_X
+                                        const num = episode.id.replace('main_', '');
+                                        if (!currentSrc.endsWith(`main_${num}.png`)) {
+                                          img.src = `/banners/main_${num}.png`;
+                                        } else {
+                                          setFailedImages(prev => ({ ...prev, [episode.id]: true }));
+                                        }
+                                      } else if (!currentSrc.includes('情报处理室_') && !currentSrc.includes('main_')) {
+                                        // Last ditch effort: try adding the prefix if we haven't yet
+                                        img.src = `/banners/情报处理室_${chineseName}.png`;
+                                      } else {
+                                        setFailedImages(prev => ({ ...prev, [episode.id]: true }));
+                                      }
                                     }}
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0a0a]">
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 border border-white/10">
                                     <AlertCircle className="w-8 h-8 text-white/5 mb-2" />
                                     <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">No Visual Data</span>
                                   </div>
                                 )}
                                 
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-transparent opacity-100 group-hover:opacity-60 transition-opacity duration-500" />
+                                {/* Gradient Overlay - Only visible on hover */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 
-                                {/* Content Overlay */}
-                                <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                                  <div className="flex flex-col gap-1 translate-y-1 group-hover:translate-y-0 transition-transform duration-500">
+                                {/* Content Overlay - Only visible on hover */}
+                                <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                                  <div className="flex flex-col gap-1">
                                     <div className="flex items-center justify-between mb-1">
-                                      <div className="w-4 h-0.5 bg-white/30 group-hover:w-8 group-hover:bg-white transition-all duration-500" />
-                                      <span className="text-[9px] font-mono text-white/20">{(index + 1).toString().padStart(3, '0')}</span>
+                                      <div className="w-8 bg-white h-0.5" />
+                                      <span className="text-[9px] font-mono text-white/40">{(index + 1).toString().padStart(3, '0')}</span>
                                     </div>
-                                    <h4 className="text-xs md:text-sm font-black leading-tight tracking-tight text-white/90 group-hover:text-white transition-colors line-clamp-2 uppercase">
+                                    <h4 className="text-xs md:text-sm font-black leading-tight tracking-tight text-white transition-colors line-clamp-2 uppercase">
                                       {episode.name}
                                     </h4>
-                                    <div className="flex flex-col gap-0.5 mt-1 border-t border-white/5 pt-1">
-                                      <span className="text-[8px] font-black text-white/30 tracking-widest uppercase truncate">{episode.id}</span>
-                                      <span className="text-[8px] font-black text-white/20 tracking-widest uppercase italic">YEAR.{episode.year}</span>
+                                    <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
+                                      <span className="text-[8px] font-black text-white/40 tracking-widest uppercase truncate">{episode.id}</span>
+                                      <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
                                     </div>
                                   </div>
                                 </div>
                                 
                                 {/* Hover Play Indicator */}
-                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0">
-                                  <div className="p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0">
+                                  <div className="p-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full">
                                     <Play className="w-3 h-3 text-white fill-white" />
                                   </div>
                                 </div>
+                              </div>
+
+                              {/* Vinyl Effect Icon */}
+                              <div className="absolute top-1/2 -translate-y-1/2 -left-4 w-16 h-16 z-0 opacity-0 group-hover:opacity-100 group-hover:-left-8 transition-all duration-500 ease-out pointer-events-none">
+                                <img 
+                                  src="/banners/49px-图标_剧情.png" 
+                                  alt="" 
+                                  className="w-full h-full object-contain animate-[spin_8s_linear_infinite]"
+                                  referrerPolicy="no-referrer"
+                                />
                               </div>
                             </button>
                           );
@@ -650,68 +686,67 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto pr-4 custom-scrollbar"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 pl-8 pr-4">
                 {selectedEpisode.chapters.map((chapter, idx) => {
                   const isOfficial = LANGUAGES.find(l => l.id === lang)?.isOfficial ?? true;
                   const scriptExists = chapterScriptsExist[chapter.id] ?? isOfficial; 
+                  
+                  const isBeg = chapter.id.toLowerCase().includes('_beg');
+                  const isMid = chapter.id.toLowerCase().includes('_mid');
+                  const isEnd = chapter.id.toLowerCase().includes('_end');
+                  const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'NO.';
+                  const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/20';
+                  const displayCode = chapter.code || chapter.id.split('_').pop()?.toUpperCase() || chapter.id.toUpperCase();
+
                   return (
                     <div
                       key={chapter.id}
-                      className="group relative flex flex-col bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-left overflow-hidden rounded-sm"
+                      className="group relative flex items-center border border-white/10 hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-left rounded-sm bg-black/40 backdrop-blur-sm p-1.5 pr-1.5"
                     >
-                      <div className="flex items-center gap-6 p-1">
-                        {/* Chapter Index */}
-                        <div className="w-16 h-16 bg-black flex flex-col items-center justify-center shrink-0 border-r border-white/10 relative overflow-hidden">
-                          <span className="text-[10px] font-mono text-white/20 absolute top-1 left-2">NO.</span>
-                          <span className="text-2xl font-black text-white/40 group-hover:text-white transition-colors">
-                            {(idx + 1).toString().padStart(2, '0')}
-                          </span>
-                          {/* Decorative line */}
-                          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/0 group-hover:bg-white transition-all" />
-                        </div>
-
-                        <div className="flex-1 flex flex-col py-2 pr-4 relative">
-                          <span className="text-white/60 text-[9px] font-mono font-bold tracking-widest mb-1">
-                            {chapter.code || chapter.id.toUpperCase()}
-                          </span>
-                          <h3 className="text-white text-base font-black leading-tight uppercase tracking-tight group-hover:text-white transition-colors line-clamp-1 flex items-center">
-                            {chapter.name}
-                            {chapter.id.toLowerCase().includes('_beg') && (
-                              <span className="ml-2 text-[8px] text-blue-400 font-bold border border-blue-400/30 px-1 rounded-sm shrink-0">BEG</span>
-                            )}
-                            {chapter.id.toLowerCase().includes('_mid') && (
-                              <span className="ml-2 text-[8px] text-yellow-400 font-bold border border-yellow-400/30 px-1 rounded-sm shrink-0">MID</span>
-                            )}
-                            {chapter.id.toLowerCase().includes('_end') && (
-                              <span className="ml-2 text-[8px] text-red-400 font-bold border border-red-400/30 px-1 rounded-sm shrink-0">END</span>
-                            )}
-                          </h3>
-                        </div>
+                      {/* Vinyl Effect Icon for Chapters */}
+                      <div className="absolute top-1/2 -translate-y-1/2 -left-6 w-16 h-16 z-30 pointer-events-none">
+                        <img 
+                          src="/banners/49px-图标_剧情.png" 
+                          alt="" 
+                          className="w-full h-full object-contain group-hover:animate-[spin_4s_linear_infinite]"
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
 
-                      {/* Review/Translate Button Area (Footer) */}
-                      <div className="h-0 group-hover:h-10 transition-all duration-300 overflow-hidden flex items-center justify-end px-4 bg-white/5 border-t border-white/0 group-hover:border-white/10">
-                        <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-300">
+                      {/* Chapter Index / Code / Name */}
+                      <div className="w-20 h-20 ml-6 bg-black flex flex-col items-center justify-center shrink-0 border border-white/10 relative overflow-hidden rounded-sm z-10">
+                        <span className={`text-[8px] font-black absolute top-1 left-1.5 ${typeColor}`}>{typeLabel}</span>
+                        <span className="text-sm font-black text-white/80 group-hover:text-white transition-colors px-1 text-center truncate w-full mt-1.5">
+                          {displayCode}
+                        </span>
+                        <h3 className="text-white/60 text-[9px] font-bold leading-tight uppercase tracking-tight group-hover:text-white transition-colors line-clamp-2 mt-0.5 px-1 text-center w-full">
+                          {chapter.name}
+                        </h3>
+                        {/* Decorative line */}
+                        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/0 group-hover:bg-white transition-all" />
+                      </div>
+
+                      {/* Review/Translate Button Area */}
+                      <div className="flex-1 flex flex-col gap-1.5 h-20 pl-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+                        <button 
+                          onClick={() => onSelect(chapter)}
+                          disabled={!scriptExists}
+                          className="flex-1 w-full bg-white text-black rounded-sm flex items-center justify-center gap-1.5 hover:bg-gray-200 transition-all group/btn disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+                          title={scriptExists ? "Review Story" : "Script not available for this language"}
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Review</span>
+                        </button>
+                        {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
                           <button 
-                            onClick={() => onSelect(chapter)}
-                            disabled={!scriptExists}
-                            className="bg-white/10 border border-white/20 px-3 py-1 rounded-sm flex items-center gap-1.5 hover:bg-white hover:border-white hover:text-black transition-all group/btn disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-white disabled:cursor-not-allowed"
-                            title={scriptExists ? "Review Story" : "Script not available for this language"}
+                            onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
+                            className="flex-1 w-full bg-white/10 border border-white/20 text-white rounded-sm flex items-center justify-center gap-1.5 hover:bg-white/20 transition-all group/btn whitespace-nowrap"
+                            title="Open Translation Tool"
                           >
-                            <Play className="w-2.5 h-2.5 fill-current group-hover/btn:text-black" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Review</span>
+                            <Languages className="w-3 h-3" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Translate</span>
                           </button>
-                          {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
-                            <button 
-                              onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
-                              className="bg-red-500/20 border border-red-500/40 px-3 py-1 rounded-sm flex items-center gap-1.5 hover:bg-red-500 hover:border-red-500 hover:text-white transition-all group/btn"
-                              title="Open Translation Tool"
-                            >
-                              <Languages className="w-2.5 h-2.5 group-hover/btn:text-white" />
-                              <span className="text-[9px] font-black uppercase tracking-widest">Translate</span>
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
 
                       {/* Hover Decoration */}

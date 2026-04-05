@@ -772,11 +772,6 @@ export async function checkImageExists(url: string): Promise<boolean> {
   }
 }
 
-export async function getPrtsWikiImageUrl(episodeName: string, episodeId?: string, chineseName?: string): Promise<string | null> {
-  // PRTS Wiki image fetching has been disabled to reduce proxy requests
-  return null;
-}
-
 const urlCache = new Map<string, string>();
 
 function generateNamesToTry(name: string): string[] {
@@ -906,14 +901,12 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
         if (!cleanName.startsWith('storyentrypic_')) {
           cleanName = `storyentrypic_${cleanName}`;
         }
-
-        let hub = 'mini';
-        if (cleanName.includes('_main_') || cleanName.includes('main_')) hub = 'main';
-        else if (cleanName.includes('_char_') || cleanName.includes('char_')) hub = 'none';
-        else if (cleanName.includes('_act') || cleanName.includes('act')) hub = 'activity';
         
-        // Try Aceship first as it's often more complete for these specific UI assets
-        return `https://cdn.jsdelivr.net/gh/Aceship/Arknights-Bot-Assets@master/arts/ui/storyreview/hubs/${hub}/storyentrypic/${cleanName}.png`;
+        // Use local banners folder
+        // We return the primary guess, but since this is a service returning a string, 
+        // we can't easily do a fallback chain here without async checks.
+        // However, this function is mostly for chapter images, not episode banners.
+        return `/banners/${cleanName}.png`;
       }
 
       // Fallback for character avatars (useful for Operator Records)
