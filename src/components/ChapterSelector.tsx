@@ -65,7 +65,7 @@ const CHRONO_ORDER: Record<string, number> = {
   'main_15': 500, 'main_16': 501,
 };
 
-const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/sashayshcevich/ArknightsBanners/main';
+const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/banners';
 
 export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation }) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
@@ -88,6 +88,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showEpisodesOnMobile, setShowEpisodesOnMobile] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
@@ -967,6 +968,39 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
               >
                 SKPORT PROFILE
               </a>
+
+              <div className="h-px bg-white/5 my-2" />
+              
+              {!showClearConfirm ? (
+                <button 
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex items-center gap-2 py-4 px-4 bg-red-500/10 border border-red-500/20 text-[11px] font-black text-red-400 hover:bg-red-500/20 hover:border-red-500/40 transition-all uppercase tracking-[0.2em] text-center justify-center"
+                >
+                  <History className="w-4 h-4" />
+                  CLEAR CACHE & FIX ISSUES
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 p-4 bg-red-500/20 border border-red-500/40 rounded-sm">
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Are you sure?</span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={async () => {
+                        await CacheService.clear();
+                        window.location.reload();
+                      }}
+                      className="flex-1 py-2 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest"
+                    >
+                      YES, CLEAR
+                    </button>
+                    <button 
+                      onClick={() => setShowClearConfirm(false)}
+                      className="flex-1 py-2 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest"
+                    >
+                      CANCEL
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

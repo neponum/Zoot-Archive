@@ -693,7 +693,7 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const baseUrl = getBaseUrl(lang);
       url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
     } else {
-      url = `/translations/${lang}/${storyPath}.txt`;
+      url = `https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/translations/${lang}/${storyPath}.txt`;
     }
     
     // Check cache first
@@ -704,8 +704,9 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     if (!response.ok) throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
     
     const text = await response.text();
-    if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().startsWith('<html')) {
-      throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Returned HTML)`);
+    const lowerText = text.trim().toLowerCase();
+    if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
+      throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Invalid content or Not Found)`);
     }
     
     // Cache for next time

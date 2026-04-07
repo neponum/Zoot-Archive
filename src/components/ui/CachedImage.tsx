@@ -26,13 +26,31 @@ export const CachedImage: React.FC<CachedImageProps> = ({ src, fallbackSrc, ...p
       try {
         const response = await fetch(src);
         if (response.ok) {
+          const contentType = response.headers.get('Content-Type');
+          // Basic check to ensure we're not caching HTML or error pages as images
+          if (contentType && (contentType.includes('text/html') || contentType.includes('application/json'))) {
+            console.warn('Fetched non-image content for image URL:', src, contentType);
+            if (isMounted) setDisplaySrc(src);
+            return;
+          }
+          
           const blob = await response.blob();
+          // Ensure the blob is actually an image
+          if (!blob.type.startsWith('image/') && blob.size < 1000) {
+             // Small non-image blobs are likely error messages
+             console.warn('Fetched small non-image blob for image URL:', src, blob.type);
+             if (isMounted) setDisplaySrc(src);
+             return;
+          }
+          
           await CacheService.cacheBlob(src, blob);
           const newCachedUrl = await CacheService.getCachedBlobUrl(src);
           if (newCachedUrl && isMounted) {
             setDisplaySrc(newCachedUrl);
             setIsLoaded(true);
           }
+        } else {
+          if (isMounted) setDisplaySrc(src);
         }
       } catch (err) {
         console.warn('Failed to fetch and cache image:', src, err);

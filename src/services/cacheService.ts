@@ -116,4 +116,16 @@ export class CacheService {
     }
     return null;
   }
+
+  /**
+   * Clears the entire cache
+   */
+  static async clear(): Promise<void> {
+    try {
+      await caches.delete(CACHE_NAME);
+      console.log('Cache cleared successfully');
+    } catch (err) {
+      console.warn('Failed to clear cache:', err);
+    }
+  }
 }
