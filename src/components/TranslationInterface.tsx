@@ -144,6 +144,15 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [isDiscordMember, setIsDiscordMember] = useState(false);
   const [isCheckingDiscord, setIsCheckingDiscord] = useState(true);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => setErrorMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
+
   // Persistent translations: Record<storyTxt, Record<lineIndex, { text?: string, name?: string }>>
   const [allTranslations, setAllTranslations] = useState<Record<string, Record<string, { text?: string, name?: string }>>>(() => {
     const profile = localStorage.getItem('ak-current-profile') || 'Default';
@@ -564,8 +573,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     try {
       const apiKey = userApiKey || process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        alert("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
-        return null;
+        throw new Error("GEMINI_API_KEY_MISSING");
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -674,7 +682,12 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     try {
       const apiKey = userApiKey || process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        alert("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
+        setErrorMessage("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
+        setTranslatingBlockIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
         return;
       }
 
@@ -725,7 +738,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       }
     } catch (error: any) {
       if (error.message === "QUOTA_EXCEEDED") {
-        alert("Gemini API quota exceeded. Please wait a moment.");
+        setErrorMessage("Gemini API quota exceeded. Please wait a moment.");
+      } else if (error.message === "GEMINI_API_KEY_MISSING") {
+        setErrorMessage("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
+      } else {
+        setErrorMessage("Translation failed. Please check your API key and connection.");
       }
     } finally {
       setTranslatingBlockIds(prev => {
@@ -741,6 +758,12 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     
     const emptyBlocks = blocks.filter(b => b.type === 'dialogue' && !b.translatedText.trim());
     if (emptyBlocks.length === 0) return;
+
+    const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      alert("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
+      return;
+    }
 
     setIsTranslatingAll(true);
     
@@ -844,9 +867,12 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       }
     } catch (error: any) {
       if (error.message === "QUOTA_EXCEEDED") {
-        alert("Gemini API quota exceeded. Translation stopped.");
+        setErrorMessage("Gemini API quota exceeded. Translation stopped.");
+      } else if (error.message === "GEMINI_API_KEY_MISSING") {
+        setErrorMessage("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
       } else {
         console.error("Batch translation failed:", error);
+        setErrorMessage("Translation failed. Please check your API key and connection.");
       }
     } finally {
       setTranslatingBlockIds(new Set());
@@ -1443,6 +1469,20 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                   </button>
                 </div>
               </div>
+
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-2 flex items-center gap-3 animate-in slide-in-from-top duration-300 shrink-0">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <p className="text-[11px] text-red-200 font-medium">{errorMessage}</p>
+                  <button 
+                    onClick={() => setErrorMessage(null)}
+                    className="ml-auto text-red-400 hover:text-red-200 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
               {/* Export Submission Modal */}
               {showExportModal && (

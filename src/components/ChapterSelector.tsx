@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists } from '../services/storyService';
+import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists, fetchStoryScript } from '../services/storyService';
+import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
 import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
@@ -63,6 +64,8 @@ const CHRONO_ORDER: Record<string, number> = {
   // --- 1100+ ---
   'main_15': 500, 'main_16': 501,
 };
+
+const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/sashayshcevich/ArknightsBanners/main';
 
 export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation }) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
@@ -248,7 +251,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
       const loadBatch = async (items: StoryEpisode[]) => {
         const images: Record<string, string> = {};
 
-        items.forEach(ep => {
+        for (const ep of items) {
           const imageId = ep.storyEntryPicId || ep.id;
           const chineseName = ep.chineseName || ep.name;
           
@@ -256,18 +259,23 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
           const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
           
+          let url = '';
           // Try to guess the most likely filename based on what the user added
           if (ep.id.startsWith('main_')) {
             const num = ep.id.replace('main_', '');
             const paddedNum = num.length === 1 ? `0${num}` : num;
-            images[ep.id] = `/banners/main_${paddedNum}.png`;
+            url = `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
           } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
             // If we have a Chinese name and the ID is just a code, try the Chinese name format first
-            images[ep.id] = `/banners/情报处理室_${safeChineseName}.png`;
+            url = `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
           } else {
-            images[ep.id] = `/banners/${safeImageId}.png`;
+            url = `${BANNERS_BASE_URL}/${safeImageId}.png`;
           }
-        });
+
+          // Check cache
+          const cachedUrl = await CacheService.getCachedBlobUrl(url);
+          images[ep.id] = cachedUrl || url;
+        }
         setEpisodeImages(prev => ({ ...prev, ...images }));
       };
 
@@ -582,22 +590,31 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                       const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
                                       
                                       // Fallback chain logic
-                                      if (decodedSrc.includes(`/banners/情报处理室_${safeChineseName}.png`)) {
+                                      let nextSrc = '';
+                                      if (decodedSrc.includes(`${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`)) {
                                         // If 情报处理室_ failed, try just the ID
-                                        img.src = `/banners/${safeImageId}.png`;
-                                      } else if (decodedSrc.includes(`/banners/main_`) && episode.id.startsWith('main_')) {
+                                        nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
+                                      } else if (decodedSrc.includes(`${BANNERS_BASE_URL}/main_`) && episode.id.startsWith('main_')) {
                                         // If main_XX failed, try just main_X
                                         const num = episode.id.replace('main_', '');
                                         if (!decodedSrc.endsWith(`main_${num}.png`)) {
-                                          img.src = `/banners/main_${num}.png`;
+                                          nextSrc = `${BANNERS_BASE_URL}/main_${num}.png`;
                                         } else {
                                           setFailedImages(prev => ({ ...prev, [episode.id]: true }));
+                                          return;
                                         }
                                       } else if (!decodedSrc.includes('情报处理室_') && !decodedSrc.includes('main_')) {
                                         // Last ditch effort: try adding the prefix if we haven't yet
-                                        img.src = `/banners/情报处理室_${safeChineseName}.png`;
+                                        nextSrc = `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
                                       } else {
                                         setFailedImages(prev => ({ ...prev, [episode.id]: true }));
+                                        return;
+                                      }
+
+                                      if (nextSrc) {
+                                        CacheService.getCachedBlobUrl(nextSrc).then(cached => {
+                                          img.src = cached || nextSrc;
+                                        });
                                       }
                                     }}
                                   />
@@ -643,7 +660,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               {/* Vinyl Effect Icon */}
                               <div className="absolute top-1/2 -translate-y-1/2 -left-4 w-16 h-16 z-0 opacity-0 group-hover:opacity-100 group-hover:-left-8 transition-all duration-500 ease-out pointer-events-none">
                                 <img 
-                                  src="/banners/49px-图标_剧情.png" 
+                                  src={`${BANNERS_BASE_URL}/49px-图标_剧情.png`} 
                                   alt="" 
                                   className="w-full h-full object-contain animate-[spin_8s_linear_infinite]"
                                   referrerPolicy="no-referrer"
@@ -729,7 +746,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                       {/* Vinyl Effect Icon for Chapters */}
                       <div className="absolute top-1/2 -translate-y-1/2 -left-5 w-14 h-14 z-30 pointer-events-none">
                         <img 
-                          src="/banners/49px-图标_剧情.png" 
+                          src={`${BANNERS_BASE_URL}/49px-图标_剧情.png`} 
                           alt="" 
                           className="w-full h-full object-contain group-hover:animate-[spin_4s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
                           referrerPolicy="no-referrer"

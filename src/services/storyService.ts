@@ -1,6 +1,7 @@
 import { StoryChapter, StoryLine, StoryEpisode, Language } from '../types';
 import audioMap from '../audio_map.json';
 import imageMap from '../image_map.json';
+import { CacheService } from './cacheService';
 
 enum TokenType {
   LEFT_BRACKET,
@@ -525,9 +526,18 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
   const fetchList = async (lang: Language) => {
     const baseUrl = getBaseUrl(lang);
     const url = `${baseUrl}/${lang}/gamedata/excel/story_review_table.json`;
+    
+    // Check cache first
+    const cached = await CacheService.getCachedJson(url);
+    if (cached) return cached;
+    
     const response = await fetchWithTimeout(url);
     if (!response.ok) throw new Error(`Failed to fetch ${lang} story review table: ${response.status}`);
-    return await response.json();
+    
+    const data = await response.json();
+    // Cache for next time
+    await CacheService.cacheJson(url, data);
+    return data;
   };
 
   let data;
@@ -686,6 +696,10 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       url = `/translations/${lang}/${storyPath}.txt`;
     }
     
+    // Check cache first
+    const cached = await CacheService.getCachedText(url);
+    if (cached) return cached;
+    
     const response = await fetchWithTimeout(url);
     if (!response.ok) throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
     
@@ -693,6 +707,9 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().startsWith('<html')) {
       throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Returned HTML)`);
     }
+    
+    // Cache for next time
+    await CacheService.cacheText(url, text);
     return text;
   };
 
@@ -845,14 +862,23 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
     return pendingUrlPromises.get(cacheKey)!;
   }
   
-  const promise = _getImageUrl(type, name).then(url => {
-    urlCache.set(cacheKey, url);
-    pendingUrlPromises.delete(cacheKey);
+  const promise = (async () => {
+    const url = await _getImageUrl(type, name);
+    
+    // Check persistent cache for images/audio
+    if (['background', 'character', 'image', 'music', 'sound', 'voice'].includes(type)) {
+      const cachedBlobUrl = await CacheService.getCachedBlobUrl(url);
+      if (cachedBlobUrl) return cachedBlobUrl;
+    }
+    
     return url;
-  });
+  })();
   
   pendingUrlPromises.set(cacheKey, promise);
-  return promise;
+  const finalUrl = await promise;
+  urlCache.set(cacheKey, finalUrl);
+  pendingUrlPromises.delete(cacheKey);
+  return finalUrl;
 }
 
 let imageMapKeys: string[] | null = null;
@@ -973,40 +999,45 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
     if (onProgress) onProgress(loaded, total);
   };
 
-  const createImagePromise = (url: string) => new Promise((resolve) => {
-    const img = new Image();
-    let resolved = false;
-    const finish = () => {
-      if (!resolved) {
-        resolved = true;
+  const createImagePromise = async (url: string) => {
+    try {
+      // Check if already in cache
+      if (await CacheService.has(url)) {
         updateProgress();
-        resolve(null);
+        return;
       }
-    };
-    img.onload = finish;
-    img.onerror = finish;
-    img.src = url;
-    // Add a timeout for image loading to prevent hanging
-    setTimeout(finish, 30000);
-  });
 
-  const createAudioPromise = (url: string) => new Promise((resolve) => {
-    const audio = new Audio();
-    let resolved = false;
-    const finish = () => {
-      if (!resolved) {
-        resolved = true;
-        updateProgress();
-        resolve(null);
+      const response = await fetchWithTimeout(url);
+      if (response.ok) {
+        const blob = await response.blob();
+        await CacheService.cacheBlob(url, blob);
       }
-    };
-    audio.oncanplaythrough = finish;
-    audio.onerror = finish;
-    audio.src = url;
-    audio.load();
-    // Don't wait forever for audio
-    setTimeout(finish, 10000);
-  });
+    } catch (err) {
+      console.warn('Failed to preload/cache image:', url, err);
+    } finally {
+      updateProgress();
+    }
+  };
+
+  const createAudioPromise = async (url: string) => {
+    try {
+      // Check if already in cache
+      if (await CacheService.has(url)) {
+        updateProgress();
+        return;
+      }
+
+      const response = await fetchWithTimeout(url);
+      if (response.ok) {
+        const blob = await response.blob();
+        await CacheService.cacheBlob(url, blob);
+      }
+    } catch (err) {
+      console.warn('Failed to preload/cache audio:', url, err);
+    } finally {
+      updateProgress();
+    }
+  };
 
   // Preload everything in parallel
   const allUrls = [...imageUrls.map(url => ({ url, type: 'image' })), ...audioUrls.map(url => ({ url, type: 'audio' }))];
