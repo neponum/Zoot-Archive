@@ -911,9 +911,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     // 0. Metadata rows
     const metadataRows = [
-      { 'ID': 'meta-episode-name', 'Original Text': selectedEpisode.name, 'Translation': episodeNameTranslation },
-      { 'ID': 'meta-chapter-name', 'Original Text': selectedChapter.name, 'Translation': chapterNameTranslation },
-      { 'ID': '', 'Original Text': '', 'Translation': '' } // Blank row
+      { 'ID': 'meta-episode-name', 'Character': '', 'Original Text': selectedEpisode.name, 'Translation': episodeNameTranslation },
+      { 'ID': 'meta-chapter-name', 'Character': '', 'Original Text': selectedChapter.name, 'Translation': chapterNameTranslation },
+      { 'ID': '', 'Character': '', 'Original Text': '', 'Translation': '' } // Blank row
     ];
 
     // 1. Get unique character names
@@ -928,7 +928,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const firstBlock = blocks.find(b => b.characterName === name);
       return {
         'ID': `char-${index + 1}`,
-        'Original Text': name,
+        'Character': name,
         'Translation': firstBlock?.translatedCharacterName || ''
       };
     });
@@ -938,6 +938,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       .filter(b => b.type === 'dialogue')
       .map(b => ({
         'ID': b.id,
+        'Character': b.characterName || '',
         'Original Text': b.textToTranslate,
         'Translation': b.translatedText || ''
       }));
@@ -946,7 +947,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     const data = [
       ...metadataRows,
       ...characterRows,
-      { 'ID': '', 'Original Text': '', 'Translation': '' }, // Blank row
+      { 'ID': '', 'Character': '', 'Original Text': '', 'Translation': '' }, // Blank row
       ...dialogueRows
     ];
 
@@ -957,6 +958,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     // Set column widths
     const wscols = [
       { wch: 15 }, // ID
+      { wch: 20 }, // Character
       { wch: 60 }, // Original Text
       { wch: 60 }, // Translation
     ];
@@ -1014,10 +1016,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
           if (id.startsWith('char-')) {
             // Character name translation
-            if (original && translation) {
+            const charName = row['Character']?.toString() || '';
+            if (charName && translation) {
               // Update all blocks with this original character name
               updatedBlocks.forEach((b, idx) => {
-                if (b.characterName === original) {
+                if (b.characterName === charName) {
                   b.translatedCharacterName = translation;
                   
                   // Update persistent state
@@ -1299,7 +1302,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handleExportExcel}
-                  disabled={!selectedChapter}
+                  disabled={!selectedChapter || blocks.length === 0}
                   className="flex items-center justify-center gap-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
                 >
                   <Download className="w-3 h-3" /> Export

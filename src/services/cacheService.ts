@@ -56,16 +56,23 @@ export class CacheService {
     }
   }
 
+  private static blobUrlCache = new Map<string, string>();
+
   /**
    * Retrieves cached blob and returns a URL
    */
   static async getCachedBlobUrl(url: string): Promise<string | null> {
+    if (this.blobUrlCache.has(url)) {
+      return this.blobUrlCache.get(url)!;
+    }
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(url);
       if (response) {
         const blob = await response.blob();
-        return URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
+        this.blobUrlCache.set(url, blobUrl);
+        return blobUrl;
       }
     } catch (err) {
       console.warn('Failed to get cached blob:', err);

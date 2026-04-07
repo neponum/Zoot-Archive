@@ -61,7 +61,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   } = state;
 
   const [loading, setLoading] = React.useState(true);
-  const [preloadProgress, setPreloadProgress] = React.useState({ loaded: 0, total: 0 });
+  const [preloadProgress, setPreloadProgress] = React.useState({ loaded: 0, total: 0, currentFile: '' });
   const [error, setError] = React.useState<string | null>(null);
   const [scriptContent, setScriptContent] = React.useState<string | null>(null);
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
@@ -447,8 +447,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         const parsed = parseStoryScript(script);
         dispatch({ type: 'SET_LINES', payload: parsed });
         
-        await preloadAssets(parsed, (loaded, total) => {
-          setPreloadProgress({ loaded, total });
+        await preloadAssets(parsed, (loaded, total, currentFile) => {
+          setPreloadProgress({ loaded, total, currentFile: currentFile || '' });
         });
         
         setLoading(false);
@@ -498,6 +498,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             <p className="text-white/40 text-xs mt-2 text-center">
               {preloadProgress.loaded} / {preloadProgress.total}
             </p>
+            {preloadProgress.currentFile && (
+              <p className="text-white/30 text-[10px] mt-1 text-center truncate" title={preloadProgress.currentFile}>
+                {preloadProgress.currentFile}
+              </p>
+            )}
           </div>
         )}
       </div>

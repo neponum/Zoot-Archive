@@ -435,7 +435,37 @@ class StoryParser {
   }
 }
 
-let currentLanguage: Language = 'zh_CN';
+function detectInitialLanguage(): Language {
+  try {
+    // 1. Check localStorage
+    const saved = localStorage.getItem('arknights_story_lang') as Language;
+    const validLanguages: Language[] = ['zh_CN', 'zh_TW', 'de_DE', 'en_US', 'es_ES', 'fr_FR', 'id_ID', 'it_IT', 'ja_JP', 'ko_KR', 'pt_PT', 'ru_RU'];
+    if (saved && validLanguages.includes(saved)) {
+      return saved;
+    }
+
+    // 2. Check browser language
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.includes('zh-cn') || browserLang.includes('zh-hans')) return 'zh_CN';
+    if (browserLang.includes('zh-tw') || browserLang.includes('zh-hk') || browserLang.includes('zh-hant')) return 'zh_TW';
+    if (browserLang.startsWith('ru')) return 'ru_RU';
+    if (browserLang.startsWith('ja')) return 'ja_JP';
+    if (browserLang.startsWith('ko')) return 'ko_KR';
+    if (browserLang.startsWith('de')) return 'de_DE';
+    if (browserLang.startsWith('fr')) return 'fr_FR';
+    if (browserLang.startsWith('es')) return 'es_ES';
+    if (browserLang.startsWith('it')) return 'it_IT';
+    if (browserLang.startsWith('pt')) return 'pt_PT';
+    if (browserLang.startsWith('id')) return 'id_ID';
+    if (browserLang.startsWith('en')) return 'en_US';
+  } catch (e) {
+    console.warn('Failed to detect language:', e);
+  }
+
+  return 'zh_CN'; // Fallback to CN
+}
+
+let currentLanguage: Language = detectInitialLanguage();
 const BASE_DATA_URL_CN = 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master';
 const BASE_DATA_URL_YOSTAR = 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/master';
 
@@ -483,6 +513,11 @@ export async function fetchCharacterMapping(): Promise<Record<string, string>> {
 
 export function setLanguage(lang: Language) {
   currentLanguage = lang;
+  try {
+    localStorage.setItem('arknights_story_lang', lang);
+  } catch (e) {
+    console.warn('Failed to save language to localStorage:', e);
+  }
 }
 
 export function getLanguage(): Language {
@@ -758,7 +793,7 @@ function saveCache() {
 
 async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
     const response = await fetch(url, { signal: controller.signal });
@@ -855,8 +890,12 @@ function generateNamesToTry(name: string): string[] {
 
 export async function getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice', name: string): Promise<string> {
   const cacheKey = `${type}-${name}`;
+  
   if (urlCache.has(cacheKey)) {
-    return urlCache.get(cacheKey)!;
+    const cachedUrl = urlCache.get(cacheKey)!;
+    if (cachedUrl.startsWith('blob:')) {
+      return cachedUrl;
+    }
   }
   
   if (pendingUrlPromises.has(cacheKey)) {
@@ -864,7 +903,10 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
   }
   
   const promise = (async () => {
-    const url = await _getImageUrl(type, name);
+    let url = urlCache.get(cacheKey);
+    if (!url) {
+      url = await _getImageUrl(type, name);
+    }
     
     // Check persistent cache for images/audio
     if (['background', 'character', 'image', 'music', 'sound', 'voice'].includes(type)) {
@@ -957,7 +999,7 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
   }
 }
 
-export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: number, total: number) => void): Promise<void> {
+export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: number, total: number, currentFile?: string) => void): Promise<void> {
   const imageAssets = new Set<string>();
   const audioAssets = new Set<string>();
 
@@ -995,57 +1037,73 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
   const total = imageUrls.length + audioUrls.length;
   let loaded = 0;
 
-  const updateProgress = () => {
+  const updateProgress = (url: string) => {
     loaded++;
-    if (onProgress) onProgress(loaded, total);
+    const fileName = url.split('/').pop() || url;
+    if (onProgress) onProgress(loaded, total, fileName);
   };
 
-  const createImagePromise = async (url: string) => {
+  const loadAsset = async (url: string, type: 'image' | 'audio') => {
+    const fileName = url.split('/').pop() || url;
+    if (onProgress) onProgress(loaded, total, fileName);
     try {
       // Check if already in cache
       if (await CacheService.has(url)) {
-        updateProgress();
+        if (type === 'image') {
+          const blobUrl = await CacheService.getCachedBlobUrl(url);
+          if (blobUrl) {
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = resolve;
+              img.onerror = resolve;
+              img.src = blobUrl;
+            });
+          }
+        }
+        updateProgress(url);
         return;
       }
 
-      const response = await fetchWithTimeout(url);
+      const response = await fetchWithRetry(url, 3);
       if (response.ok) {
         const blob = await response.blob();
         await CacheService.cacheBlob(url, blob);
+        
+        // If it's an image, create an Image object to force the browser to decode it
+        if (type === 'image') {
+          const blobUrl = await CacheService.getCachedBlobUrl(url);
+          if (blobUrl) {
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = resolve;
+              img.onerror = resolve;
+              img.src = blobUrl;
+            });
+          }
+        }
       }
     } catch (err) {
-      console.warn('Failed to preload/cache image:', url, err);
+      console.warn(`Failed to preload/cache ${type}:`, url, err);
     } finally {
-      updateProgress();
+      updateProgress(url);
     }
   };
 
-  const createAudioPromise = async (url: string) => {
-    try {
-      // Check if already in cache
-      if (await CacheService.has(url)) {
-        updateProgress();
-        return;
-      }
-
-      const response = await fetchWithTimeout(url);
-      if (response.ok) {
-        const blob = await response.blob();
-        await CacheService.cacheBlob(url, blob);
-      }
-    } catch (err) {
-      console.warn('Failed to preload/cache audio:', url, err);
-    } finally {
-      updateProgress();
-    }
-  };
-
-  // Preload everything in parallel
-  const allUrls = [...imageUrls.map(url => ({ url, type: 'image' })), ...audioUrls.map(url => ({ url, type: 'audio' }))];
+  const allUrls = [...imageUrls.map(url => ({ url, type: 'image' as const })), ...audioUrls.map(url => ({ url, type: 'audio' as const }))];
   
-  await Promise.allSettled(allUrls.map(item => 
-    item.type === 'image' ? createImagePromise(item.url) : createAudioPromise(item.url)
-  ));
+  // Load in batches of 1
+  const CONCURRENCY = 1;
+  let i = 0;
+  const executing = new Set<Promise<void>>();
+  
+  for (const item of allUrls) {
+    const p = loadAsset(item.url, item.type).finally(() => executing.delete(p));
+    executing.add(p);
+    if (executing.size >= CONCURRENCY) {
+      await Promise.race(executing);
+    }
+  }
+  await Promise.all(executing);
 
   // Small delay to ensure browser has settled
   await new Promise(resolve => setTimeout(resolve, 300));
