@@ -252,16 +252,20 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           const imageId = ep.storyEntryPicId || ep.id;
           const chineseName = ep.chineseName || ep.name;
           
+          // Sanitize names for file paths (remove invalid characters like colon)
+          const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+          const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+          
           // Try to guess the most likely filename based on what the user added
           if (ep.id.startsWith('main_')) {
             const num = ep.id.replace('main_', '');
             const paddedNum = num.length === 1 ? `0${num}` : num;
             images[ep.id] = `/banners/main_${paddedNum}.png`;
-          } else if (chineseName && !/[\u4e00-\u9fa5]/.test(imageId)) {
+          } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
             // If we have a Chinese name and the ID is just a code, try the Chinese name format first
-            images[ep.id] = `/banners/情报处理室_${chineseName}.png`;
+            images[ep.id] = `/banners/情报处理室_${safeChineseName}.png`;
           } else {
-            images[ep.id] = `/banners/${imageId}.png`;
+            images[ep.id] = `/banners/${safeImageId}.png`;
           }
         });
         setEpisodeImages(prev => ({ ...prev, ...images }));
@@ -557,35 +561,41 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               onMouseLeave={() => setHoveredEpisodeId(null)}
                               className="relative group transition-all duration-500 w-full text-left"
                             >
-                              <div className={`w-full ${isMainline ? 'aspect-square' : 'aspect-[4/5]'} transition-all duration-500 overflow-hidden relative shadow-2xl rounded-sm z-10 bg-black`}>
+                              <div className={`w-full ${isMainline ? 'aspect-square bg-black shadow-2xl rounded-sm overflow-hidden' : 'aspect-[4/5]'} transition-all duration-500 relative z-10`}>
                                 {/* Background Image */}
                                 {episodeImages[episode.id] && !failedImages[episode.id] ? (
                                   <img 
                                     src={episodeImages[episode.id]!} 
                                     alt={episode.name} 
-                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-out"
+                                    loading="lazy"
+                                    decoding="async"
+                                    className={`w-full h-full ${isMainline ? 'object-cover' : 'object-contain drop-shadow-2xl'} opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-out`}
                                     referrerPolicy="no-referrer"
                                     onError={(e) => {
                                       const img = e.currentTarget;
                                       const currentSrc = img.src;
+                                      const decodedSrc = decodeURIComponent(currentSrc);
                                       const chineseName = episode.chineseName || episode.name;
                                       const imageId = episode.storyEntryPicId || episode.id;
                                       
+                                      const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+                                      const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+                                      
                                       // Fallback chain logic
-                                      if (currentSrc.includes(`/banners/情报处理室_${chineseName}.png`)) {
+                                      if (decodedSrc.includes(`/banners/情报处理室_${safeChineseName}.png`)) {
                                         // If 情报处理室_ failed, try just the ID
-                                        img.src = `/banners/${imageId}.png`;
-                                      } else if (currentSrc.includes(`/banners/main_`) && episode.id.startsWith('main_')) {
+                                        img.src = `/banners/${safeImageId}.png`;
+                                      } else if (decodedSrc.includes(`/banners/main_`) && episode.id.startsWith('main_')) {
                                         // If main_XX failed, try just main_X
                                         const num = episode.id.replace('main_', '');
-                                        if (!currentSrc.endsWith(`main_${num}.png`)) {
+                                        if (!decodedSrc.endsWith(`main_${num}.png`)) {
                                           img.src = `/banners/main_${num}.png`;
                                         } else {
                                           setFailedImages(prev => ({ ...prev, [episode.id]: true }));
                                         }
-                                      } else if (!currentSrc.includes('情报处理室_') && !currentSrc.includes('main_')) {
+                                      } else if (!decodedSrc.includes('情报处理室_') && !decodedSrc.includes('main_')) {
                                         // Last ditch effort: try adding the prefix if we haven't yet
-                                        img.src = `/banners/情报处理室_${chineseName}.png`;
+                                        img.src = `/banners/情报处理室_${safeChineseName}.png`;
                                       } else {
                                         setFailedImages(prev => ({ ...prev, [episode.id]: true }));
                                       }
@@ -599,24 +609,28 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                 )}
                                 
                                 {/* Gradient Overlay - Only visible on hover */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                {(isMainline || failedImages[episode.id] || !episodeImages[episode.id]) && (
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                )}
                                 
                                 {/* Content Overlay - Only visible on hover */}
-                                <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <div className="w-8 bg-white h-0.5" />
-                                      <span className="text-[9px] font-mono text-white/40">{(index + 1).toString().padStart(3, '0')}</span>
-                                    </div>
-                                    <h4 className="text-xs md:text-sm font-black leading-tight tracking-tight text-white transition-colors line-clamp-2 uppercase">
-                                      {episode.name}
-                                    </h4>
-                                    <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
-                                      <span className="text-[8px] font-black text-white/40 tracking-widest uppercase truncate">{episode.id}</span>
-                                      <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
+                                {(isMainline || failedImages[episode.id] || !episodeImages[episode.id]) && (
+                                  <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <div className="w-8 bg-white h-0.5" />
+                                        <span className="text-[9px] font-mono text-white/40">{(index + 1).toString().padStart(3, '0')}</span>
+                                      </div>
+                                      <h4 className="text-xs md:text-sm font-black leading-tight tracking-tight text-white transition-colors line-clamp-2 uppercase">
+                                        {episode.name}
+                                      </h4>
+                                      <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
+                                        <span className="text-[8px] font-black text-white/40 tracking-widest uppercase truncate">{episode.id}</span>
+                                        <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                )}
                                 
                                 {/* Hover Play Indicator */}
                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0">
@@ -694,63 +708,107 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   const isBeg = chapter.id.toLowerCase().includes('_beg');
                   const isMid = chapter.id.toLowerCase().includes('_mid');
                   const isEnd = chapter.id.toLowerCase().includes('_end');
-                  const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'NO.';
+                  const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'RECORD';
                   const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/20';
-                  const displayCode = chapter.code || chapter.id.split('_').pop()?.toUpperCase() || chapter.id.toUpperCase();
+                  
+                  let displayCode = chapter.code;
+                  if (!displayCode) {
+                    const parts = chapter.id.split('_');
+                    if (['beg', 'mid', 'end'].includes(parts[parts.length - 1].toLowerCase())) {
+                      displayCode = parts[parts.length - 2]?.toUpperCase() || chapter.id;
+                    } else {
+                      displayCode = parts[parts.length - 1]?.toUpperCase() || chapter.id;
+                    }
+                  }
 
                   return (
                     <div
                       key={chapter.id}
-                      className="group relative flex items-center border border-white/10 hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-left rounded-sm bg-black/40 backdrop-blur-sm p-1.5 pr-1.5"
+                      className="group relative flex items-center transition-all duration-300"
                     >
                       {/* Vinyl Effect Icon for Chapters */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -left-6 w-16 h-16 z-30 pointer-events-none">
+                      <div className="absolute top-1/2 -translate-y-1/2 -left-5 w-14 h-14 z-30 pointer-events-none">
                         <img 
                           src="/banners/49px-图标_剧情.png" 
                           alt="" 
-                          className="w-full h-full object-contain group-hover:animate-[spin_4s_linear_infinite]"
+                          className="w-full h-full object-contain group-hover:animate-[spin_4s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
                           referrerPolicy="no-referrer"
                         />
                       </div>
 
-                      {/* Chapter Index / Code / Name */}
-                      <div className="w-20 h-20 ml-6 bg-black flex flex-col items-center justify-center shrink-0 border border-white/10 relative overflow-hidden rounded-sm z-10">
-                        <span className={`text-[8px] font-black absolute top-1 left-1.5 ${typeColor}`}>{typeLabel}</span>
-                        <span className="text-sm font-black text-white/80 group-hover:text-white transition-colors px-1 text-center truncate w-full mt-1.5">
-                          {displayCode}
-                        </span>
-                        <h3 className="text-white/60 text-[9px] font-bold leading-tight uppercase tracking-tight group-hover:text-white transition-colors line-clamp-2 mt-0.5 px-1 text-center w-full">
-                          {chapter.name}
-                        </h3>
-                        {/* Decorative line */}
-                        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/0 group-hover:bg-white transition-all" />
-                      </div>
-
-                      {/* Review/Translate Button Area */}
-                      <div className="flex-1 flex flex-col gap-1.5 h-20 pl-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                        <button 
+                      {/* Chapter Container */}
+                      <div className="ml-4 flex h-16 rounded-sm overflow-hidden shadow-xl border border-white/10 group-hover:border-white/40 transition-all hover:scale-105 z-10">
+                        
+                        {/* Chapter Info (The Black Square) */}
+                        <button
                           onClick={() => onSelect(chapter)}
                           disabled={!scriptExists}
-                          className="flex-1 w-full bg-white text-black rounded-sm flex items-center justify-center gap-1.5 hover:bg-gray-200 transition-all group/btn disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
-                          title={scriptExists ? "Review Story" : "Script not available for this language"}
+                          className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
+                          title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                         >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Review</span>
-                        </button>
-                        {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
-                          <button 
-                            onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
-                            className="flex-1 w-full bg-white/10 border border-white/20 text-white rounded-sm flex items-center justify-center gap-1.5 hover:bg-white/20 transition-all group/btn whitespace-nowrap"
-                            title="Open Translation Tool"
-                          >
-                            <Languages className="w-3 h-3" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Translate</span>
-                          </button>
-                        )}
-                      </div>
+                          {/* Top Left REC / MISSING */}
+                          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 z-20">
+                            <div className={`w-1.5 h-1.5 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
+                            <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
+                              {scriptExists ? 'RECORD' : 'MISSING'}
+                            </span>
+                          </div>
 
-                      {/* Hover Decoration */}
-                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/0 group-hover:bg-white transition-all" />
+                          {/* Top Right Type Label (BEG/MID/END) */}
+                          <span className={`text-[6px] font-black absolute top-1.5 right-1.5 tracking-widest ${typeColor} z-20`}>
+                            {typeLabel}
+                          </span>
+                          
+                          <div className="flex flex-col items-center justify-center w-full h-full pt-1 text-center relative overflow-hidden">
+                            {chapterImages[chapter.id] && (
+                              <img 
+                                src={chapterImages[chapter.id]!} 
+                                alt="" 
+                                className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover/info:opacity-40 transition-opacity"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div className="relative z-10 flex flex-col items-center">
+                              <span className="text-[15px] font-bold text-white tracking-wide truncate w-full px-2">
+                                {displayCode}
+                              </span>
+                              <span className="text-[7px] font-light text-white/60 uppercase tracking-[0.2em] mt-0.5 mb-1">
+                                STORY
+                              </span>
+                              <h3 className="text-xs font-medium text-white truncate w-full px-2">
+                                {chapter.name}
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* Decorative line */}
+                          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white/0 group-hover/info:bg-white/50 transition-all" />
+                        </button>
+
+                        {/* Actions Extension */}
+                        <div className="flex flex-col w-12 bg-zinc-950 border-l border-white/10 shrink-0">
+                          <button 
+                            onClick={() => onSelect(chapter)}
+                            disabled={!scriptExists}
+                            className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white disabled:opacity-30 disabled:cursor-not-allowed group/btn"
+                            title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current group-hover/btn:scale-110 transition-transform" />
+                            <span className="text-[6px] font-black uppercase tracking-widest">Play</span>
+                          </button>
+                          
+                          {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
+                            <button 
+                              onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
+                              className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white border-t border-white/10 group/btn"
+                              title="Open Translation Tool"
+                            >
+                              <Languages className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+                              <span className="text-[6px] font-black uppercase tracking-widest">Trans</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

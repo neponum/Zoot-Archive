@@ -23,7 +23,12 @@ export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ chara
   return (
     <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end overflow-hidden">
       {(Object.entries(characterSlots) as [string, CharacterSlot][])
-        .filter(([_, data]) => data.url && data.name)
+        .filter(([_, data]) => {
+          if (data.name && !data.url) {
+            console.warn(`Missing URL for character: ${data.name}`);
+          }
+          return data.url && data.name;
+        })
         .map(([slot, data]) => {
           // Animation logic
           const initial: any = {};

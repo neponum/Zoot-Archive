@@ -488,7 +488,7 @@ export function getLanguage(): Language {
   return currentLanguage;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 30000): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -740,7 +740,7 @@ function saveCache() {
 
 async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
   try {
     const response = await fetch(url, { signal: controller.signal });
@@ -773,6 +773,7 @@ export async function checkImageExists(url: string): Promise<boolean> {
 }
 
 const urlCache = new Map<string, string>();
+const pendingUrlPromises = new Map<string, Promise<string>>();
 
 function generateNamesToTry(name: string): string[] {
   const baseNames = [name];
@@ -797,6 +798,13 @@ function generateNamesToTry(name: string): string[] {
       namesToTry.push(`d_sys_${n}`);
       namesToTry.push(`d_dia_${n}`);
       namesToTry.push(`p_skill_${n}`);
+      namesToTry.push(`avg_${n}`);
+      namesToTry.push(`char_${n}`);
+      namesToTry.push(`avg_char_${n}`);
+      namesToTry.push(`bg_${n}`);
+      namesToTry.push(`story_pic_${n}`);
+      namesToTry.push(`story_icon_${n}`);
+      namesToTry.push(`story_entry_${n}`);
     }
     if (!n.startsWith('bgm_')) namesToTry.push(`bgm_${n}`);
   });
@@ -833,9 +841,18 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
     return urlCache.get(cacheKey)!;
   }
   
-  const url = await _getImageUrl(type, name);
-  urlCache.set(cacheKey, url);
-  return url;
+  if (pendingUrlPromises.has(cacheKey)) {
+    return pendingUrlPromises.get(cacheKey)!;
+  }
+  
+  const promise = _getImageUrl(type, name).then(url => {
+    urlCache.set(cacheKey, url);
+    pendingUrlPromises.delete(cacheKey);
+    return url;
+  });
+  
+  pendingUrlPromises.set(cacheKey, promise);
+  return promise;
 }
 
 let imageMapKeys: string[] | null = null;
@@ -848,75 +865,39 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
     case 'background':
     case 'character':
     case 'image': {
-      // Special handling for black background which is very common
-      if (name.toLowerCase() === 'black' || name.toLowerCase() === 'bg_black') {
-        return 'https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/torappu/dynamicassets/avg/backgrounds/bg_black.png';
-      }
-
       for (const n of allNames) {
         if ((imageMap as any)[n]) {
           return (imageMap as any)[n];
         }
-        // For characters, try common suffixes if not already present
-        if (type === 'character') {
-          if (!n.includes('#') && (imageMap as any)[`${n}#1$1`]) {
-            return (imageMap as any)[`${n}#1$1`];
-          }
-          if (!n.includes('$') && (imageMap as any)[`${n}$1`]) {
-            return (imageMap as any)[`${n}$1`];
-          }
-        }
       }
-      
+
+      // Fuzzy search fallback
+      const cleanName = name.replace('$', '').replace('_loop', '').toLowerCase();
       if (!imageMapKeys) imageMapKeys = Object.keys(imageMap);
-      const fuzzyMatch = imageMapKeys.find(k => k.includes(name));
-      if (fuzzyMatch) return (imageMap as any)[fuzzyMatch];
-
-      // Fallback for new assets not in the map
-      if (type === 'character') {
-        let finalName = name;
-        // Try common suffixes if not already present
-        if (!finalName.includes('#')) {
-          finalName += '#1$1';
-        } else if (!finalName.includes('$')) {
-          finalName += '$1';
-        }
-        const encodedName = encodeURIComponent(finalName);
-        return `https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/avg/characters/${encodedName}.png`;
+      
+      // Try to find a key that contains the clean name, prioritizing those that start with it or have it as a distinct part
+      let fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().startsWith(cleanName));
+      if (!fuzzyMatch) {
+        fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().includes(`_${cleanName}_`));
+      }
+      if (!fuzzyMatch) {
+        fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().includes(cleanName));
       }
       
-      if (type === 'background' || name.startsWith('bg_')) {
-        return `https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/torappu/dynamicassets/avg/backgrounds/${name}.png`;
+      if (fuzzyMatch) {
+        console.log(`Fuzzy matched ${name} to ${fuzzyMatch}`);
+        return (imageMap as any)[fuzzyMatch];
       }
       
-      // Try torappu images path as well
-      if (name.startsWith('story_pic_') || name.startsWith('story_icon_') || name.startsWith('pic_')) {
-        return `https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/torappu/dynamicassets/avg/images/${name}.png`;
-      }
-      
-      // Try story review entry pics
+      // Don't warn for level-related names or guide/tutorial names that are often just script metadata
       const lowerName = name.toLowerCase();
-      if (lowerName.startsWith('storyentrypic_') || lowerName.startsWith('story_entry_') || lowerName.includes('main_') || lowerName.includes('act') || lowerName.includes('mini_')) {
-        let cleanName = lowerName.replace('story_entry_', 'storyentrypic_');
-        if (!cleanName.startsWith('storyentrypic_')) {
-          cleanName = `storyentrypic_${cleanName}`;
-        }
-        
-        // Use local banners folder
-        // We return the primary guess, but since this is a service returning a string, 
-        // we can't easily do a fallback chain here without async checks.
-        // However, this function is mostly for chapter images, not episode banners.
-        return `/banners/${cleanName}.png`;
+      if (!lowerName.includes('_level_') && 
+          !lowerName.startsWith('main_') && 
+          !lowerName.startsWith('sub_') &&
+          !lowerName.includes('_guide_')) {
+        console.warn(`Could not find image for ${type}: ${name}`);
       }
-
-      // Fallback for character avatars (useful for Operator Records)
-      if (name.startsWith('char_')) {
-        const charId = name.replace('story_entry_', '');
-        return `https://cdn.jsdelivr.net/gh/Aceship/Arknights-Bot-Assets@master/avatar/${charId}.png`;
-      }
-
-      // Generic fallback for other images
-      return `https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/avg/images/${name}.png`;
+      return '';
     }
     case 'music':
     case 'sound':
@@ -928,11 +909,20 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       }
 
       // Fuzzy search fallback
-      const cleanName = name.replace('$', '').replace('_loop', '');
+      const cleanName = name.replace('$', '').replace('_loop', '').toLowerCase();
       if (!audioMapKeys) audioMapKeys = Object.keys(audioMap);
-      const fuzzyMatch = audioMapKeys.find(k => k.includes(cleanName));
-      if (fuzzyMatch) return (audioMap as any)[fuzzyMatch];
       
+      let fuzzyMatch = audioMapKeys.find(k => k.toLowerCase().startsWith(cleanName));
+      if (!fuzzyMatch) {
+        fuzzyMatch = audioMapKeys.find(k => k.toLowerCase().includes(cleanName));
+      }
+      
+      if (fuzzyMatch) {
+        console.log(`Fuzzy matched audio ${name} to ${fuzzyMatch}`);
+        return (audioMap as any)[fuzzyMatch];
+      }
+      
+      console.warn(`Could not find audio for ${type}: ${name}`);
       return '';
     }
     default:
@@ -949,10 +939,11 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
 
   for (const line of lines) {
     if (line.assetName || (line.type === 'character' && line.assetName2)) {
-      if (['background', 'character', 'image'].includes(line.type)) {
+      if (['background', 'character', 'image', 'imagetween', 'animtext'].includes(line.type)) {
+        const type = (line.type === 'imagetween' || line.type === 'animtext') ? 'image' : line.type as any;
         if (line.assetName) {
           resolutionPromises.push(
-            getImageUrl(line.type as any, line.assetName).then(url => { if (url) imageAssets.add(url); })
+            getImageUrl(type, line.assetName).then(url => { if (url) imageAssets.add(url); })
           );
         }
         if (line.type === 'character' && line.assetName2) {
@@ -984,31 +975,46 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
 
   const createImagePromise = (url: string) => new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => { updateProgress(); resolve(null); };
-    img.onerror = () => { updateProgress(); resolve(null); };
+    let resolved = false;
+    const finish = () => {
+      if (!resolved) {
+        resolved = true;
+        updateProgress();
+        resolve(null);
+      }
+    };
+    img.onload = finish;
+    img.onerror = finish;
     img.src = url;
     // Add a timeout for image loading to prevent hanging
-    setTimeout(() => { resolve(null); }, 10000);
+    setTimeout(finish, 30000);
   });
 
   const createAudioPromise = (url: string) => new Promise((resolve) => {
     const audio = new Audio();
-    audio.oncanplaythrough = () => { updateProgress(); resolve(null); };
-    audio.onerror = () => { updateProgress(); resolve(null); };
+    let resolved = false;
+    const finish = () => {
+      if (!resolved) {
+        resolved = true;
+        updateProgress();
+        resolve(null);
+      }
+    };
+    audio.oncanplaythrough = finish;
+    audio.onerror = finish;
     audio.src = url;
     audio.load();
     // Don't wait forever for audio
-    setTimeout(() => { resolve(null); }, 5000);
+    setTimeout(finish, 10000);
   });
 
-  // Preload everything in parallel with a concurrency limit
+  // Preload everything in parallel
   const allUrls = [...imageUrls.map(url => ({ url, type: 'image' })), ...audioUrls.map(url => ({ url, type: 'audio' }))];
   
-  const CONCURRENCY = 6;
-  for (let i = 0; i < allUrls.length; i += CONCURRENCY) {
-    const batch = allUrls.slice(i, i + CONCURRENCY);
-    await Promise.allSettled(batch.map(item => 
-      item.type === 'image' ? createImagePromise(item.url) : createAudioPromise(item.url)
-    ));
-  }
+  await Promise.allSettled(allUrls.map(item => 
+    item.type === 'image' ? createImagePromise(item.url) : createAudioPromise(item.url)
+  ));
+
+  // Small delay to ensure browser has settled
+  await new Promise(resolve => setTimeout(resolve, 300));
 }

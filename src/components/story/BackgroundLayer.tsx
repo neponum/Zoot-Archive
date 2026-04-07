@@ -17,24 +17,25 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
     <>
       {/* Background Layer */}
       <AnimatePresence mode="wait">
-        {bgUrl && !imageUrl && (
+        {!imageUrl && (
           <motion.div
-            key={bgUrl}
+            key={bgUrl || 'black'}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
-            className={cn("absolute inset-0", bgUrl === 'BLACK_FALLBACK' ? "bg-black" : "")}
+            className={cn("absolute inset-0 bg-black")}
           >
-            {bgUrl !== 'BLACK_FALLBACK' && (
+            {bgUrl && bgUrl !== 'BLACK_FALLBACK' && (
               <img 
                 src={bgUrl} 
                 alt="Background" 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
                 draggable="false"
+                loading="eager"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://cdn.jsdelivr.net/gh/akgcc/arkdata@main/assets/torappu/dynamicassets/avg/backgrounds/bg_black.png';
+                  e.currentTarget.style.display = 'none';
                 }}
               />
             )}
@@ -68,6 +69,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
               draggable="false"
+              loading="eager"
             />
           </motion.div>
         )}
