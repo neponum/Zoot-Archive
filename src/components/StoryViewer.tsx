@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useReducer, useRef } from 'react';
 import { motion } from 'motion/react';
-import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage } from '../services/storyService';
+import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { StoryLine } from '../types';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -167,10 +167,16 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 if (charsToLoad[1].slot === 'center') charsToLoad[1].slot = 'right';
               }
 
+              // Load character assets (body, face, positioning) using the new asset info service
+              const slotUpdates: Record<string, CharacterSlotData> = {};
               for (const char of charsToLoad) {
-                const url = await getImageUrl('character', char.name);
-                const slotData: CharacterSlotData = { 
-                  url, 
+                const assetInfo = await getCharacterAssetInfo(char.name);
+
+                slotUpdates[char.slot] = { 
+                  url: assetInfo.bodyUrl,
+                  faceUrl: assetInfo.faceUrl,
+                  faceRect: assetInfo.faceRect,
+                  size: assetInfo.size,
                   focus: char.focus, 
                   name: char.name,
                   animation: line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined ? {
@@ -181,8 +187,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     duration: line.duration
                   } : undefined
                 };
-                dispatch({ type: 'UPDATE_CHARACTER_SLOT', payload: { slot: char.slot, data: slotData } });
               }
+              dispatch({ type: 'UPDATE_CHARACTER_SLOTS', payload: slotUpdates });
             } else if (line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined) {
               const getSlotName = (rawSlot: string | undefined): string => {
                 let s = (rawSlot || 'center').toLowerCase();

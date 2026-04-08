@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { StoryLine } from '../types';
-import { getImageUrl } from '../services/storyService';
+import { getImageUrl, getCharacterAssetInfo } from '../services/storyService';
 import { AudioManager } from '../utils/audioManager';
 
 export function useStoryEngine(lines: StoryLine[], onBack: () => void) {
@@ -186,10 +186,14 @@ export function useStoryEngine(lines: StoryLine[], onBack: () => void) {
               }
 
               const newSlotData: Record<string, any> = {};
+              // Fetch character asset info (body, face, rects) from the asset service
               for (const char of charsToLoad) {
-                const url = await getImageUrl('character', char.name);
+                const assetInfo = await getCharacterAssetInfo(char.name);
                 newSlotData[char.slot] = { 
-                  url, 
+                  url: assetInfo.bodyUrl,
+                  faceUrl: assetInfo.faceUrl,
+                  faceRect: assetInfo.faceRect,
+                  size: assetInfo.size,
                   focus: char.focus, 
                   name: char.name,
                   animation: line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined ? {

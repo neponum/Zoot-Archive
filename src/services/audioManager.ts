@@ -114,6 +114,7 @@ class AudioManager {
   public playSFX(url: string, volume: number = 1.0) {
     const sound = new Howl({
       src: [url],
+      html5: true,
       volume: volume * this.masterSFXVolume,
       onend: () => {
         sound.unload();
@@ -133,6 +134,7 @@ class AudioManager {
 
     this.voice = new Howl({
       src: [url],
+      html5: true,
       volume: volume * this.masterVoiceVolume,
       onend: () => {
         this.voice = null;

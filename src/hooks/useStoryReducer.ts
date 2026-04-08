@@ -1,7 +1,14 @@
 import { StoryLine } from '../types';
 
+/**
+ * Data structure for a character slot in the story viewer.
+ * Includes positioning and asset URLs for body and face.
+ */
 export interface CharacterSlotData {
   url: string | null;
+  faceUrl?: string | null;
+  faceRect?: { x: number; y: number; w: number; h: number };
+  size?: { x: number; y: number };
   focus: boolean;
   name: string | null;
   animation?: {
@@ -54,6 +61,7 @@ export type StoryAction =
   | { type: 'SET_INDEX'; payload: number }
   | { type: 'SET_BG'; payload: { bgUrl: string | null; assetName: string | null } }
   | { type: 'UPDATE_CHARACTER_SLOT'; payload: { slot: string; data: CharacterSlotData } }
+  | { type: 'UPDATE_CHARACTER_SLOTS'; payload: Record<string, CharacterSlotData> }
   | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string } // Optional slot to clear
   | { type: 'SET_FOCUS'; payload: number }
   | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; isSubtitle?: boolean; line?: StoryLine } }
@@ -133,6 +141,7 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       if (!data.animation && 
           nextSlots[slot]?.name === data.name && 
           nextSlots[slot]?.url === data.url && 
+          nextSlots[slot]?.faceUrl === data.faceUrl && 
           nextSlots[slot]?.focus === data.focus) {
         return state;
       }
@@ -147,6 +156,33 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       
       nextSlots[slot] = data;
       return { ...state, characterSlots: nextSlots };
+    }
+    case 'UPDATE_CHARACTER_SLOTS': {
+      const updates = action.payload;
+      const nextSlots = { ...state.characterSlots };
+      let hasChanges = false;
+
+      Object.entries(updates).forEach(([slot, data]) => {
+        if (data.animation || 
+            nextSlots[slot]?.name !== data.name || 
+            nextSlots[slot]?.url !== data.url || 
+            nextSlots[slot]?.faceUrl !== data.faceUrl || 
+            nextSlots[slot]?.focus !== data.focus) {
+          
+          // Logic for slot clearing when center is used
+          if (slot === 'center' && data.url) {
+            nextSlots.left = { url: null, focus: false, name: null };
+            nextSlots.right = { url: null, focus: false, name: null };
+          } else if ((slot === 'left' || slot === 'right') && data.url) {
+            nextSlots.center = { url: null, focus: false, name: null };
+          }
+
+          nextSlots[slot] = data;
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? { ...state, characterSlots: nextSlots } : state;
     }
     case 'CLEAR_CHARACTER_SLOTS':
       if (action.payload) {

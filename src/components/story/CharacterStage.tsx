@@ -67,6 +67,14 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({ characterSlots }
                 className="h-[90cqh] object-contain drop-shadow-2xl object-bottom"
                 referrerPolicy="no-referrer"
               />
+              {data.faceUrl && (
+                <img 
+                  src={data.faceUrl} 
+                  alt={`${data.name} face`} 
+                  className="absolute bottom-0 left-0 h-full w-full object-contain object-bottom"
+                  referrerPolicy="no-referrer"
+                />
+              )}
             </motion.div>
           );
         })}

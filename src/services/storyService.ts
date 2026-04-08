@@ -1,7 +1,6 @@
 import { StoryChapter, StoryLine, StoryEpisode, Language } from '../types';
-import audioMap from '../audio_map.json';
-import imageMap from '../image_map.json';
 import { CacheService } from './cacheService';
+import audioMap from '../data/audioMap.json';
 
 enum TokenType {
   LEFT_BRACKET,
@@ -716,7 +715,18 @@ export async function checkScriptExists(storyPath: string, lang: Language): Prom
   }
 }
 
+let currentStoryChapter = 'a001';
+
 export async function fetchStoryScript(storyPath: string, langOverride?: Language, noFallback?: boolean): Promise<string> {
+  // Extract chapter ID from path for music folder detection
+  const parts = storyPath.split('/');
+  for (const part of parts) {
+    if (part.startsWith('act') || part === 'main' || part.startsWith('a00') || part.startsWith('guide')) {
+      currentStoryChapter = part;
+      break;
+    }
+  }
+  
   const targetLang = langOverride || currentLanguage;
   
   const fetchScript = async (lang: Language) => {
@@ -818,77 +828,161 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
  */
 export async function checkImageExists(url: string): Promise<boolean> {
   try {
-    const response = await fetchWithTimeout(url, { method: 'HEAD' }, 3000);
-    return response.ok;
+    // Try HEAD first as it's faster
+    const response = await fetchWithTimeout(url, { method: 'HEAD' }, 2000);
+    if (response.ok) return true;
+    
+    // If HEAD failed with 405 (Method Not Allowed) or 403 (Forbidden), try a quick GET
+    // Some servers block HEAD requests
+    if (response.status === 405 || response.status === 403) {
+      const getResponse = await fetchWithTimeout(url, { method: 'GET' }, 2000);
+      return getResponse.ok;
+    }
+    return false;
   } catch (e) {
     return false;
   }
 }
 
-const urlCache = new Map<string, string>();
-const pendingUrlPromises = new Map<string, Promise<string>>();
 
-function generateNamesToTry(name: string): string[] {
-  const baseNames = [name];
-  if (name.startsWith('$')) {
-    baseNames.push(name.substring(1));
-  }
+let characterDataPromise: Promise<Record<string, any>> | null = null;
+
+export async function fetchCharacterData(): Promise<Record<string, any>> {
+  if (characterDataPromise) return characterDataPromise;
   
-  const namesToTry: string[] = [];
-  baseNames.forEach(n => {
-    namesToTry.push(n);
-    // Try common prefixes used in game files
-    if (!n.startsWith('m_') && !n.startsWith('d_') && !n.startsWith('p_')) {
-      namesToTry.push(`m_${n}`);
-      namesToTry.push(`m_bat_${n}`);
-      namesToTry.push(`m_avg_${n}`);
-      namesToTry.push(`m_sys_${n}`);
-      namesToTry.push(`m_dia_${n}`);
-      namesToTry.push(`d_${n}`);
-      namesToTry.push(`d_gen_${n}`);
-      namesToTry.push(`d_avg_${n}`);
-      namesToTry.push(`d_bat_${n}`);
-      namesToTry.push(`d_sys_${n}`);
-      namesToTry.push(`d_dia_${n}`);
-      namesToTry.push(`p_skill_${n}`);
-      namesToTry.push(`avg_${n}`);
-      namesToTry.push(`char_${n}`);
-      namesToTry.push(`avg_char_${n}`);
-      namesToTry.push(`bg_${n}`);
-      namesToTry.push(`story_pic_${n}`);
-      namesToTry.push(`story_icon_${n}`);
-      namesToTry.push(`story_entry_${n}`);
+  characterDataPromise = (async () => {
+    try {
+      console.log('Fetching character.json...');
+      const response = await fetch('/character.json');
+      if (!response.ok) throw new Error(`Failed to fetch character.json: ${response.status}`);
+      const text = await response.text();
+      console.log(`Loaded character.json, size: ${text.length} bytes`);
+      const data = JSON.parse(text);
+      return data;
+    } catch (err) {
+      console.error('Failed to fetch character data:', err);
+      characterDataPromise = null; // Reset on failure so it can be retried
+      return {};
     }
-    if (!n.startsWith('bgm_')) namesToTry.push(`bgm_${n}`);
-  });
+  })();
 
-  // Add variations for '_loop'
-  const finalNames: string[] = [];
-  namesToTry.forEach(n => {
-    finalNames.push(n);
-    if (n.endsWith('_loop')) {
-      finalNames.push(n.replace('_loop', ''));
-    } else {
-      finalNames.push(`${n}_loop`);
-    }
-  });
-  
-  // Add story specific prefixes if not present
-  const storyNames: string[] = [];
-  finalNames.forEach(n => {
-    storyNames.push(n);
-    if (!n.startsWith('story_pic_')) storyNames.push(`story_pic_${n}`);
-    if (!n.startsWith('story_icon_')) storyNames.push(`story_icon_${n}`);
-    if (!n.startsWith('story_entry_')) storyNames.push(`story_entry_${n}`);
-  });
-
-  return Array.from(new Set([
-    ...storyNames,
-    ...storyNames.map(n => n.toLowerCase())
-  ]));
+  return characterDataPromise;
 }
 
-export async function getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice', name: string): Promise<string> {
+export interface CharacterAssetInfo {
+  bodyUrl: string;
+  faceUrl?: string;
+  faceRect?: { x: number; y: number; w: number; h: number };
+  size?: { x: number; y: number };
+}
+
+/**
+ * Retrieves detailed asset information for a character, including body and face URLs,
+ * and positioning data from character.json.
+ */
+export async function getCharacterAssetInfo(name: string): Promise<CharacterAssetInfo> {
+  const charData = await fetchCharacterData();
+  
+  let baseName = name;
+  let expression = '';
+  
+  if (name.includes('#')) {
+    [baseName, expression] = name.split('#');
+  }
+
+  const data = charData[baseName];
+  let faceItem = null;
+  if (data && expression) {
+    // Improved matching: exact name, name with #, suffix match (e.g. "6" matches "char_002_amiya_6"), or alias
+    faceItem = data.array?.find((item: any) => 
+      item.name === expression || 
+      item.name === `${baseName}#${expression}` ||
+      item.name.endsWith(`_${expression}`) ||
+      item.alias === expression
+    );
+    
+    if (faceItem) {
+      if (faceItem.group === -1 && faceItem.image) {
+        const imagePath = faceItem.image.split('/').map(encodeURIComponent).join('/');
+        return {
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
+          size: data.size
+        };
+      }
+      const group = data.groups?.[faceItem.group];
+      if (group) {
+        const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
+        const facePath = faceItem.face.split('/').map(encodeURIComponent).join('/');
+        return {
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
+          faceUrl: `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`,
+          faceRect: group.faceRect,
+          size: data.size
+        };
+      }
+    }
+  }
+
+  if (data && !expression) {
+    if (data.groups && data.groups.length > 0) {
+      const group = data.groups[0];
+      const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
+      return {
+        bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
+        size: data.size
+      };
+    } else if (data.array && data.array.length > 0) {
+      const firstItem = data.array[0];
+      if (firstItem.image) {
+        const imagePath = firstItem.image.split('/').map(encodeURIComponent).join('/');
+        return {
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
+          size: data.size
+        };
+      }
+    }
+  }
+
+  // Fallback: use baseName instead of full name to avoid # in URL
+  if (expression && (!data || !faceItem)) {
+    // Smart fallback for characters like Amiya: 
+    // If baseName ends with _1 and expression is a number, try replacing _1 with _expression
+    if (baseName.endsWith('_1') && /^\d+$/.test(expression)) {
+      const guessedName = baseName.replace(/_1$/, `_${expression}`);
+      
+      // Try with original baseName as folder (e.g., char_002_amiya_1/char_002_amiya_6)
+      const guessedPath = `${baseName}/${guessedName}`;
+      const guessedUrl1 = await getImageUrl('character_body', guessedPath);
+      if (await checkImageExists(guessedUrl1)) {
+        return { bodyUrl: guessedUrl1, size: data?.size };
+      }
+      
+      // Try with guessedName as folder (e.g., char_002_amiya_6/char_002_amiya_6)
+      const guessedUrl2 = await getImageUrl('character_body', guessedName);
+      if (await checkImageExists(guessedUrl2)) {
+        return { bodyUrl: guessedUrl2, size: data?.size };
+      }
+    }
+    
+    // Try baseName_expression
+    const suffixGuessedName = `${baseName}_${expression}`;
+    const suffixGuessedUrl = await getImageUrl('character_body', suffixGuessedName);
+    if (await checkImageExists(suffixGuessedUrl)) {
+      return { bodyUrl: suffixGuessedUrl, size: data?.size };
+    }
+  }
+
+  return {
+    bodyUrl: await getImageUrl('character_body', baseName),
+    size: data?.size
+  };
+}
+
+const urlCache = new Map<string, string>();
+
+const pendingUrlPromises = new Map<string, Promise<string>>();
+
+export async function getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice' | 'character_body' | 'character_face', name: string): Promise<string> {
   const cacheKey = `${type}-${name}`;
   
   if (urlCache.has(cacheKey)) {
@@ -909,7 +1003,7 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
     }
     
     // Check persistent cache for images/audio
-    if (['background', 'character', 'image', 'music', 'sound', 'voice'].includes(type)) {
+    if (['background', 'character', 'image', 'music', 'sound', 'voice', 'character_body', 'character_face'].includes(type)) {
       const cachedBlobUrl = await CacheService.getCachedBlobUrl(url);
       if (cachedBlobUrl) return cachedBlobUrl;
     }
@@ -924,75 +1018,155 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
   return finalUrl;
 }
 
-let imageMapKeys: string[] | null = null;
-let audioMapKeys: string[] | null = null;
+// Cache for resolved audio URLs to avoid repeated network checks
+const resolvedAudioCache: Record<string, string> = {};
+// Remember which folder worked best for the current session/chapter
+let lastSuccessfulMusicFolder: string | null = null;
 
-async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice', name: string): Promise<string> {
-  const allNames = generateNamesToTry(name);
-  
+async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice' | 'character_body' | 'character_face', name: string): Promise<string> {
+  const cacheKey = `${type}:${name}`;
+  if (resolvedAudioCache[cacheKey]) return resolvedAudioCache[cacheKey];
+
   switch (type) {
     case 'background':
-    case 'character':
-    case 'image': {
-      for (const n of allNames) {
-        if ((imageMap as any)[n]) {
-          return (imageMap as any)[n];
-        }
-      }
-
-      // Fuzzy search fallback
-      const cleanName = name.replace('$', '').replace('_loop', '').toLowerCase();
-      if (!imageMapKeys) imageMapKeys = Object.keys(imageMap);
+      return `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(name)}.png`;
+    case 'image':
+      return `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(name)}.png`;
+    case 'character': {
+      // Fallback for character if not using body/face split
+      const parts = name.split('/');
+      const encodedPath = parts.map(encodeURIComponent).join('/');
       
-      // Try to find a key that contains the clean name, prioritizing those that start with it or have it as a distinct part
-      let fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().startsWith(cleanName));
-      if (!fuzzyMatch) {
-        fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().includes(`_${cleanName}_`));
-      }
-      if (!fuzzyMatch) {
-        fuzzyMatch = imageMapKeys.find(k => k.toLowerCase().includes(cleanName));
+      // If it's just a name, we assume it's in a folder with the same name
+      if (parts.length === 1) {
+        const baseNameMatch = name.match(/^([^#$]+)/);
+        const baseName = baseNameMatch ? baseNameMatch[1] : name;
+        return `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name)}.png`;
       }
       
-      if (fuzzyMatch) {
-        console.log(`Fuzzy matched ${name} to ${fuzzyMatch}`);
-        return (imageMap as any)[fuzzyMatch];
-      }
-      
-      // Don't warn for level-related names or guide/tutorial names that are often just script metadata
-      const lowerName = name.toLowerCase();
-      if (!lowerName.includes('_level_') && 
-          !lowerName.startsWith('main_') && 
-          !lowerName.startsWith('sub_') &&
-          !lowerName.includes('_guide_')) {
-        console.warn(`Could not find image for ${type}: ${name}`);
-      }
-      return '';
+      return `https://torappu.prts.wiki/assets/avg/characters/${encodedPath}.png`;
     }
-    case 'music':
-    case 'sound':
-    case 'voice': {
-      for (const n of allNames) {
-        if ((audioMap as any)[n]) {
-          return (audioMap as any)[n];
+    case 'character_body': {
+      const parts = name.split('/');
+      const encodedPath = parts.map(encodeURIComponent).join('/');
+      const baseName = parts[0].split('$')[0];
+      
+      let urlBase: string;
+      if (parts.length > 1) {
+        // If it already has a path, use it directly
+        urlBase = `https://torappu.prts.wiki/assets/avg/characters/${encodedPath}.png`;
+      } else {
+        // Otherwise use the baseName as folder
+        urlBase = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodedPath}.png`;
+      }
+      
+      // If name already has suffix or path, use it
+      if (name.includes('$') || parts.length > 1) return urlBase;
+      
+      // Try without $1 first
+      if (await checkImageExists(urlBase)) return urlBase;
+      
+      // Try with $1 suffix
+      const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name + '$1')}.png`;
+      if (await checkImageExists(urlWithDollar)) return urlWithDollar;
+      
+      // Default to no-dollar if neither check passed or both failed
+      return urlBase;
+    }
+    case 'character_face': {
+      const [baseName, expression] = name.split('/');
+      
+      // 1. Try exact match (e.g., "1.png")
+      const urlBase = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
+      if (await checkImageExists(urlBase)) return urlBase;
+      
+      // 2. Try with $1 suffix (e.g., "1$1.png")
+      const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression + '$1')}.png`;
+      if (await checkImageExists(urlWithDollar)) return urlWithDollar;
+      
+      // 3. Fallback to $1 suffix if neither exists
+      return urlWithDollar;
+    }
+    case 'music': {
+      const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
+      
+      // 1. Check static audio map first (Highest priority)
+      if ((audioMap.music as any)[cleanAudioName]) {
+        return (audioMap.music as any)[cleanAudioName];
+      }
+
+      // Arknights music often has these prefixes in the files but not in the script
+      const prefixes = ['', 'm_avg_', 'm_dia_', 'm_bat_', 'm_sys_'];
+      
+      // 1. Context folders (Highest priority)
+      const contextFolders = [
+        lastSuccessfulMusicFolder, 
+        currentStoryChapter
+      ].filter(Boolean) as string[];
+
+      // 2. General/Global folders (Medium priority)
+      const generalFolders = ['avg', 'a001', 'static', 'beta1_180603', 'obt'];
+
+      // 3. Other specific episodes (Lowest priority - fallback safety net)
+      const otherEpisodes = [
+        'act12d0d0', 'act17side', 'act20side', 'act13d0d0', 'act15main', 
+        'act11d0d0', 'act10d0d0', 'act9d0d0', 'act18side'
+      ];
+
+      const priorityFolders = [...contextFolders, ...generalFolders, ...otherEpisodes]
+        .filter((f, i, self) => f && self.indexOf(f) === i) as string[];
+
+      // Try each prefix in each priority folder
+      for (const folder of priorityFolders) {
+        for (const prefix of prefixes) {
+          const testName = prefix && !cleanAudioName.startsWith('m_') ? prefix + cleanAudioName : cleanAudioName;
+          const url = `https://torappu.prts.wiki/assets/audio/music/${folder}/${encodeURIComponent(testName)}.mp3`;
+          
+          if (await checkImageExists(url)) {
+            console.log(`Music resolved (${folder}${prefix ? ' with ' + prefix : ''}): ${url}`);
+            lastSuccessfulMusicFolder = folder; // Remember this folder for next time
+            resolvedAudioCache[cacheKey] = url;
+            return url;
+          }
+        }
+      }
+      
+      // Last resort: try root music folder with prefixes
+      for (const prefix of prefixes) {
+        const testName = prefix && !cleanAudioName.startsWith('m_') ? prefix + cleanAudioName : cleanAudioName;
+        const rootUrl = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(testName)}.mp3`;
+        if (await checkImageExists(rootUrl)) {
+          console.log(`Music resolved (root${prefix ? ' with ' + prefix : ''}): ${rootUrl}`);
+          resolvedAudioCache[cacheKey] = rootUrl;
+          return rootUrl;
         }
       }
 
-      // Fuzzy search fallback
-      const cleanName = name.replace('$', '').replace('_loop', '').toLowerCase();
-      if (!audioMapKeys) audioMapKeys = Object.keys(audioMap);
+      const fallback = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(cleanAudioName)}.mp3`;
+      resolvedAudioCache[cacheKey] = fallback;
+      return fallback; 
+    }
+    case 'sound': {
+      const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
       
-      let fuzzyMatch = audioMapKeys.find(k => k.toLowerCase().startsWith(cleanName));
-      if (!fuzzyMatch) {
-        fuzzyMatch = audioMapKeys.find(k => k.toLowerCase().includes(cleanName));
+      // 1. Check static audio map first
+      if ((audioMap.sound as any)[cleanAudioName]) {
+        return (audioMap.sound as any)[cleanAudioName];
+      }
+
+      const prefixes = ['', 'd_gen_', 'd_avg_', 'd_amb_', 'd_sys_'];
+      
+      for (const prefix of prefixes) {
+        const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
+        const url = `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(testName)}.mp3`;
+        if (await checkImageExists(url)) return url;
       }
       
-      if (fuzzyMatch) {
-        console.log(`Fuzzy matched audio ${name} to ${fuzzyMatch}`);
-        return (audioMap as any)[fuzzyMatch];
-      }
-      
-      console.warn(`Could not find audio for ${type}: ${name}`);
-      return '';
+      return `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(cleanAudioName)}.mp3`;
+    }
+    case 'voice': {
+      const cleanAudioName = name.replace(/^\$/, '');
+      return `https://torappu.prts.wiki/assets/audio/voice/${encodeURIComponent(cleanAudioName)}.mp3`;
     }
     default:
       return '';
@@ -1008,16 +1182,19 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
 
   for (const line of lines) {
     if (line.assetName || (line.type === 'character' && line.assetName2)) {
-      if (['background', 'character', 'image', 'imagetween', 'animtext'].includes(line.type)) {
+      if (line.type === 'character') {
+        const names = [line.assetName, line.assetName2].filter(Boolean) as string[];
+        for (const name of names) {
+          resolutionPromises.push(getCharacterAssetInfo(name).then(info => {
+            if (info.bodyUrl) imageAssets.add(info.bodyUrl);
+            if (info.faceUrl) imageAssets.add(info.faceUrl);
+          }));
+        }
+      } else if (['background', 'image', 'imagetween', 'animtext'].includes(line.type)) {
         const type = (line.type === 'imagetween' || line.type === 'animtext') ? 'image' : line.type as any;
         if (line.assetName) {
           resolutionPromises.push(
             getImageUrl(type, line.assetName).then(url => { if (url) imageAssets.add(url); })
-          );
-        }
-        if (line.type === 'character' && line.assetName2) {
-          resolutionPromises.push(
-            getImageUrl('character', line.assetName2).then(url => { if (url) imageAssets.add(url); })
           );
         }
       } else if (['music', 'sound', 'voice'].includes(line.type)) {
@@ -1083,7 +1260,12 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
         }
       }
     } catch (err) {
-      console.warn(`Failed to preload/cache ${type}:`, url, err);
+      if (type === 'audio') {
+        // Audio preloading often fails due to CORS on assets/ folder, but html5:true bypasses this during playback.
+        console.info(`Audio preloading info: ${url} will be loaded on demand during playback.`);
+      } else {
+        console.warn(`Failed to preload/cache ${type}:`, url, err);
+      }
     } finally {
       updateProgress(url);
     }
