@@ -100,26 +100,6 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowUI(true); }}
         />
       )}
-
-      {/* Skip Speed Indicator */}
-      {isHoldingSkip && (
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-4 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10">
-          <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Skip Speed</div>
-          {[32, 16, 8, 4, 2].map((speed) => (
-            <div 
-              key={speed}
-              className={cn(
-                "w-8 h-8 flex items-center justify-center rounded-lg font-bold transition-all duration-200 text-[12px]",
-                skipSpeed === speed 
-                  ? "bg-white text-black scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" 
-                  : "text-white/40 border border-white/5"
-              )}
-            >
-              {speed}x
-            </div>
-          ))}
-        </div>
-      )}
     </>
   );
 };

@@ -49,26 +49,11 @@ export const useStoryControls = ({
     pointerDownTime.current = Date.now();
     
     holdStartY.current = e.clientY;
-    longPressTimer.current = setTimeout(() => {
-      setIsHoldingSkip(true);
-      setIsSkipping(true);
-      setIsAuto(false);
-      setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
-    }, LONG_PRESS_DELAY);
-  }, [currentDecision, showBackConfirm, showSettings, showLog, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
+  }, [currentDecision, showBackConfirm, showSettings, showLog]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!longPressTimer.current && !isHoldingSkip) return;
-    
-    const deltaY = holdStartY.current - e.clientY;
-    const absDeltaY = Math.abs(deltaY);
-    
-    if (absDeltaY > 150) setSkipSpeed(SKIP_SPEEDS.LEVEL_5);
-    else if (absDeltaY > 120) setSkipSpeed(SKIP_SPEEDS.LEVEL_4);
-    else if (absDeltaY > 90) setSkipSpeed(SKIP_SPEEDS.LEVEL_3);
-    else if (absDeltaY > 60) setSkipSpeed(SKIP_SPEEDS.LEVEL_2);
-    else setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
-  }, [isHoldingSkip, setSkipSpeed]);
+  const handlePointerMove = useCallback((_e: React.PointerEvent) => {
+    // Speed selection removed
+  }, []);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (longPressTimer.current) {
@@ -83,27 +68,43 @@ export const useStoryControls = ({
     
     const isSwipe = distance > SWIPE_THRESHOLD && duration < SWIPE_DURATION;
 
-    if (isHoldingSkip) {
-      setIsHoldingSkip(false);
-      setIsSkipping(false);
-      setSkipSpeed(SKIP_SPEEDS.LEVEL_1);
-    } else if (!showBackConfirm && !currentDecision && !showSettings && !showLog && showUI) {
+    if (!showBackConfirm && !currentDecision && !showSettings && !showLog && showUI) {
       if (e.pointerType !== 'mouse' || e.button === 0) {
         advance();
       }
     }
-  }, [isHoldingSkip, showBackConfirm, currentDecision, showSettings, showLog, showUI, isTypewriterFinished, advance, setIsHoldingSkip, setIsSkipping, setSkipSpeed, setShouldSkipTypewriter]);
+  }, [showBackConfirm, currentDecision, showSettings, showLog, showUI, advance]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showBackConfirm || currentDecision || showSettings || showLog) return;
+      
       if (e.code === 'Space' || e.code === 'Enter') {
         advance();
       }
+
+      if (e.code === 'ControlLeft') {
+        setIsHoldingSkip(true);
+        setIsSkipping(true);
+        setIsAuto(false);
+        setSkipSpeed(SKIP_SPEEDS.LEVEL_5); // Fixed high speed for Ctrl skip
+      }
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ControlLeft') {
+        setIsHoldingSkip(false);
+        setIsSkipping(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [advance, showBackConfirm, currentDecision, showSettings, showLog]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [advance, showBackConfirm, currentDecision, showSettings, showLog, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
 
   return {
     handlePointerDown,
