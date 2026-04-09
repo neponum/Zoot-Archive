@@ -128,6 +128,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   });
 
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem('ak-user-api-key') || '');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('ak-selected-model') || 'gemini-3-flash-preview');
   const [showExportModal, setShowExportModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -277,6 +278,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   useEffect(() => {
     localStorage.setItem('ak-user-api-key', userApiKey);
   }, [userApiKey]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-selected-model', selectedModel);
+  }, [selectedModel]);
 
   const handleAddProfile = (name: string) => {
     if (name && name.trim() && !profiles.includes(name.trim())) {
@@ -598,7 +603,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       };
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: selectedModel,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -696,7 +701,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const toLabel = LANGUAGES.find(l => l.id === targetLang)?.label || targetLang;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: selectedModel,
         config: {
           systemInstruction: `You are a professional game translator specializing in Arknights. 
           Translate the following ${type} title from ${fromLabel} to ${toLabel}. 
@@ -756,8 +761,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const handleGeminiTranslateAll = async () => {
     if (!selectedChapter || isTranslatingAll) return;
     
-    const emptyBlocks = blocks.filter(b => b.type === 'dialogue' && !b.translatedText.trim());
-    if (emptyBlocks.length === 0) return;
+    const dialogueBlocks = blocks.filter(b => b.type === 'dialogue');
+    if (dialogueBlocks.length === 0) return;
 
     const apiKey = userApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -770,8 +775,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     // Batch size for context and efficiency
     const BATCH_SIZE = 5;
     const batches: TranslationBlock[][] = [];
-    for (let i = 0; i < emptyBlocks.length; i += BATCH_SIZE) {
-      batches.push(emptyBlocks.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < dialogueBlocks.length; i += BATCH_SIZE) {
+      batches.push(dialogueBlocks.slice(i, i + BATCH_SIZE));
     }
 
     try {
@@ -1053,23 +1058,17 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     try {
       const safeTranslatorName = activeProfile.replace(/[^a-z0-9а-яё]/gi, '_');
-      const safeChapterName = (selectedChapter.name || selectedChapter.code || 'chapter').replace(/[^a-z0-9а-яё]/gi, '_');
+      // Use original filename from storyTxt
+      const originalFileName = selectedChapter.storyTxt.split('/').pop()?.replace(/\.txt$/, '') || 'chapter';
+      const baseFileName = `${originalFileName}_${safeTranslatorName}`;
       
-      const baseFileName = `${safeChapterName}_${safeTranslatorName}`;
-      
-      // 1. Prepare TXT file
-      const exportText = generateExportText();
-      const txtBlob = new Blob([exportText], { type: 'text/plain' });
-      const txtFile = new File([txtBlob], `${baseFileName}.txt`);
-
-      // 2. Prepare CSV file
+      // Prepare CSV file
       const csvData = generateCSVData();
-      let csvFile: File | null = null;
-      if (csvData) {
-        const csvString = Papa.unparse(csvData);
-        const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        csvFile = new File([csvBlob], `${baseFileName}.csv`);
-      }
+      if (!csvData) throw new Error("No data to submit");
+
+      const csvString = Papa.unparse(csvData);
+      const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const csvFile = new File([csvBlob], `${baseFileName}.csv`);
 
       // Prepare form data for Discord
       const formData = new FormData();
@@ -1079,10 +1078,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       };
       
       formData.append('payload_json', JSON.stringify(payload));
-      formData.append('file0', txtFile);
-      if (csvFile) {
-        formData.append('file1', csvFile);
-      }
+      formData.append('file0', csvFile);
 
       const response = await fetch(SUBMISSION_WEBHOOK_URL, {
         method: 'POST',
@@ -1263,6 +1259,26 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                   className="bg-transparent text-xs text-white outline-none flex-1 placeholder:text-white/20"
                 />
               </div>
+              
+              {userApiKey && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <h3 className="text-[9px] font-bold uppercase tracking-wider text-white/30">Model Selection</h3>
+                  <div className="flex items-center gap-2 bg-white/5 px-2 py-1.5 border border-white/10 rounded-sm relative">
+                    <Sparkles className="w-3.5 h-3.5 text-white/40" />
+                    <select 
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="bg-transparent text-xs text-white outline-none flex-1 cursor-pointer appearance-none pr-6"
+                    >
+                      <option value="gemini-3-flash-preview" className="bg-[#111] text-white">Gemini 3 Flash (Fast)</option>
+                      <option value="gemini-3.1-pro-preview" className="bg-[#111] text-white">Gemini 3.1 Pro (Best)</option>
+                      <option value="gemini-3.1-flash-lite-preview" className="bg-[#111] text-white">Gemini 3.1 Flash Lite</option>
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-white/40 absolute right-2 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+              
               <p className="text-[8px] text-white/30 leading-tight">
                 Your key is stored locally in your browser and never sent to our server. Get one at <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google AI Studio</a>.
               </p>
