@@ -1,3 +1,4 @@
+import Papa from 'papaparse';
 import { StoryChapter, StoryLine, StoryEpisode, Language } from '../types';
 import { CacheService } from './cacheService';
 import audioMap from '../data/audioMap.json';
@@ -733,30 +734,94 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     // For unofficial languages, we load from the zoot-data repository
     const isOfficial = ['zh_CN', 'zh_TW', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
     
-    let url;
     if (isOfficial) {
       const baseUrl = getBaseUrl(lang);
-      url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
+      const url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
+      
+      // Check cache first
+      const cached = await CacheService.getCachedText(url);
+      if (cached) return cached;
+      
+      const response = await fetchWithTimeout(url);
+      if (!response.ok) throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
+      
+      const text = await response.text();
+      const lowerText = text.trim().toLowerCase();
+      if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
+        throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Invalid content or Not Found)`);
+      }
+      
+      // Cache for next time
+      await CacheService.cacheText(url, text);
+      return text;
     } else {
-      url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.txt`;
+      // Unofficial language: fetch original (zh_CN) and apply CSV
+      const originalScript = await fetchScript('zh_CN');
+      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.csv`;
+      
+      let csvText = await CacheService.getCachedText(csvUrl);
+      
+      if (!csvText) {
+        const response = await fetchWithTimeout(csvUrl);
+        if (!response.ok) {
+          // If CSV doesn't exist, just return the original script
+          console.warn(`No CSV translation found for ${lang} at ${csvUrl}`);
+          return originalScript;
+        }
+        csvText = await response.text();
+        await CacheService.cacheText(csvUrl, csvText);
+      }
+      
+      // Parse CSV and apply to originalScript
+      const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+      const translations = parsed.data as any[];
+      
+      // Apply translations to originalScript lines
+      const lines = originalScript.split(/\r?\n/);
+      let dialogueIndex = 0;
+      
+      const translatedLines = lines.map((line) => {
+        const trimmed = line.trim();
+        if (trimmed === '' || trimmed.startsWith('//') || trimmed.toUpperCase().startsWith('[HEADER')) {
+          return line;
+        }
+        
+        const match = line.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
+        if (match) {
+          const prefix = match[1];
+          const textToTranslate = match[2];
+          
+          if (textToTranslate.trim() === '') {
+            return line;
+          }
+          
+          const id = `line-${dialogueIndex}`;
+          dialogueIndex++;
+          
+          // Find translation for this line
+          const translationRow = translations.find(row => row['ID'] === id);
+          if (translationRow && translationRow['Translation']) {
+            let finalPrefix = prefix;
+            
+            // Handle character name translation
+            let characterName = undefined;
+            const nameMatch = prefix.match(/name="([^"]+)"/);
+            if (nameMatch) {
+              characterName = nameMatch[1];
+              const charTranslationRow = translations.find(row => row['Original Text'] === characterName && row['ID']?.startsWith('char-'));
+              if (charTranslationRow && charTranslationRow['Translation']) {
+                finalPrefix = finalPrefix.replace(`name="${characterName}"`, `name="${charTranslationRow['Translation']}"`);
+              }
+            }
+            
+            return `${finalPrefix}${translationRow['Translation']}`;
+          }
+        }
+        return line;
+      });
+      
+      return translatedLines.join('\n');
     }
-    
-    // Check cache first
-    const cached = await CacheService.getCachedText(url);
-    if (cached) return cached;
-    
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
-    
-    const text = await response.text();
-    const lowerText = text.trim().toLowerCase();
-    if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
-      throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Invalid content or Not Found)`);
-    }
-    
-    // Cache for next time
-    await CacheService.cacheText(url, text);
-    return text;
   };
 
   try {

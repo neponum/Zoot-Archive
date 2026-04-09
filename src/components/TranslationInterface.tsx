@@ -3,7 +3,7 @@ import { ArrowLeft, Download, Copy, Check, Globe, FileText, ChevronDown, AlertCi
 import { StoryEpisode, Language, StoryChapter } from '../types';
 import { fetchChapterList, fetchStoryScript } from '../services/storyService';
 import { GoogleGenAI, Type } from "@google/genai";
-import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
 interface TranslationInterfaceProps {
   onClose: () => void;
@@ -906,7 +906,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const generateExcelWorkbook = () => {
+  const generateCSVData = () => {
     if (!selectedChapter || !selectedEpisode) return null;
 
     // 0. Metadata rows
@@ -929,6 +929,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       return {
         'ID': `char-${index + 1}`,
         'Character': name,
+        'Original Text': name,
         'Translation': firstBlock?.translatedCharacterName || ''
       };
     });
@@ -944,114 +945,103 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       }));
 
     // 3. Combine with a blank row
-    const data = [
+    return [
       ...metadataRows,
       ...characterRows,
       { 'ID': '', 'Character': '', 'Original Text': '', 'Translation': '' }, // Blank row
       ...dialogueRows
     ];
+  };
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Translations");
+  const handleExportCSV = () => {
+    const data = generateCSVData();
+    if (!data || !selectedChapter) return;
+
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     
-    // Set column widths
-    const wscols = [
-      { wch: 15 }, // ID
-      { wch: 20 }, // Character
-      { wch: 60 }, // Original Text
-      { wch: 60 }, // Translation
-    ];
-    worksheet['!cols'] = wscols;
-
-    return workbook;
-  };
-
-  const handleExportExcel = () => {
-    const workbook = generateExcelWorkbook();
-    if (!workbook || !selectedChapter) return;
-
     const baseName = selectedChapter.storyTxt.split('/').pop()?.replace(/\.txt$/, '') || 'translation';
-    const fileName = `${baseName}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    const fileName = `${baseName}.csv`;
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
-  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedChapter) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        try {
+          const jsonData = results.data as any[];
 
-        const newTranslations = { ...allTranslations };
-        const chapterKey = selectedChapter.storyTxt;
-        if (!newTranslations[chapterKey]) newTranslations[chapterKey] = {};
+          const newTranslations = { ...allTranslations };
+          const chapterKey = selectedChapter.storyTxt;
+          if (!newTranslations[chapterKey]) newTranslations[chapterKey] = {};
 
-        // We'll update blocks state in one go at the end
-        const updatedBlocks = [...blocks];
+          const updatedBlocks = [...blocks];
 
-        jsonData.forEach(row => {
-          const id = row['ID']?.toString();
-          const translation = row['Translation']?.toString() || '';
-          const original = row['Original Text']?.toString() || '';
+          jsonData.forEach(row => {
+            const id = row['ID']?.toString();
+            const translation = row['Translation']?.toString() || '';
 
-          if (!id) return;
+            if (!id) return;
 
-          if (id === 'meta-episode-name') {
-            newTranslations[chapterKey]['__episode_name__'] = { ...(newTranslations[chapterKey]['__episode_name__'] || {}), text: translation };
-            setEpisodeNameTranslation(translation);
-            return;
-          }
-          if (id === 'meta-chapter-name') {
-            newTranslations[chapterKey]['__chapter_name__'] = { ...(newTranslations[chapterKey]['__chapter_name__'] || {}), text: translation };
-            setChapterNameTranslation(translation);
-            return;
-          }
-
-          if (id.startsWith('char-')) {
-            // Character name translation
-            const charName = row['Character']?.toString() || '';
-            if (charName && translation) {
-              // Update all blocks with this original character name
-              updatedBlocks.forEach((b, idx) => {
-                if (b.characterName === charName) {
-                  b.translatedCharacterName = translation;
-                  
-                  // Update persistent state
-                  const current = newTranslations[chapterKey][idx] || {};
-                  newTranslations[chapterKey][idx] = { ...current, name: translation };
-                }
-              });
+            if (id === 'meta-episode-name') {
+              newTranslations[chapterKey]['__episode_name__'] = { ...(newTranslations[chapterKey]['__episode_name__'] || {}), text: translation };
+              setEpisodeNameTranslation(translation);
+              return;
             }
-          } else if (id.startsWith('line-')) {
-            // Dialogue translation
-            const index = updatedBlocks.findIndex(b => b.id === id);
-            if (index !== -1) {
-              updatedBlocks[index].translatedText = translation;
-              
-              // Update persistent state
-              const current = newTranslations[chapterKey][index] || {};
-              newTranslations[chapterKey][index] = { ...current, text: translation };
+            if (id === 'meta-chapter-name') {
+              newTranslations[chapterKey]['__chapter_name__'] = { ...(newTranslations[chapterKey]['__chapter_name__'] || {}), text: translation };
+              setChapterNameTranslation(translation);
+              return;
             }
-          }
-        });
 
-        setBlocks(updatedBlocks);
-        setAllTranslations(newTranslations);
-        alert('Excel imported successfully!');
-      } catch (error) {
-        console.error('Excel import error:', error);
-        alert('Failed to import Excel. Please check the file format.');
+            if (id.startsWith('char-')) {
+              const charName = row['Character']?.toString() || '';
+              if (charName && translation) {
+                updatedBlocks.forEach((b, idx) => {
+                  if (b.characterName === charName) {
+                    b.translatedCharacterName = translation;
+                    const current = newTranslations[chapterKey][idx] || {};
+                    newTranslations[chapterKey][idx] = { ...current, name: translation };
+                  }
+                });
+              }
+            } else if (id.startsWith('line-')) {
+              const index = updatedBlocks.findIndex(b => b.id === id);
+              if (index !== -1) {
+                updatedBlocks[index].translatedText = translation;
+                const current = newTranslations[chapterKey][index] || {};
+                newTranslations[chapterKey][index] = { ...current, text: translation };
+              }
+            }
+          });
+
+          setBlocks(updatedBlocks);
+          setAllTranslations(newTranslations);
+          alert('CSV imported successfully!');
+        } catch (error) {
+          console.error('CSV import error:', error);
+          alert('Failed to import CSV. Please check the file format.');
+        }
+      },
+      error: (error) => {
+        console.error('CSV parsing error:', error);
+        alert('Failed to parse CSV file.');
       }
-    };
-    reader.readAsArrayBuffer(file);
-    // Reset input
+    });
+
     e.target.value = '';
   };
 
@@ -1072,13 +1062,13 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const txtBlob = new Blob([exportText], { type: 'text/plain' });
       const txtFile = new File([txtBlob], `${baseFileName}.txt`);
 
-      // 2. Prepare Excel file
-      const workbook = generateExcelWorkbook();
-      let excelFile: File | null = null;
-      if (workbook) {
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        excelFile = new File([excelBlob], `${baseFileName}.xlsx`);
+      // 2. Prepare CSV file
+      const csvData = generateCSVData();
+      let csvFile: File | null = null;
+      if (csvData) {
+        const csvString = Papa.unparse(csvData);
+        const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        csvFile = new File([csvBlob], `${baseFileName}.csv`);
       }
 
       // Prepare form data for Discord
@@ -1090,8 +1080,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       
       formData.append('payload_json', JSON.stringify(payload));
       formData.append('file0', txtFile);
-      if (excelFile) {
-        formData.append('file1', excelFile);
+      if (csvFile) {
+        formData.append('file1', csvFile);
       }
 
       const response = await fetch(SUBMISSION_WEBHOOK_URL, {
@@ -1111,25 +1101,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       setIsSubmitting(false);
     }
   };
-  const handleExport = () => {
-    if (!selectedChapter) return;
-    const text = generateExportText();
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    
-    const safeTranslatorName = activeProfile.replace(/[^a-z0-9а-яё]/gi, '_');
-    const safeChapterName = (selectedChapter.name || selectedChapter.code || 'chapter').replace(/[^a-z0-9а-яё]/gi, '_');
-    const filename = `${safeChapterName}_${safeTranslatorName}.txt`;
-    
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const chaptersList = useMemo(() => {
     if (!selectedEpisode) return [];
     return selectedEpisode.chapters;
@@ -1298,10 +1269,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
             </div>
 
             <div className="flex flex-col gap-2">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-white/40">Excel Tools</h2>
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-white/40">CSV Tools</h2>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={handleExportExcel}
+                  onClick={handleExportCSV}
                   disabled={!selectedChapter || blocks.length === 0}
                   className="flex items-center justify-center gap-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
                 >
@@ -1311,15 +1282,15 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                   <Plus className="w-3 h-3" /> Import
                   <input 
                     type="file" 
-                    accept=".xlsx, .xls" 
+                    accept=".csv" 
                     className="hidden" 
-                    onChange={handleImportExcel}
+                    onChange={handleImportCSV}
                     disabled={!selectedChapter}
                   />
                 </label>
               </div>
               <p className="text-[8px] text-white/30 leading-tight">
-                Export to Excel for offline translation, then import back.
+                Export to CSV for offline translation, then import back.
               </p>
             </div>
 
@@ -1418,19 +1389,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   
-                  <div className="flex items-center gap-2 bg-white/5 px-2 py-1 border border-white/10 rounded-sm shrink-0">
-                    <span className="text-[9px] font-bold text-white/40 uppercase">Translator</span>
-                    <input 
-                      type="text" 
-                      placeholder="Enter Your Name" 
-                      value={activeProfile}
-                      onChange={(e) => handleRenameProfile(e.target.value)}
-                      className="bg-transparent text-[10px] text-white outline-none w-24 md:w-32 placeholder:text-white/20"
-                    />
-                  </div>
-
-                  <div className="h-4 w-px bg-white/10 mx-1 hidden md:block" />
-
                   <span className="text-[10px] md:text-xs font-bold text-white/70 truncate">{selectedChapter.name || selectedChapter.code}</span>
                   
                   {/* Progress Bar (Desktop) */}
@@ -1466,9 +1424,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                   </button>
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 px-2 md:px-3 py-1 md:py-1.5 bg-[#4ade80]/20 text-[#4ade80] hover:bg-[#4ade80]/30 rounded-sm transition-colors text-[9px] md:text-[10px] font-bold uppercase tracking-wider shrink-0"
+                    className="flex items-center gap-1.5 px-2 md:px-3 py-1 md:py-1.5 bg-[#5865F2]/20 text-[#5865F2] hover:bg-[#5865F2]/30 rounded-sm transition-colors text-[9px] md:text-[10px] font-bold uppercase tracking-wider shrink-0"
                   >
-                    <Download className="w-3 h-3 md:w-3.5 md:h-3.5" /> Export
+                    <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5" /> Submit
                   </button>
                 </div>
               </div>
@@ -1493,7 +1451,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                   <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
                     <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                       <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                        <Download className="w-4 h-4 text-[#4ade80]" /> Export Translation
+                        <MessageSquare className="w-4 h-4 text-[#5865F2]" /> Submit Translation
                       </h3>
                       <button onClick={() => setShowExportModal(false)} className="text-white/40 hover:text-white transition-colors">
                         <X className="w-4 h-4" />
@@ -1584,21 +1542,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                           </p>
                         )}
                       </div>
-
-                      <div className="pt-2 border-t border-white/5 mt-2">
-                        <button 
-                          onClick={() => {
-                            handleExport();
-                            setShowExportModal(false);
-                          }}
-                          className="w-full flex items-center justify-center gap-2 py-3 bg-[#4ade80] hover:bg-[#22c55e] text-black text-xs font-black rounded-sm transition-colors uppercase tracking-widest"
-                        >
-                          <Download className="w-4 h-4" /> Download Script Now
-                        </button>
-                        <p className="text-[9px] text-center text-white/30 mt-3 uppercase tracking-tighter">
-                          Файл будет экспортирован в формате скрипта Arknights (.txt)
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1683,80 +1626,65 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                     </div>
                   )}
 
-                  {blocks.map((block) => {
-                    if (block.type === 'command') {
-                      if (block.originalText.toUpperCase().includes('[HEADER')) {
-                        return null;
-                      }
-                      return (
-                        <div key={block.id} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm opacity-50 select-none">
-                          <AlertCircle className="w-3 h-3 text-white/40" />
-                          <span className="text-[10px] font-mono text-white/60 truncate">{block.originalText}</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (block.type === 'comment' || block.type === 'empty') {
-                      return null; // Hide comments and empty lines to reduce clutter
-                    }
+                  <div className="max-w-6xl mx-auto bg-[#111] border border-white/10 rounded-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10 bg-white/5">
+                          <th className="p-3 font-bold uppercase tracking-widest text-white/40 w-16">ID</th>
+                          <th className="p-3 font-bold uppercase tracking-widest text-white/40 w-40">Character</th>
+                          <th className="p-3 font-bold uppercase tracking-widest text-white/40 w-1/3">Original Text</th>
+                          <th className="p-3 font-bold uppercase tracking-widest text-white/40 w-1/3">Translation</th>
+                          <th className="p-3 w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {blocks.map((block) => {
+                          if (block.type !== 'dialogue') return null;
 
-                    return (
-                      <div key={block.id} className="flex flex-col bg-[#111] border border-white/10 rounded-sm overflow-hidden focus-within:border-white/30 focus-within:ring-1 focus-within:ring-white/30 transition-all">
-                        {/* Source Text */}
-                        <div className="p-3 bg-white/5 border-b border-white/10 flex flex-col gap-1">
-                          {block.prefix && (
-                            <span className="text-[10px] font-mono text-white/40 select-none">{block.prefix}</span>
-                          )}
-                          <p className="text-sm text-white/80 leading-relaxed">{block.textToTranslate}</p>
-                        </div>
-                        
-                        {/* Target Text Input */}
-                        <div className="p-3 flex flex-col gap-3 bg-black/20">
-                          {block.characterName && (
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-[#4ade80]/60 flex items-center gap-1.5">
-                                <User className="w-2.5 h-2.5" /> Character Name Translation
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-white/20 select-none">{block.characterName} →</span>
-                                <input
-                                  type="text"
-                                  value={block.translatedCharacterName || ''}
-                                  onChange={(e) => handleCharacterNameChange(block.id, e.target.value)}
-                                  className="bg-white/5 border border-white/10 rounded-sm px-2 py-1 text-xs font-medium text-[#4ade80] outline-none focus:border-[#4ade80]/50 flex-1 placeholder:text-white/10"
-                                  placeholder="Enter translated name..."
+                          return (
+                            <tr key={block.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                              <td className="p-3 font-mono text-[10px] text-white/30 align-top">{block.id}</td>
+                              <td className="p-3 align-top">
+                                {block.characterName && (
+                                  <div className="flex flex-col gap-1.5">
+                                    <span className="text-white/50 font-medium">{block.characterName}</span>
+                                    <input
+                                      type="text"
+                                      value={block.translatedCharacterName || ''}
+                                      onChange={(e) => handleCharacterNameChange(block.id, e.target.value)}
+                                      className="bg-black/50 border border-white/10 rounded-sm px-2 py-1 text-[10px] font-medium text-[#4ade80] outline-none focus:border-[#4ade80]/50 w-full placeholder:text-white/20 transition-colors"
+                                      placeholder="Translate name..."
+                                    />
+                                  </div>
+                                )}
+                              </td>
+                              <td className="p-3 text-white/80 whitespace-pre-wrap leading-relaxed align-top">
+                                {block.textToTranslate}
+                              </td>
+                              <td className="p-3 align-top">
+                                <textarea
+                                  value={block.translatedText}
+                                  onChange={(e) => handleTranslationChange(block.id, e.target.value)}
+                                  className="w-full bg-black/50 border border-white/10 rounded-sm px-2 py-1.5 text-white outline-none focus:border-white/30 resize-y min-h-[60px] transition-colors placeholder:text-white/20"
+                                  placeholder="Translate text..."
                                 />
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 flex items-center gap-1.5">
-                              <MessageSquare className="w-2.5 h-2.5" /> Dialogue Translation
-                            </label>
-                            <textarea
-                              value={block.translatedText}
-                              onChange={(e) => handleTranslationChange(block.id, e.target.value)}
-                              placeholder="Enter dialogue translation..."
-                              className="w-full bg-transparent resize-none outline-none text-sm text-white leading-relaxed placeholder:text-white/20 min-h-[40px]"
-                              rows={Math.max(1, block.translatedText.split('\n').length, block.textToTranslate.split('\n').length)}
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => handleGeminiTranslateBlock(block.id)}
-                              disabled={translatingBlockIds.has(block.id)}
-                              className="flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 rounded-sm transition-colors text-[9px] font-bold uppercase tracking-wider"
-                              title="Translate with Gemini"
-                            >
-                              {translatingBlockIds.has(block.id) ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
-                              Gemini
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                              </td>
+                              <td className="p-3 align-top text-center">
+                                <button
+                                  onClick={() => handleGeminiTranslateBlock(block.id)}
+                                  disabled={translatingBlockIds.has(block.id)}
+                                  className="p-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                  title="Translate with Gemini"
+                                >
+                                  {translatingBlockIds.has(block.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
