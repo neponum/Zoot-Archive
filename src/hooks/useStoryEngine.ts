@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { StoryLine } from '../types';
 import { getImageUrl, getCharacterAssetInfo } from '../services/storyService';
-import { AudioManager } from '../utils/audioManager';
+import { audioManager } from '../services/audioManager';
 
 export function useStoryEngine(lines: StoryLine[], onBack: () => void) {
   const [currentIndex, _setCurrentIndex] = useState(0);
@@ -50,7 +50,7 @@ export function useStoryEngine(lines: StoryLine[], onBack: () => void) {
   const [activeAnimText, setActiveAnimText] = useState<StoryLine | null>(null);
   const [currentSubtitle, setCurrentSubtitle] = useState<StoryLine | null>(null);
 
-  const audioManager = useRef(AudioManager.getInstance()).current;
+  // audioManager is now imported directly as a singleton
 
   useEffect(() => {
     return () => {
