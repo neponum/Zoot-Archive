@@ -65,7 +65,7 @@ const CHRONO_ORDER: Record<string, number> = {
   'main_15': 500, 'main_16': 501,
 };
 
-const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/banners';
+const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
 
 export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation }) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);

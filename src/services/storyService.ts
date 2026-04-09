@@ -690,7 +690,7 @@ export async function checkScriptExists(storyPath: string, lang: Language): Prom
     return scriptExistenceCache[cacheKey];
   }
   
-  const url = `/translations/${lang}/${storyPath}.txt`;
+  const url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.txt`;
   
   try {
     // Use HEAD to save bandwidth, fallback to GET if needed
@@ -730,7 +730,7 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
   const targetLang = langOverride || currentLanguage;
   
   const fetchScript = async (lang: Language) => {
-    // For unofficial languages, we load from local public/translations folder
+    // For unofficial languages, we load from the zoot-data repository
     const isOfficial = ['zh_CN', 'zh_TW', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
     
     let url;
@@ -738,7 +738,7 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const baseUrl = getBaseUrl(lang);
       url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
     } else {
-      url = `https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/translations/${lang}/${storyPath}.txt`;
+      url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.txt`;
     }
     
     // Check cache first
