@@ -70,6 +70,21 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
       if (nameMatch) {
         characterName = nameMatch[1];
       }
+
+      // Check for decision options
+      const optionsMatch = prefix.match(/options="([^"]+)"/);
+      if (optionsMatch && textToTranslate.trim() === '') {
+        const options = optionsMatch[1];
+        return { 
+          id, 
+          type: 'dialogue', // Treat as dialogue so it appears in the list
+          originalText: line, 
+          prefix, 
+          textToTranslate: options,
+          translatedText: '',
+          characterName: 'Decision Options'
+        };
+      }
       
       if (textToTranslate.trim() === '') {
         return { id, type: 'command', originalText: line, prefix, textToTranslate: '', translatedText: '' };

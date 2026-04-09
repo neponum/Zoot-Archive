@@ -47,6 +47,7 @@ export interface StoryState {
   showBackConfirm: boolean;
   showSettings: boolean;
   showLog: boolean;
+  predicateMismatch: boolean;
   history: { speaker: string | null; text: string }[];
   settings: {
     fontSize: number;
@@ -82,6 +83,7 @@ export type StoryAction =
   | { type: 'SET_SHOW_BACK_CONFIRM'; payload: boolean }
   | { type: 'SET_SHOW_SETTINGS'; payload: boolean }
   | { type: 'SET_SHOW_LOG'; payload: boolean }
+  | { type: 'SET_PREDICATE_MISMATCH'; payload: boolean }
   | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string } }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> };
 
@@ -116,6 +118,7 @@ export const initialState: StoryState = {
   showBackConfirm: false,
   showSettings: false,
   showLog: false,
+  predicateMismatch: false,
   history: [],
   settings: {
     fontSize: 100, // Percentage
@@ -267,6 +270,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, showSettings: action.payload };
     case 'SET_SHOW_LOG':
       return { ...state, showLog: action.payload };
+    case 'SET_PREDICATE_MISMATCH':
+      return { ...state, predicateMismatch: action.payload };
     case 'ADD_TO_HISTORY':
       return { ...state, history: [...state.history, action.payload] };
     case 'UPDATE_SETTINGS':

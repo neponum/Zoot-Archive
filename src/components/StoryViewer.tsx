@@ -56,6 +56,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     showBackConfirm,
     showSettings,
     showLog,
+    predicateMismatch,
     history,
     settings
   } = state;
@@ -84,7 +85,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     
     try {
       let index = startIndex;
-      let localPredicateMismatch = false;
+      let localPredicateMismatch = predicateMismatch;
       
       while (index < lines.length) {
         const line = lines[index];
@@ -95,6 +96,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           } else {
             localPredicateMismatch = false;
           }
+          dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: localPredicateMismatch });
           index++;
           continue;
         }
@@ -374,7 +376,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     } finally {
       isProcessing.current = false;
     }
-  }, [lines, characterSlots]);
+  }, [lines, characterSlots, predicateMismatch]);
 
   const advance = useCallback(() => {
     if (currentDecision) return;
@@ -448,6 +450,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     const loadStory = async () => {
       try {
         setLoading(true);
+        selectedChoicesRef.current.clear();
+        dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
         const script = customScript || await fetchStoryScript(storyTxt);
         setScriptContent(script);
         const parsed = parseStoryScript(script);

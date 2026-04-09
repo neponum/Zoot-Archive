@@ -374,14 +374,14 @@ class StoryParser {
       case 'decision':
         return {
           type: 'decision',
-          options: params.options ? params.options.split(';') : [],
-          values: params.values ? params.values.split(';') : [],
+          options: params.options ? params.options.split(';').map(s => s.trim()) : [],
+          values: params.values ? params.values.split(';').map(s => s.trim()) : [],
           originalTag: original
         };
       case 'predicate':
         return {
           type: 'predicate',
-          references: params.references ? params.references.split(';') : [],
+          references: params.references ? params.references.split(';').map(s => s.trim()) : [],
           originalTag: original
         };
       case 'subtitle':
@@ -813,6 +813,23 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
                 finalPrefix = finalPrefix.replace(`name="${characterName}"`, `name="${charTranslationRow['Translation']}"`);
               }
             }
+
+            // Handle decision options translation
+            const optionsMatch = prefix.match(/options="([^"]+)"/);
+            if (optionsMatch) {
+              const options = optionsMatch[1];
+              if (textToTranslate.trim() === '') {
+                // If there's no dialogue text, the translation row itself is for the options
+                finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${translationRow['Translation']}"`);
+                return finalPrefix;
+              } else {
+                // If there is dialogue text, we need to find a separate translation for options if it exists
+                const optionsTranslationRow = translations.find(row => row['Original Text'] === options && row['ID']?.startsWith('line-'));
+                if (optionsTranslationRow && optionsTranslationRow['Translation']) {
+                  finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${optionsTranslationRow['Translation']}"`);
+                }
+              }
+            }
             
             return `${finalPrefix}${translationRow['Translation']}`;
           }
@@ -888,29 +905,19 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
   }
 }
 
-function getProxiedUrl(url: string): string {
-  if (typeof window === 'undefined') return url;
-  // Only proxy if it's a known non-CORS domain
-  if (url.includes('torappu.prts.wiki') || url.includes('prts.wiki')) {
-    return `/api/proxy?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-}
-
 /**
  * Checks if an image exists at the given URL
  */
 export async function checkImageExists(url: string): Promise<boolean> {
   try {
-    const proxiedUrl = getProxiedUrl(url);
     // Try HEAD first as it's faster
-    const response = await fetchWithTimeout(proxiedUrl, { method: 'HEAD' }, 2000);
+    const response = await fetchWithTimeout(url, { method: 'HEAD' }, 2000);
     if (response.ok) return true;
     
     // If HEAD failed with 405 (Method Not Allowed) or 403 (Forbidden), try a quick GET
     // Some servers block HEAD requests
     if (response.status === 405 || response.status === 403) {
-      const getResponse = await fetchWithTimeout(proxiedUrl, { method: 'GET' }, 2000);
+      const getResponse = await fetchWithTimeout(url, { method: 'GET' }, 2000);
       return getResponse.ok;
     }
     return false;
@@ -980,7 +987,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       if (faceItem.group === -1 && faceItem.image) {
         const imagePath = faceItem.image.split('/').map(encodeURIComponent).join('/');
         return {
-          bodyUrl: getProxiedUrl(`https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`),
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
           size: data.size
         };
       }
@@ -989,8 +996,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
         const facePath = faceItem.face.split('/').map(encodeURIComponent).join('/');
         return {
-          bodyUrl: getProxiedUrl(`https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`),
-          faceUrl: getProxiedUrl(`https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`),
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
+          faceUrl: `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`,
           faceRect: group.faceRect,
           size: data.size
         };
@@ -1003,7 +1010,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       const group = data.groups[0];
       const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
       return {
-        bodyUrl: getProxiedUrl(`https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`),
+        bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
         size: data.size
       };
     } else if (data.array && data.array.length > 0) {
@@ -1011,7 +1018,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       if (firstItem.image) {
         const imagePath = firstItem.image.split('/').map(encodeURIComponent).join('/');
         return {
-          bodyUrl: getProxiedUrl(`https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`),
+          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
           size: data.size
         };
       }
@@ -1102,14 +1109,11 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
   const cacheKey = `${type}:${name}`;
   if (resolvedAudioCache[cacheKey]) return resolvedAudioCache[cacheKey];
 
-  let rawUrl = '';
   switch (type) {
     case 'background':
-      rawUrl = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(name)}.png`;
-      break;
+      return `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(name)}.png`;
     case 'image':
-      rawUrl = `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(name)}.png`;
-      break;
+      return `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(name)}.png`;
     case 'character': {
       // Fallback for character if not using body/face split
       const parts = name.split('/');
@@ -1119,11 +1123,10 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       if (parts.length === 1) {
         const baseNameMatch = name.match(/^([^#$]+)/);
         const baseName = baseNameMatch ? baseNameMatch[1] : name;
-        rawUrl = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name)}.png`;
-      } else {
-        rawUrl = `https://torappu.prts.wiki/assets/avg/characters/${encodedPath}.png`;
+        return `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name)}.png`;
       }
-      break;
+      
+      return `https://torappu.prts.wiki/assets/avg/characters/${encodedPath}.png`;
     }
     case 'character_body': {
       const parts = name.split('/');
@@ -1140,48 +1143,31 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       }
       
       // If name already has suffix or path, use it
-      if (name.includes('$') || parts.length > 1) {
-        rawUrl = urlBase;
-        break;
-      }
+      if (name.includes('$') || parts.length > 1) return urlBase;
       
       // Try without $1 first
-      if (await checkImageExists(urlBase)) {
-        rawUrl = urlBase;
-        break;
-      }
+      if (await checkImageExists(urlBase)) return urlBase;
       
       // Try with $1 suffix
       const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name + '$1')}.png`;
-      if (await checkImageExists(urlWithDollar)) {
-        rawUrl = urlWithDollar;
-        break;
-      }
+      if (await checkImageExists(urlWithDollar)) return urlWithDollar;
       
       // Default to no-dollar if neither check passed or both failed
-      rawUrl = urlBase;
-      break;
+      return urlBase;
     }
     case 'character_face': {
       const [baseName, expression] = name.split('/');
       
       // 1. Try exact match (e.g., "1.png")
       const urlBase = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
-      if (await checkImageExists(urlBase)) {
-        rawUrl = urlBase;
-        break;
-      }
+      if (await checkImageExists(urlBase)) return urlBase;
       
       // 2. Try with $1 suffix (e.g., "1$1.png")
       const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression + '$1')}.png`;
-      if (await checkImageExists(urlWithDollar)) {
-        rawUrl = urlWithDollar;
-        break;
-      }
+      if (await checkImageExists(urlWithDollar)) return urlWithDollar;
       
       // 3. Fallback to $1 suffix if neither exists
-      rawUrl = urlWithDollar;
-      break;
+      return urlWithDollar;
     }
     case 'music': {
       const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
@@ -1221,9 +1207,8 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
           if (await checkImageExists(url)) {
             console.log(`Music resolved (${folder}${prefix ? ' with ' + prefix : ''}): ${url}`);
             lastSuccessfulMusicFolder = folder; // Remember this folder for next time
-            const proxied = getProxiedUrl(url);
-            resolvedAudioCache[cacheKey] = proxied;
-            return proxied;
+            resolvedAudioCache[cacheKey] = url;
+            return url;
           }
         }
       }
@@ -1234,14 +1219,30 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
         const rootUrl = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(testName)}.mp3`;
         if (await checkImageExists(rootUrl)) {
           console.log(`Music resolved (root${prefix ? ' with ' + prefix : ''}): ${rootUrl}`);
-          const proxied = getProxiedUrl(rootUrl);
-          resolvedAudioCache[cacheKey] = proxied;
-          return proxied;
+          resolvedAudioCache[cacheKey] = rootUrl;
+          return rootUrl;
         }
       }
 
-      rawUrl = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(cleanAudioName)}.mp3`;
-      break;
+      // Fallback: try sound folders (avg, dialog) with sound prefixes
+      // This is because some ambient loops are used as music but stored as sounds
+      const soundFolders = ['avg', 'dialog'];
+      const soundPrefixes = ['', 'd_gen_', 'd_avg_', 'd_amb_', 'd_sys_'];
+      for (const folder of soundFolders) {
+        for (const prefix of soundPrefixes) {
+          const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
+          const url = `https://torappu.prts.wiki/assets/audio/${folder}/${encodeURIComponent(testName)}.mp3`;
+          if (await checkImageExists(url)) {
+            console.log(`Music resolved as sound fallback (${folder}): ${url}`);
+            resolvedAudioCache[cacheKey] = url;
+            return url;
+          }
+        }
+      }
+
+      const fallback = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(cleanAudioName)}.mp3`;
+      resolvedAudioCache[cacheKey] = fallback;
+      return fallback; 
     }
     case 'sound': {
       const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
@@ -1251,33 +1252,31 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
         return (audioMap.sound as any)[cleanAudioName];
       }
 
+      const folders = ['avg', 'dialog'];
       const prefixes = ['', 'd_gen_', 'd_avg_', 'd_amb_', 'd_sys_'];
       
-      for (const prefix of prefixes) {
-        const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
-        const url = `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(testName)}.mp3`;
-        if (await checkImageExists(url)) {
-          const proxied = getProxiedUrl(url);
-          resolvedAudioCache[cacheKey] = proxied;
-          return proxied;
+      for (const folder of folders) {
+        for (const prefix of prefixes) {
+          const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
+          const url = `https://torappu.prts.wiki/assets/audio/${folder}/${encodeURIComponent(testName)}.mp3`;
+          if (await checkImageExists(url)) {
+            resolvedAudioCache[cacheKey] = url;
+            return url;
+          }
         }
       }
       
-      rawUrl = `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(cleanAudioName)}.mp3`;
-      break;
+      const fallback = `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(cleanAudioName)}.mp3`;
+      resolvedAudioCache[cacheKey] = fallback;
+      return fallback;
     }
     case 'voice': {
       const cleanAudioName = name.replace(/^\$/, '');
-      rawUrl = `https://torappu.prts.wiki/assets/audio/voice/${encodeURIComponent(cleanAudioName)}.mp3`;
-      break;
+      return `https://torappu.prts.wiki/assets/audio/voice/${encodeURIComponent(cleanAudioName)}.mp3`;
     }
     default:
       return '';
   }
-
-  const finalUrl = getProxiedUrl(rawUrl);
-  resolvedAudioCache[cacheKey] = finalUrl;
-  return finalUrl;
 }
 
 export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: number, total: number, currentFile?: string) => void): Promise<void> {

@@ -6,7 +6,7 @@ const router = Router();
 
 const proxyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 2000, // Increased to allow preloading many assets
+  max: 100,
   message: { error: "Too many proxy requests from this IP" }
 });
 
