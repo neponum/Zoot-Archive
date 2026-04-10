@@ -1,18 +1,20 @@
-import { Howl } from 'howler';
+// AudioManager uses standard HTML5 Audio to avoid CORS issues with external audio files
+// that don't provide Access-Control-Allow-Origin headers.
 
 class AudioManager {
   private static instance: AudioManager;
   
-  private bgm: Howl | null = null;
+  private bgm: HTMLAudioElement | null = null;
   private bgmUrl: string | null = null;
   private bgmVolume: number = 0.5;
+  private bgmFadeInterval: number | null = null;
   
   private masterBGMVolume: number = 1.0;
   private masterSFXVolume: number = 1.0;
   private masterVoiceVolume: number = 1.0;
   
-  private sfx: Map<string, Howl> = new Map();
-  private voice: Howl | null = null;
+  private sfx: Set<HTMLAudioElement> = new Set();
+  private voice: HTMLAudioElement | null = null;
   
   private constructor() {
     // Load volumes from localStorage if available
@@ -42,7 +44,7 @@ class AudioManager {
     this.masterVoiceVolume = voice;
     
     if (this.bgm) {
-      this.bgm.volume(this.bgmVolume * this.masterBGMVolume);
+      this.bgm.volume = this.bgmVolume * this.masterBGMVolume;
     }
     
     localStorage.setItem('arknights_avg_volumes', JSON.stringify({ bgm, sfx, voice }));
@@ -56,40 +58,71 @@ class AudioManager {
     };
   }
 
+  private fadeAudio(audio: HTMLAudioElement, startVol: number, endVol: number, duration: number, onComplete?: () => void) {
+    const steps = 20;
+    const stepTime = duration / steps;
+    const volumeStep = (endVol - startVol) / steps;
+    let currentStep = 0;
+
+    audio.volume = startVol;
+
+    const interval = window.setInterval(() => {
+      currentStep++;
+      let newVol = startVol + (volumeStep * currentStep);
+      // Ensure volume stays between 0 and 1
+      newVol = Math.max(0, Math.min(1, newVol));
+      audio.volume = newVol;
+
+      if (currentStep >= steps) {
+        window.clearInterval(interval);
+        if (onComplete) onComplete();
+      }
+    }, stepTime);
+
+    return interval;
+  }
+
   /**
    * Play background music with optional crossfade
    */
   public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000) {
     if (this.bgmUrl === url) {
       if (this.bgm) {
-        this.bgm.volume(volume * this.masterBGMVolume);
+        this.bgm.volume = volume * this.masterBGMVolume;
       }
       return;
     }
 
     const oldBgm = this.bgm;
+    const oldInterval = this.bgmFadeInterval;
+    
     this.bgmUrl = url;
     this.bgmVolume = volume;
 
+    if (oldInterval) {
+      window.clearInterval(oldInterval);
+    }
+
     // Fade out old BGM
     if (oldBgm) {
-      oldBgm.fade(oldBgm.volume(), 0, fadeDuration);
-      setTimeout(() => {
-        oldBgm.stop();
-        oldBgm.unload();
-      }, fadeDuration);
+      this.fadeAudio(oldBgm, oldBgm.volume, 0, fadeDuration, () => {
+        oldBgm.pause();
+        oldBgm.src = '';
+      });
     }
 
     // Load and fade in new BGM
-    this.bgm = new Howl({
-      src: [url],
-      html5: true, // Use HTML5 Audio for large files (BGM)
-      loop: true,
-      volume: 0,
-    });
-
-    this.bgm.play();
-    this.bgm.fade(0, volume * this.masterBGMVolume, fadeDuration);
+    const newBgm = new Audio(url);
+    newBgm.loop = true;
+    newBgm.volume = 0;
+    
+    try {
+      await newBgm.play();
+      this.bgm = newBgm;
+      this.bgmFadeInterval = this.fadeAudio(newBgm, 0, volume * this.masterBGMVolume, fadeDuration);
+    } catch (e) {
+      console.error('Failed to play BGM', e);
+    }
   }
 
   /**
@@ -98,11 +131,20 @@ class AudioManager {
   public stopBGM(fadeDuration: number = 1000) {
     if (this.bgm) {
       const currentBgm = this.bgm;
-      currentBgm.fade(currentBgm.volume(), 0, fadeDuration);
-      setTimeout(() => {
-        currentBgm.stop();
-        currentBgm.unload();
-      }, fadeDuration);
+      if (this.bgmFadeInterval) {
+        window.clearInterval(this.bgmFadeInterval);
+      }
+      
+      if (fadeDuration > 0) {
+        this.fadeAudio(currentBgm, currentBgm.volume, 0, fadeDuration, () => {
+          currentBgm.pause();
+          currentBgm.src = '';
+        });
+      } else {
+        currentBgm.pause();
+        currentBgm.src = '';
+      }
+      
       this.bgm = null;
       this.bgmUrl = null;
     }
@@ -112,15 +154,16 @@ class AudioManager {
    * Play sound effect
    */
   public playSFX(url: string, volume: number = 1.0) {
-    const sound = new Howl({
-      src: [url],
-      html5: true,
-      volume: volume * this.masterSFXVolume,
-      onend: () => {
-        sound.unload();
-      }
+    const sound = new Audio(url);
+    sound.volume = volume * this.masterSFXVolume;
+    
+    sound.addEventListener('ended', () => {
+      this.sfx.delete(sound);
+      sound.src = '';
     });
-    sound.play();
+    
+    this.sfx.add(sound);
+    sound.play().catch(e => console.error('Failed to play SFX', e));
   }
 
   /**
@@ -128,19 +171,18 @@ class AudioManager {
    */
   public playVoice(url: string, volume: number = 1.0) {
     if (this.voice) {
-      this.voice.stop();
-      this.voice.unload();
+      this.voice.pause();
+      this.voice.src = '';
     }
 
-    this.voice = new Howl({
-      src: [url],
-      html5: true,
-      volume: volume * this.masterVoiceVolume,
-      onend: () => {
-        this.voice = null;
-      }
+    this.voice = new Audio(url);
+    this.voice.volume = volume * this.masterVoiceVolume;
+    
+    this.voice.addEventListener('ended', () => {
+      this.voice = null;
     });
-    this.voice.play();
+    
+    this.voice.play().catch(e => console.error('Failed to play voice', e));
   }
 
   /**
@@ -148,13 +190,18 @@ class AudioManager {
    */
   public stopAll() {
     this.stopBGM(0);
+    
     if (this.voice) {
-      this.voice.stop();
-      this.voice.unload();
+      this.voice.pause();
+      this.voice.src = '';
       this.voice = null;
     }
-    // Howler.stop() stops all sounds
-    import('howler').then(({ Howler }) => Howler.stop());
+    
+    this.sfx.forEach(sound => {
+      sound.pause();
+      sound.src = '';
+    });
+    this.sfx.clear();
   }
 }
 
