@@ -10,11 +10,10 @@ export interface TranslationInfo {
 // которые уже переведены и готовы к отображению для конкретного языка.
 export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = {
   ru_RU: {
-    translators: ['Community Translators'],
+    translators: ['nep0num', 'Gethris'],
     translatedEpisodes: [
-      // Сюда будем добавлять ID переведенных эпизодов, например:
-      // 'main_00',
-      // 'main_01'
+      // Add episode IDs here to show specific translators for them
+      // Example: 'main_00', 'act17side'
     ],
   },
   es_ES: {

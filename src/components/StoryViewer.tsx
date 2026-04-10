@@ -22,10 +22,11 @@ import { OrientationOverlay } from './story/OrientationOverlay';
 interface StoryViewerProps {
   storyTxt: string;
   customScript?: string;
+  translator?: string;
   onBack: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, onBack }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
@@ -474,7 +475,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         setLoading(true);
         selectedChoicesRef.current.clear();
         dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
-        const script = customScript || await fetchStoryScript(storyTxt);
+        const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
         const parsed = parseStoryScript(script);
         dispatch({ type: 'SET_LINES', payload: parsed });

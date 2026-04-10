@@ -12,6 +12,7 @@ import { QRCodeSVG } from 'qrcode.react';
 interface ChapterSelectorProps {
   onSelect: (chapter: StoryChapter) => void;
   onOpenTranslation?: (chapter?: StoryChapter, episode?: StoryEpisode) => void;
+  onTranslatorChange?: (translator: string | undefined) => void;
 }
 
 const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
@@ -67,7 +68,7 @@ const CHRONO_ORDER: Record<string, number> = {
 
 const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
 
-export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation }) => {
+export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation, onTranslatorChange }) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +90,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [isMobile, setIsMobile] = useState(false);
   const [showEpisodesOnMobile, setShowEpisodesOnMobile] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(undefined);
+  const [isTranslatorMenuOpen, setIsTranslatorMenuOpen] = useState(false);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
@@ -322,8 +325,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
             images[chapter.id] = url;
           }
           
-          // Check if script exists for current language
-          const exists = await checkScriptExists(chapter.storyTxt, lang);
+          // Check if script exists for current language and selected translator
+          const exists = await checkScriptExists(chapter.storyTxt, lang, selectedTranslator);
           existence[chapter.id] = exists;
         }));
         
@@ -332,7 +335,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
       };
       loadChapterData();
     }
-  }, [selectedEpisode, lang]);
+  }, [selectedEpisode, lang, selectedTranslator]);
 
   if (loading) {
     return (
@@ -700,11 +703,51 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   const currentLangObj = LANGUAGES.find(l => l.id === lang);
                   if (currentLangObj && !currentLangObj.isOfficial) {
                     const registry = TRANSLATION_REGISTRY[lang];
-                    if (registry && registry.translators.length > 0) {
+                    const hasAnyTranslation = Object.values(chapterScriptsExist).some(exists => exists);
+                    
+                    if (hasAnyTranslation) {
+                      const translators = (registry && registry.translators.length > 0) 
+                        ? registry.translators 
+                        : ['Community Translators'];
+                        
                       return (
-                        <div className="mt-2 text-sm text-white/50 flex items-center gap-2">
-                          <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">Translation</span>
-                          <span className="font-medium">{registry.translators.join(', ')}</span>
+                        <div className="mt-2 flex items-center gap-4">
+                          <div className="text-sm text-white/50 flex items-center gap-2">
+                            <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">Translation</span>
+                            <span className="font-medium">{selectedTranslator || translators[0]}</span>
+                          </div>
+                          
+                          {translators.length > 1 && (
+                            <div className="relative">
+                              <button 
+                                onClick={() => setIsTranslatorMenuOpen(!isTranslatorMenuOpen)}
+                                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                              >
+                                Change <ChevronDown className="w-3 h-3" />
+                              </button>
+                              
+                              {isTranslatorMenuOpen && (
+                                <div className="absolute top-full left-0 mt-1 w-48 bg-zinc-900 border border-white/10 shadow-2xl z-50 py-1 rounded-sm">
+                                  {translators.map(t => (
+                                    <button
+                                      key={t}
+                                      onClick={() => {
+                                        setSelectedTranslator(t);
+                                        onTranslatorChange?.(t);
+                                        setIsTranslatorMenuOpen(false);
+                                      }}
+                                      className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center justify-between ${
+                                        (selectedTranslator === t || (!selectedTranslator && t === translators[0])) ? 'text-blue-400' : 'text-white/60'
+                                      }`}
+                                    >
+                                      {t}
+                                      {(selectedTranslator === t || (!selectedTranslator && t === translators[0])) && <Check className="w-3 h-3" />}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     }
@@ -768,7 +811,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           <div className="absolute top-1.5 left-1.5 flex items-center gap-1 z-20">
                             <div className={`w-1.5 h-1.5 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
                             <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
-                              {scriptExists ? 'RECORD' : 'MISSING'}
+                              {scriptExists ? (isOfficial ? 'RECORD' : 'TRANSLATED') : 'MISSING'}
                             </span>
                           </div>
 

@@ -8,6 +8,7 @@ import { OrientationOverlay } from './components/story/OrientationOverlay';
 
 function App() {
   const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
+  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(undefined);
   const [showTranslationUI, setShowTranslationUI] = useState(false);
   const [translationChapter, setTranslationChapter] = useState<StoryChapter | null>(null);
   const [translationEpisode, setTranslationEpisode] = useState<StoryEpisode | null>(null);
@@ -47,6 +48,7 @@ function App() {
             <ChapterSelector 
               onSelect={setSelectedChapter} 
               onOpenTranslation={handleOpenTranslation}
+              onTranslatorChange={setSelectedTranslator}
             />
           </motion.div>
         ) : (
@@ -60,6 +62,7 @@ function App() {
             <StoryViewer 
               storyTxt={selectedChapter.storyTxt} 
               customScript={testScript}
+              translator={selectedTranslator}
               onBack={handleBackFromViewer} 
             />
           </motion.div>

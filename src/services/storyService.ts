@@ -677,7 +677,7 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
 
 const scriptExistenceCache: Record<string, boolean> = {};
 
-export async function checkScriptExists(storyPath: string, lang: Language): Promise<boolean> {
+export async function checkScriptExists(storyPath: string, lang: Language, translator?: string): Promise<boolean> {
   const isOfficial = ['zh_CN', 'zh_TW', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
   
   // For official languages, if it's in the story_review_table, the script almost certainly exists.
@@ -686,12 +686,14 @@ export async function checkScriptExists(storyPath: string, lang: Language): Prom
     return true;
   }
 
-  const cacheKey = `${lang}_${storyPath}`;
+  const cacheKey = `${lang}_${storyPath}_${translator || 'default'}`;
   if (cacheKey in scriptExistenceCache) {
     return scriptExistenceCache[cacheKey];
   }
   
-  const url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.txt`;
+  const extension = isOfficial ? 'txt' : 'csv';
+  const translatorSuffix = translator && translator !== 'Community Translators' ? `_${translator}` : '';
+  const url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}${translatorSuffix}.${extension}`;
   
   try {
     // Use HEAD to save bandwidth, fallback to GET if needed
@@ -718,7 +720,7 @@ export async function checkScriptExists(storyPath: string, lang: Language): Prom
 
 let currentStoryChapter = 'a001';
 
-export async function fetchStoryScript(storyPath: string, langOverride?: Language, noFallback?: boolean): Promise<string> {
+export async function fetchStoryScript(storyPath: string, langOverride?: Language, noFallback?: boolean, translator?: string): Promise<string> {
   // Extract chapter ID from path for music folder detection
   const parts = storyPath.split('/');
   for (const part of parts) {
@@ -757,7 +759,8 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     } else {
       // Unofficial language: fetch original (zh_CN) and apply CSV
       const originalScript = await fetchScript('zh_CN');
-      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}.csv`;
+      const translatorSuffix = translator && translator !== 'Community Translators' ? `_${translator}` : '';
+      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}${translatorSuffix}.csv`;
       
       let csvText = await CacheService.getCachedText(csvUrl);
       
