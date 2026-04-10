@@ -62,7 +62,11 @@ router.get('/', proxyLimiter, async (req, res) => {
     }
     
     if (response.ok) {
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      // Optimize for Vercel Edge Caching:
+      // max-age: browser cache (1 year)
+      // s-maxage: Vercel Edge cache (1 year)
+      // stale-while-revalidate: serve stale content while revalidating in background
+      res.setHeader("Cache-Control", "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=31536000, immutable");
     }
 
     res.status(response.status);

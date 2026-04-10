@@ -19,6 +19,7 @@ router.get('/url', (req, res) => {
     scope: "identify guilds",
   });
 
+  res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=600");
   res.json({ url: `https://discord.com/api/oauth2/authorize?${params}` });
 });
 
