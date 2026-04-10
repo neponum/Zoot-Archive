@@ -73,6 +73,28 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAdvanceTime = useRef<number>(0);
   const lastSkipTime = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
 
   // Sync ref with state for callbacks
   useEffect(() => {
@@ -548,6 +570,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   return (
     <div 
+      ref={containerRef}
       className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center select-none touch-none"
       onPointerDown={controls.handlePointerDown}
       onPointerMove={controls.handlePointerMove}
@@ -615,11 +638,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           skipSpeed={skipSpeed}
           isHoldingSkip={isHoldingSkip}
           activeAnimText={activeAnimText}
+          isFullscreen={isFullscreen}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
           onToggleSkip={() => {}}
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}
           onSettingsClick={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })}
           onLogClick={() => dispatch({ type: 'SET_SHOW_LOG', payload: true })}
+          onToggleFullscreen={toggleFullscreen}
           setShowUI={(val) => dispatch({ type: 'SET_SHOW_UI', payload: val })}
           t={t}
         />

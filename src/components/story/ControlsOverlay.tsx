@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Settings, History } from 'lucide-react';
+import { Settings, History, Maximize, Minimize } from 'lucide-react';
 
 interface ControlsOverlayProps {
   showUI: boolean;
@@ -9,11 +9,13 @@ interface ControlsOverlayProps {
   skipSpeed: number;
   isHoldingSkip: boolean;
   activeAnimText: any;
+  isFullscreen: boolean;
   onToggleAuto: () => void;
   onToggleSkip: () => void;
   onBackClick: () => void;
   onSettingsClick: () => void;
   onLogClick: () => void;
+  onToggleFullscreen: () => void;
   setShowUI: (show: boolean) => void;
   t: any;
 }
@@ -25,11 +27,13 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   skipSpeed,
   isHoldingSkip,
   activeAnimText,
+  isFullscreen,
   onToggleAuto,
   onToggleSkip,
   onBackClick,
   onSettingsClick,
   onLogClick,
+  onToggleFullscreen,
   setShowUI,
   t,
 }) => {
@@ -58,6 +62,13 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             className="text-white/60 hover:text-white transition-all drop-shadow-lg"
           >
             <History className="w-8 h-8" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize className="w-8 h-8" /> : <Maximize className="w-8 h-8" />}
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); setShowUI(false); }}
