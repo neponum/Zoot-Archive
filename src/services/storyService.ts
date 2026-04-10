@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { StoryChapter, StoryLine, StoryEpisode, Language } from '../types';
 import { CacheService } from './cacheService';
+import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
 import audioMap from '../data/audioMap.json';
 
 enum TokenType {
@@ -692,8 +693,9 @@ export async function checkScriptExists(storyPath: string, lang: Language, trans
   }
   
   const extension = isOfficial ? 'txt' : 'csv';
-  const translatorSuffix = translator && translator !== 'Community Translators' ? `_${translator}` : '';
-  const url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}${translatorSuffix}.${extension}`;
+  const translatorSuffix = translator && translator !== 'Community Translators' && translator !== 'Переводчики сообщества' ? `_${translator}` : '';
+  const baseName = storyPath.split('/').pop();
+  const url = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.${extension}`;
   
   try {
     // Use HEAD to save bandwidth, fallback to GET if needed
@@ -759,8 +761,12 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     } else {
       // Unofficial language: fetch original (zh_CN) and apply CSV
       const originalScript = await fetchScript('zh_CN');
-      const translatorSuffix = translator && translator !== 'Community Translators' ? `_${translator}` : '';
-      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${storyPath}${translatorSuffix}.csv`;
+      const registry = TRANSLATION_REGISTRY[lang];
+      const defaultTranslator = (registry && registry.translators.length > 0) ? registry.translators[0] : undefined;
+      const effectiveTranslator = translator || defaultTranslator;
+      const translatorSuffix = effectiveTranslator && effectiveTranslator !== 'Community Translators' && effectiveTranslator !== 'Переводчики сообщества' ? `_${effectiveTranslator}` : '';
+      const baseName = storyPath.split('/').pop();
+      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.csv`;
       
       let csvText = await CacheService.getCachedText(csvUrl);
       

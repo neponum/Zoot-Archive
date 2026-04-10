@@ -326,7 +326,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           }
           
           // Check if script exists for current language and selected translator
-          const exists = await checkScriptExists(chapter.storyTxt, lang, selectedTranslator);
+          const registry = TRANSLATION_REGISTRY[lang];
+          const defaultTranslator = (registry && registry.translators.length > 0) ? registry.translators[0] : undefined;
+          const effectiveTranslator = selectedTranslator || defaultTranslator;
+          const exists = await checkScriptExists(chapter.storyTxt, lang, effectiveTranslator);
           existence[chapter.id] = exists;
         }));
         
@@ -704,16 +707,15 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   if (currentLangObj && !currentLangObj.isOfficial) {
                     const registry = TRANSLATION_REGISTRY[lang];
                     const hasAnyTranslation = Object.values(chapterScriptsExist).some(exists => exists);
+                    const translators = (registry && registry.translators.length > 0) 
+                      ? registry.translators 
+                      : ['Переводчики сообщества'];
                     
-                    if (hasAnyTranslation) {
-                      const translators = (registry && registry.translators.length > 0) 
-                        ? registry.translators 
-                        : ['Community Translators'];
-                        
+                    if (hasAnyTranslation || translators.length > 1) {
                       return (
                         <div className="mt-2 flex items-center gap-4">
                           <div className="text-sm text-white/50 flex items-center gap-2">
-                            <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">Translation</span>
+                            <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">Перевод</span>
                             <span className="font-medium">{selectedTranslator || translators[0]}</span>
                           </div>
                           
@@ -723,7 +725,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                 onClick={() => setIsTranslatorMenuOpen(!isTranslatorMenuOpen)}
                                 className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
                               >
-                                Change <ChevronDown className="w-3 h-3" />
+                                Изменить <ChevronDown className="w-3 h-3" />
                               </button>
                               
                               {isTranslatorMenuOpen && (
@@ -862,7 +864,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                             <button 
                               onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
                               className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white border-t border-white/10 group/btn"
-                              title="Open Translation Tool"
+                              title="Открыть инструмент перевода"
                             >
                               <Languages className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
                               <span className="text-[6px] font-black uppercase tracking-widest">Trans</span>

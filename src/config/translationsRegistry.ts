@@ -14,6 +14,7 @@ export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = 
     translatedEpisodes: [
       // Add episode IDs here to show specific translators for them
       // Example: 'main_00', 'act17side'
+      'main_00'
     ],
   },
   es_ES: {
