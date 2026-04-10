@@ -1,5 +1,14 @@
 {
   "music": {
+    "ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
+    "d_avg_ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
+    "avg_ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
+    "d_avg_phone": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_phone.mp3",
+    "avg_phone": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_phone.mp3",
+    "d_avg_radio": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_radio.mp3",
+    "avg_radio": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_radio.mp3",
+    "d_avg_slideshow": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_slideshow.mp3",
+    "avg_slideshow": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_slideshow.mp3",
     "m_bat_indust_intro": "https://torappu.prts.wiki/assets/audio/music/beta1_180603/m_bat_indust_intro.mp3",
     "indust_intro": "https://torappu.prts.wiki/assets/audio/music/beta1_180603/m_bat_indust_intro.mp3",
     "m_bat_indust_loop": "https://torappu.prts.wiki/assets/audio/music/beta1_180603/m_bat_indust_loop.mp3",
@@ -11559,15 +11568,7 @@
     "fx_025_1": "https://torappu.prts.wiki/assets/audio/voice_kr/char_1012_skadi2_iteration#2/fx_025_1.mp3",
     "fx_026_1": "https://torappu.prts.wiki/assets/audio/voice_kr/char_1012_skadi2_iteration#2/fx_026_1.mp3",
     "fx_027_1": "https://torappu.prts.wiki/assets/audio/voice_kr/char_1012_skadi2_iteration#2/fx_027_1.mp3",
-    "fx_028_1": "https://torappu.prts.wiki/assets/audio/voice_kr/char_1012_skadi2_iteration#2/fx_028_1.mp3",
-    "ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
-    "d_avg_ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
-    "avg_ekg_loop": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_ekg_loop.mp3",
-    "d_avg_phone": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_phone.mp3",
-    "avg_phone": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_phone.mp3",
-    "d_avg_radio": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_radio.mp3",
-    "avg_radio": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_radio.mp3",
-    "d_avg_slideshow": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_slideshow.mp3",
-    "avg_slideshow": "https://torappu.prts.wiki/assets/audio/dialog/d_avg_slideshow.mp3"
+    "fx_028_1": "https://torappu.prts.wiki/assets/audio/voice_kr/char_1012_skadi2_iteration#2/fx_028_1.mp3"
+    
   }
 }

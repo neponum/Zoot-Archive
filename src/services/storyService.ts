@@ -1111,8 +1111,6 @@ export async function getImageUrl(type: 'background' | 'character' | 'image' | '
 
 // Cache for resolved audio URLs to avoid repeated network checks
 const resolvedAudioCache: Record<string, string> = {};
-// Remember which folder worked best for the current session/chapter
-let lastSuccessfulMusicFolder: string | null = null;
 
 async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice' | 'character_body' | 'character_face', name: string): Promise<string> {
   const cacheKey = `${type}:${name}`;
@@ -1185,73 +1183,9 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       if ((audioMap.music as any)[cleanAudioName]) {
         return (audioMap.music as any)[cleanAudioName];
       }
-
-      // Arknights music often has these prefixes in the files but not in the script
-      const prefixes = ['', 'm_avg_', 'm_dia_', 'm_bat_', 'm_sys_'];
       
-      // 1. Context folders (Highest priority)
-      const contextFolders = [
-        lastSuccessfulMusicFolder, 
-        currentStoryChapter
-      ].filter(Boolean) as string[];
-
-      // 2. General/Global folders (Medium priority)
-      const generalFolders = ['avg', 'a001', 'static', 'beta1_180603', 'obt'];
-
-      // 3. Other specific episodes (Lowest priority - fallback safety net)
-      const otherEpisodes = [
-        'act12d0d0', 'act17side', 'act20side', 'act13d0d0', 'act15main', 
-        'act11d0d0', 'act10d0d0', 'act9d0d0', 'act18side'
-      ];
-
-      const priorityFolders = [...contextFolders, ...generalFolders, ...otherEpisodes]
-        .filter((f, i, self) => f && self.indexOf(f) === i) as string[];
-
-      // Try each prefix in each priority folder
-      for (const folder of priorityFolders) {
-        for (const prefix of prefixes) {
-          const testName = prefix && !cleanAudioName.startsWith('m_') ? prefix + cleanAudioName : cleanAudioName;
-          const url = `https://torappu.prts.wiki/assets/audio/music/${folder}/${encodeURIComponent(testName)}.mp3`;
-          
-          if (await checkImageExists(url)) {
-            console.log(`Music resolved (${folder}${prefix ? ' with ' + prefix : ''}): ${url}`);
-            lastSuccessfulMusicFolder = folder; // Remember this folder for next time
-            resolvedAudioCache[cacheKey] = url;
-            return url;
-          }
-        }
-      }
-      
-      // Last resort: try root music folder with prefixes
-      for (const prefix of prefixes) {
-        const testName = prefix && !cleanAudioName.startsWith('m_') ? prefix + cleanAudioName : cleanAudioName;
-        const rootUrl = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(testName)}.mp3`;
-        if (await checkImageExists(rootUrl)) {
-          console.log(`Music resolved (root${prefix ? ' with ' + prefix : ''}): ${rootUrl}`);
-          resolvedAudioCache[cacheKey] = rootUrl;
-          return rootUrl;
-        }
-      }
-
-      // Fallback: try sound folders (avg, dialog) with sound prefixes
-      // This is because some ambient loops are used as music but stored as sounds
-      const soundFolders = ['avg', 'dialog'];
-      const soundPrefixes = ['', 'd_gen_', 'd_avg_', 'd_amb_', 'd_sys_'];
-      for (const folder of soundFolders) {
-        for (const prefix of soundPrefixes) {
-          const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
-          const url = `https://torappu.prts.wiki/assets/audio/${folder}/${encodeURIComponent(testName)}.mp3`;
-          if (await checkImageExists(url)) {
-            console.log(`Music resolved as sound fallback (${folder}): ${url}`);
-            resolvedAudioCache[cacheKey] = url;
-            return url;
-          }
-        }
-      }
-
-      const fallback = `https://torappu.prts.wiki/assets/audio/music/${encodeURIComponent(cleanAudioName)}.mp3`;
-      resolvedAudioCache[cacheKey] = fallback;
-      return fallback; 
+      console.error(`Music file not found in audioMap: ${cleanAudioName}`);
+      return '';
     }
     case 'sound': {
       const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
@@ -1260,24 +1194,9 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       if ((audioMap.sound as any)[cleanAudioName]) {
         return (audioMap.sound as any)[cleanAudioName];
       }
-
-      const folders = ['avg', 'dialog'];
-      const prefixes = ['', 'd_gen_', 'd_avg_', 'd_amb_', 'd_sys_'];
       
-      for (const folder of folders) {
-        for (const prefix of prefixes) {
-          const testName = prefix && !cleanAudioName.startsWith('d_') ? prefix + cleanAudioName : cleanAudioName;
-          const url = `https://torappu.prts.wiki/assets/audio/${folder}/${encodeURIComponent(testName)}.mp3`;
-          if (await checkImageExists(url)) {
-            resolvedAudioCache[cacheKey] = url;
-            return url;
-          }
-        }
-      }
-      
-      const fallback = `https://torappu.prts.wiki/assets/audio/avg/${encodeURIComponent(cleanAudioName)}.mp3`;
-      resolvedAudioCache[cacheKey] = fallback;
-      return fallback;
+      console.error(`Sound file not found in audioMap: ${cleanAudioName}`);
+      return '';
     }
     case 'voice': {
       const cleanAudioName = name.replace(/^\$/, '');
