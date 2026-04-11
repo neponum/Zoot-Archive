@@ -1241,7 +1241,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const formData = new FormData();
       const payload = {
         content: `🚀 **New Translation Submission**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode?.id || 'Unknown'}\n**Chapter:** ${selectedChapter.storyTxt}\n**Language:** ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}`,
-        username: "Zoot Archive Bot"
+        username: "ZOOT"
       };
       
       formData.append('payload_json', JSON.stringify(payload));

@@ -133,6 +133,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
         switch (line.type) {
           case 'decision':
+            selectedChoicesRef.current.clear();
             dispatch({ type: 'SET_DECISION', payload: line });
             if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
             return;
@@ -690,6 +691,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           show={showBackConfirm}
           onConfirm={() => {
             audioManager.stopAll();
+            localStorage.removeItem(`ak-story-index-${storyTxt}`);
             onBack();
           }}
           onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}

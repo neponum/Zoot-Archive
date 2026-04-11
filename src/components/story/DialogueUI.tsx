@@ -110,7 +110,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                 {currentSpeaker && (
                   <div 
                     key={currentSpeaker}
-                    className="text-white/60 text-[20px] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                    className="text-white/60 text-[20px] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right"
                     style={{ fontSize: `${20 * fontScale}px` }}
                   >
                     {currentSpeaker}

@@ -215,7 +215,7 @@ class StoryParser {
       this.eat(TokenType.LEFT_PAREN);
       while (!this.isType(TokenType.RIGHT_PAREN) && !this.isType(TokenType.EOF) && !this.isType(TokenType.NEWLINE)) {
         if (this.isType(TokenType.IDENTIFIER)) {
-          const key = this.eat(TokenType.IDENTIFIER).value;
+          const key = this.eat(TokenType.IDENTIFIER).value.toLowerCase();
           if (this.isType(TokenType.EQUALS)) {
             this.eat(TokenType.EQUALS);
             if (this.isType(TokenType.STRING)) {
@@ -792,9 +792,8 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       
       // Apply translations to originalScript lines
       const lines = originalScript.split(/\r?\n/);
-      let dialogueIndex = 0;
       
-      const translatedLines = lines.map((line) => {
+      const translatedLines = lines.map((line, index) => {
         const trimmed = line.trim();
         if (trimmed === '' || trimmed.startsWith('//') || trimmed.toUpperCase().startsWith('[HEADER')) {
           return line;
@@ -805,12 +804,13 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
           const prefix = match[1];
           const textToTranslate = match[2];
           
-          if (textToTranslate.trim() === '') {
+          const optionsMatch = prefix.match(/options="([^"]+)"/);
+          
+          if (textToTranslate.trim() === '' && !optionsMatch) {
             return line;
           }
           
-          const id = `line-${dialogueIndex}`;
-          dialogueIndex++;
+          const id = `line-${index}`;
           
           // Find translation for this line
           const translationRow = translations.find(row => row['ID'] === id);
@@ -829,7 +829,6 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
             }
 
             // Handle decision options translation
-            const optionsMatch = prefix.match(/options="([^"]+)"/);
             if (optionsMatch) {
               const options = optionsMatch[1];
               if (textToTranslate.trim() === '') {
@@ -838,6 +837,10 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
                 return finalPrefix;
               } else {
                 // If there is dialogue text, we need to find a separate translation for options if it exists
+                // In the current CSV format, options usually share the same row if text is empty, 
+                // but if there is text, we might need to look for another row or handle it differently.
+                // However, parseTranslationBlocks puts options in 'zh_CN' text if text is empty.
+                // If both exist, we need to be careful.
                 const optionsTranslationRow = translations.find(row => row['Original Text'] === options && row['ID']?.startsWith('line-'));
                 if (optionsTranslationRow && optionsTranslationRow['Translation']) {
                   finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${optionsTranslationRow['Translation']}"`);
