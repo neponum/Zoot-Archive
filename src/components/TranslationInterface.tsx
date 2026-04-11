@@ -734,9 +734,15 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
       try {
         const cleanedText = response.text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
-        const parsed = JSON.parse(cleanedText) as { id: string, translatedText: string, translatedCharacter: string }[];
+        const parsed = JSON.parse(cleanedText);
+        
+        if (!Array.isArray(parsed)) {
+          console.error("Gemini response is not an array:", parsed);
+          return null;
+        }
+
         console.log(`Successfully parsed ${parsed.length} translations.`);
-        return parsed;
+        return parsed as { id: string, translatedText: string, translatedCharacter: string }[];
       } catch (e) {
         console.error("Failed to parse Gemini JSON response:", response.text);
         return null;
@@ -826,7 +832,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setBlocks(prev => {
       const next = [...prev];
       results.forEach(res => {
-        const idx = next.findIndex(b => b.id === res.id);
+        // Robust ID matching: handle both "line-X" and "X" formats
+        const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
+        const idx = next.findIndex(b => b.id === targetId);
+        
         if (idx !== -1) {
           const block = next[idx];
           
@@ -846,6 +855,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
               }
             });
           }
+        } else {
+          console.warn(`Could not find block with ID ${res.id} (tried ${targetId})`);
         }
       });
       return next;
@@ -855,8 +866,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const chapterTranslations = { ...(prev[selectedChapter.storyTxt] || {}) };
       
       results.forEach(res => {
-        // Use the current blocks state to find the index
-        const idx = blocks.findIndex(b => b.id === res.id);
+        const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
+        const idx = blocks.findIndex(b => b.id === targetId);
+        
         if (idx !== -1) {
           const block = blocks[idx];
           const current = chapterTranslations[idx] || {};
