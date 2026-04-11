@@ -725,6 +725,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         contents: JSON.stringify(prompt),
       });
       
+      console.log(`Gemini response for batch of ${batch.length} lines received.`);
+      
       if (!response.text) {
         console.warn("Gemini returned an empty response for batch");
         return null;
@@ -732,7 +734,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
       try {
         const cleanedText = response.text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
-        return JSON.parse(cleanedText) as { id: string, translatedText: string, translatedCharacter: string }[];
+        const parsed = JSON.parse(cleanedText) as { id: string, translatedText: string, translatedCharacter: string }[];
+        console.log(`Successfully parsed ${parsed.length} translations.`);
+        return parsed;
       } catch (e) {
         console.error("Failed to parse Gemini JSON response:", response.text);
         return null;
@@ -816,6 +820,75 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setReferenceLangs(prev => prev.filter(l => l !== lang));
   };
 
+  const handleBatchTranslationChange = (results: { id: string, translatedText: string, translatedCharacter: string }[], lang: Language = activeTargetLang) => {
+    if (!selectedChapter) return;
+
+    setBlocks(prev => {
+      const next = [...prev];
+      results.forEach(res => {
+        const idx = next.findIndex(b => b.id === res.id);
+        if (idx !== -1) {
+          const block = next[idx];
+          
+          // 1. Update the text for this specific block
+          const newContent = { ...block.content };
+          newContent[lang] = { ...newContent[lang], text: res.translatedText };
+          next[idx] = { ...block, content: newContent };
+          
+          // 2. If there's a character name, update it globally for this character
+          if (block.content[sourceLang]?.name) {
+            const sourceName = block.content[sourceLang].name;
+            next.forEach((b, bIdx) => {
+              if (b.content[sourceLang]?.name === sourceName) {
+                const bContent = { ...b.content };
+                bContent[lang] = { ...bContent[lang], name: res.translatedCharacter };
+                next[bIdx] = { ...b, content: bContent };
+              }
+            });
+          }
+        }
+      });
+      return next;
+    });
+
+    setAllTranslations(prev => {
+      const chapterTranslations = { ...(prev[selectedChapter.storyTxt] || {}) };
+      
+      results.forEach(res => {
+        // Use the current blocks state to find the index
+        const idx = blocks.findIndex(b => b.id === res.id);
+        if (idx !== -1) {
+          const block = blocks[idx];
+          const current = chapterTranslations[idx] || {};
+          const langData = current[lang] || {};
+          
+          // Update the specific line's text
+          chapterTranslations[idx] = { 
+            ...current, 
+            [lang]: { ...langData, text: res.translatedText } 
+          };
+
+          // Update character name globally if applicable
+          if (block.content[sourceLang]?.name) {
+            const sourceName = block.content[sourceLang].name;
+            blocks.forEach((b, bIdx) => {
+              if (b.content[sourceLang]?.name === sourceName) {
+                const bCurrent = chapterTranslations[bIdx] || {};
+                const bLangData = bCurrent[lang] || {};
+                chapterTranslations[bIdx] = {
+                  ...bCurrent,
+                  [lang]: { ...bLangData, name: res.translatedCharacter }
+                };
+              }
+            });
+          }
+        }
+      });
+
+      return { ...prev, [selectedChapter.storyTxt]: chapterTranslations };
+    });
+  };
+
   const handleGeminiTranslateAll = async (lang: Language = activeTargetLang) => {
     if (!selectedChapter || isTranslatingAll) return;
     
@@ -829,43 +902,65 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     }
 
     setIsTranslatingAll(true);
-    
-    // Mark all blocks as translating
-    setTranslatingBlockIds(prev => {
-      const next = new Set(prev);
-      dialogueBlocks.forEach(b => next.add(b.id));
-      return next;
-    });
+    setErrorMessage(null);
 
     try {
-      // Translate the entire chapter in one go as requested
-      const results = await translateBatchWithGemini(dialogueBlocks, [], lang);
-      
-      if (results && results.length > 0) {
-        // Apply all results
-        results.forEach(res => {
-          const blockId = res.id;
-          const block = blocks.find(b => b.id === blockId);
-          if (block) {
-            handleTranslationChange(blockId, res.translatedText, lang);
-            if (block.content[sourceLang]?.name) {
-              handleCharacterNameChange(blockId, res.translatedCharacter, lang);
-            }
-          }
+      // Use batches of 30 for reliability and context balance
+      const BATCH_SIZE = 30;
+      const batches: TranslationBlock[][] = [];
+      for (let i = 0; i < dialogueBlocks.length; i += BATCH_SIZE) {
+        batches.push(dialogueBlocks.slice(i, i + BATCH_SIZE));
+      }
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        
+        // Mark blocks in current batch as translating
+        setTranslatingBlockIds(prev => {
+          const next = new Set(prev);
+          batch.forEach(b => next.add(b.id));
+          return next;
         });
+
+        // Get context from preceding blocks
+        const firstBlockIndex = blocks.findIndex(b => b.id === batch[0].id);
+        const context = blocks.slice(Math.max(0, firstBlockIndex - 5), firstBlockIndex).map(b => ({
+          character: b.content[sourceLang]?.name || "Narrator/System",
+          text: b.content[lang]?.text || b.content[sourceLang]?.text || ""
+        }));
+
+        const results = await translateBatchWithGemini(batch, context, lang);
+        
+        if (results && results.length > 0) {
+          handleBatchTranslationChange(results, lang);
+        } else {
+          console.warn(`Batch ${i + 1} returned no results`);
+        }
+
+        // Clear translating status for this batch
+        setTranslatingBlockIds(prev => {
+          const next = new Set(prev);
+          batch.forEach(b => next.delete(b.id));
+          return next;
+        });
+
+        // Small delay to avoid rate limits if there are many batches
+        if (batches.length > 1 && i < batches.length - 1) {
+          await new Promise(r => setTimeout(r, 800));
+        }
       }
     } catch (error: any) {
+      console.error("Mass translation failed:", error);
       if (error.message === "QUOTA_EXCEEDED") {
         setErrorMessage("Gemini API quota exceeded. Translation stopped.");
       } else if (error.message === "GEMINI_API_KEY_MISSING") {
-        setErrorMessage("Gemini API Key is missing. Please provide your own API Key in the sidebar settings.");
+        setErrorMessage("Gemini API Key is missing.");
       } else {
-        console.error("Batch translation failed:", error);
-        setErrorMessage("Translation failed. Please check your API key and connection.");
+        setErrorMessage("Translation failed. Check console for details.");
       }
     } finally {
-      setTranslatingBlockIds(new Set());
       setIsTranslatingAll(false);
+      setTranslatingBlockIds(new Set());
     }
   };
 
