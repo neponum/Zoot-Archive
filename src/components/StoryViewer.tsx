@@ -411,6 +411,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     if (currentIndexRef.current >= lines.length - 1) {
       dispatch({ type: 'SET_SKIPPING', payload: false });
       audioManager.stopAll();
+      localStorage.removeItem(`ak-story-index-${storyTxt}`);
       onBack();
       return;
     }
@@ -508,10 +509,24 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   }, []);
 
   useEffect(() => {
-    if (lines.length > 0 && currentIndex === 0 && !loading) {
-      processLine(0);
+    if (lines.length > 0 && !loading) {
+      const savedIndex = localStorage.getItem(`ak-story-index-${storyTxt}`);
+      const startIndex = savedIndex ? parseInt(savedIndex) : 0;
+      
+      if (currentIndex === 0 && startIndex > 0 && startIndex < lines.length) {
+        dispatch({ type: 'SET_INDEX', payload: startIndex });
+        processLine(startIndex);
+      } else if (currentIndex === 0) {
+        processLine(0);
+      }
     }
-  }, [lines, loading, processLine]);
+  }, [lines, loading, processLine, storyTxt]);
+
+  useEffect(() => {
+    if (currentIndex > 0) {
+      localStorage.setItem(`ak-story-index-${storyTxt}`, currentIndex.toString());
+    }
+  }, [currentIndex, storyTxt]);
 
   if (loading) {
     return (

@@ -72,9 +72,16 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEpisode, setSelectedEpisode] = useState<StoryEpisode | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('STORY');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'chrono'>('chrono');
+  const [selectedEpisode, setSelectedEpisode] = useState<StoryEpisode | null>(() => {
+    const saved = localStorage.getItem('ak-selected-episode');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('ak-active-tab') || 'STORY';
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'chrono'>(() => {
+    return (localStorage.getItem('ak-sort-order') as any) || 'chrono';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [chapterImages, setChapterImages] = useState<Record<string, string | null>>({});
   const [episodeImages, setEpisodeImages] = useState<Record<string, string | null>>({});
@@ -82,9 +89,43 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [lang, setLang] = useState<Language>(getLanguage());
   const [hoveredEpisodeId, setHoveredEpisodeId] = useState<string | null>(null);
   const [selectedAct, setSelectedAct] = useState<string>('Act II');
-  const [viewMode, setViewMode] = useState<'STORYLINE' | 'YEAR' | 'ALL'>('STORYLINE');
-  const [selectedStoryLine, setSelectedStoryLine] = useState<string>('main');
-  const [selectedYear, setSelectedYear] = useState<number>(1); // Default to Year 1
+  const [viewMode, setViewMode] = useState<'STORYLINE' | 'YEAR' | 'ALL'>(() => {
+    return (localStorage.getItem('ak-view-mode') as any) || 'STORYLINE';
+  });
+  const [selectedStoryLine, setSelectedStoryLine] = useState<string>(() => {
+    return localStorage.getItem('ak-selected-storyline') || 'main';
+  });
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    return parseInt(localStorage.getItem('ak-selected-year') || '1');
+  });
+
+  useEffect(() => {
+    if (selectedEpisode) {
+      localStorage.setItem('ak-selected-episode', JSON.stringify(selectedEpisode));
+    } else {
+      localStorage.removeItem('ak-selected-episode');
+    }
+  }, [selectedEpisode]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-active-tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-sort-order', sortOrder);
+  }, [sortOrder]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-view-mode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-selected-storyline', selectedStoryLine);
+  }, [selectedStoryLine]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-selected-year', selectedYear.toString());
+  }, [selectedYear]);
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);

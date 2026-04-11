@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChapterSelector } from './components/ChapterSelector';
 import { StoryViewer } from './components/StoryViewer';
 import { TranslationInterface } from './components/TranslationInterface';
@@ -7,12 +7,61 @@ import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
 
 function App() {
-  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
-  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(undefined);
-  const [showTranslationUI, setShowTranslationUI] = useState(false);
-  const [translationChapter, setTranslationChapter] = useState<StoryChapter | null>(null);
-  const [translationEpisode, setTranslationEpisode] = useState<StoryEpisode | null>(null);
+  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(() => {
+    const saved = localStorage.getItem('ak-selected-chapter');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(() => {
+    return localStorage.getItem('ak-selected-translator') || undefined;
+  });
+  const [showTranslationUI, setShowTranslationUI] = useState(() => {
+    return localStorage.getItem('ak-show-translation-ui') === 'true';
+  });
+  const [translationChapter, setTranslationChapter] = useState<StoryChapter | null>(() => {
+    const saved = localStorage.getItem('ak-translation-chapter');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [translationEpisode, setTranslationEpisode] = useState<StoryEpisode | null>(() => {
+    const saved = localStorage.getItem('ak-translation-episode');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (selectedChapter) {
+      localStorage.setItem('ak-selected-chapter', JSON.stringify(selectedChapter));
+    } else {
+      localStorage.removeItem('ak-selected-chapter');
+    }
+  }, [selectedChapter]);
+
+  useEffect(() => {
+    if (selectedTranslator) {
+      localStorage.setItem('ak-selected-translator', selectedTranslator);
+    } else {
+      localStorage.removeItem('ak-selected-translator');
+    }
+  }, [selectedTranslator]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-show-translation-ui', showTranslationUI.toString());
+  }, [showTranslationUI]);
+
+  useEffect(() => {
+    if (translationChapter) {
+      localStorage.setItem('ak-translation-chapter', JSON.stringify(translationChapter));
+    } else {
+      localStorage.removeItem('ak-translation-chapter');
+    }
+  }, [translationChapter]);
+
+  useEffect(() => {
+    if (translationEpisode) {
+      localStorage.setItem('ak-translation-episode', JSON.stringify(translationEpisode));
+    } else {
+      localStorage.removeItem('ak-translation-episode');
+    }
+  }, [translationEpisode]);
 
   const handleOpenTranslation = (chapter?: StoryChapter, episode?: StoryEpisode) => {
     if (chapter) setTranslationChapter(chapter);

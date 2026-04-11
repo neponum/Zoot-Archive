@@ -65,10 +65,10 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
       const prefix = match[1];
       const textToTranslate = match[2];
       
-      // Check for decision options
-      const optionsMatch = prefix.match(/options="([^"]+)"/);
-      if (optionsMatch && textToTranslate.trim() === '') {
-        const options = optionsMatch[1];
+      // Check for decision options or other translatable attributes
+      const hasOptions = prefix.includes('options="');
+      
+      if (textToTranslate.trim() !== '' || hasOptions) {
         return { 
           id, 
           type: 'dialogue', 
@@ -78,17 +78,7 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
         };
       }
       
-      if (textToTranslate.trim() === '') {
-        return { id, type: 'command', originalText: line, prefix, content: {} };
-      } else {
-        return { 
-          id, 
-          type: 'dialogue', 
-          originalText: line, 
-          prefix, 
-          content: {}
-        };
-      }
+      return { id, type: 'command', originalText: line, prefix, content: {} };
     }
     
     return { id, type: 'dialogue', originalText: line, prefix: '', content: {} };
@@ -306,9 +296,20 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setAllTranslations(saved ? JSON.parse(saved) : {});
   }, [activeProfile]);
 
+  // Use a ref to track the profile for which allTranslations is currently valid
+  const lastSavedProfileRef = React.useRef(activeProfile);
+
   useEffect(() => {
-    const key = activeProfile === 'Default' ? 'ak-translations-v3' : `ak-translations-v3-${activeProfile}`;
-    localStorage.setItem(key, JSON.stringify(allTranslations));
+    // Only save if the current state belongs to the active profile
+    // This prevents saving 'Default' data into a newly created profile's key
+    // during the brief moment before the load effect triggers.
+    if (lastSavedProfileRef.current === activeProfile) {
+      const key = activeProfile === 'Default' ? 'ak-translations-v3' : `ak-translations-v3-${activeProfile}`;
+      localStorage.setItem(key, JSON.stringify(allTranslations));
+    } else {
+      // Update the ref so subsequent changes to allTranslations are saved to the correct key
+      lastSavedProfileRef.current = activeProfile;
+    }
   }, [allTranslations, activeProfile]);
 
   useEffect(() => {
@@ -540,8 +541,12 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           });
 
           // Apply local translations (overwrites server data for target languages)
+          const profileKey = activeProfile === 'Default' ? 'ak-translations-v3' : `ak-translations-v3-${activeProfile}`;
+          const savedLocal = localStorage.getItem(profileKey);
+          const localTranslations = savedLocal ? JSON.parse(savedLocal) : {};
+
           targetLangs.forEach(lang => {
-            const localData = allTranslations[selectedChapter.storyTxt]?.[idx]?.[lang];
+            const localData = localTranslations[selectedChapter.storyTxt]?.[idx]?.[lang];
             if (localData) {
               content[lang] = {
                 text: localData.text || content[lang]?.text || '',
@@ -825,53 +830,29 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     setIsTranslatingAll(true);
     
-    // Batch size for context and efficiency
-    const BATCH_SIZE = 5;
-    const batches: TranslationBlock[][] = [];
-    for (let i = 0; i < dialogueBlocks.length; i += BATCH_SIZE) {
-      batches.push(dialogueBlocks.slice(i, i + BATCH_SIZE));
-    }
+    // Mark all blocks as translating
+    setTranslatingBlockIds(prev => {
+      const next = new Set(prev);
+      dialogueBlocks.forEach(b => next.add(b.id));
+      return next;
+    });
 
     try {
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
-        
-        // Mark all blocks in batch as translating
-        setTranslatingBlockIds(prev => {
-          const next = new Set(prev);
-          batch.forEach(b => next.add(b.id));
-          return next;
-        });
-        
-        // Get context from preceding blocks (even if not in current batch)
-        const firstBlockInBatch = batch[0];
-        const firstBlockIndex = blocks.findIndex(b => b.id === firstBlockInBatch.id);
-        const context = blocks.slice(Math.max(0, firstBlockIndex - 5), firstBlockIndex).map(b => ({
-          character: b.content[sourceLang]?.name || "Narrator/System",
-          text: b.content[lang]?.text || b.content[sourceLang]?.text || ""
-        }));
-
-        const results = await translateBatchWithGemini(batch, context, lang);
-        
-        if (results) {
-          results.forEach(res => {
-            handleTranslationChange(res.id, res.translatedText, lang);
-            const block = blocks.find(b => b.id === res.id);
-            if (block?.content[sourceLang]?.name) {
-              handleCharacterNameChange(res.id, res.translatedCharacter, lang);
+      // Translate the entire chapter in one go as requested
+      const results = await translateBatchWithGemini(dialogueBlocks, [], lang);
+      
+      if (results && results.length > 0) {
+        // Apply all results
+        results.forEach(res => {
+          const blockId = res.id;
+          const block = blocks.find(b => b.id === blockId);
+          if (block) {
+            handleTranslationChange(blockId, res.translatedText, lang);
+            if (block.content[sourceLang]?.name) {
+              handleCharacterNameChange(blockId, res.translatedCharacter, lang);
             }
-          });
-        }
-        
-        // Clear translating status for this batch
-        setTranslatingBlockIds(prev => {
-          const next = new Set(prev);
-          batch.forEach(b => next.delete(b.id));
-          return next;
+          }
         });
-        
-        // Increased delay to avoid rate limits
-        await new Promise(r => setTimeout(r, 1000));
       }
     } catch (error: any) {
       if (error.message === "QUOTA_EXCEEDED") {
@@ -1333,18 +1314,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           </div>
 
           <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
-
-          {/* Gemini All */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button 
-              onClick={handleGeminiTranslateAll}
-              disabled={isTranslatingAll || !selectedChapter || !userApiKey}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
-            >
-              {isTranslatingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              Gemini Всё
-            </button>
-          </div>
         </div>
       </div>
 
@@ -1381,15 +1350,17 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
               {/* Chapter Progress */}
               <div className="flex items-center gap-2">
-                <div className="w-16 h-1.5 bg-black rounded-full overflow-hidden">
+                <div className="w-12 md:w-16 h-1.5 bg-black rounded-full overflow-hidden">
                   <div className="h-full bg-[#4ade80] transition-all duration-300" style={{ width: `${progress}%` }} />
                 </div>
-                <span className="text-[10px] text-[#4ade80] font-mono font-bold">Глава: {progress}%</span>
+                <span className="text-[10px] text-[#4ade80] font-mono font-bold whitespace-nowrap">
+                  <span className="hidden sm:inline">Глава: </span>{progress}%
+                </span>
               </div>
             </div>
 
             {/* Actions & CSV Tools */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
               {selectedChapter && (
                 <button 
                   onClick={() => {
@@ -1409,9 +1380,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                       win.document.close();
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  title="Скрипт"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" /> Скрипт
+                  <ExternalLink className="w-3.5 h-3.5" /> 
+                  <span className="hidden lg:inline">Скрипт</span>
                 </button>
               )}
 
@@ -1419,31 +1392,51 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                 <button 
                   onClick={() => onTestTranslation(selectedChapter!, generateExportText())}
                   disabled={!selectedChapter}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  title="Тест"
                 >
-                  <Play className="w-3.5 h-3.5" /> Тест
+                  <Play className="w-3.5 h-3.5" /> 
+                  <span className="hidden lg:inline">Тест</span>
                 </button>
               )}
 
               <button 
-                onClick={() => setShowExportModal(true)}
-                disabled={!selectedChapter || blocks.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4ade80]/20 text-[#4ade80] hover:bg-[#4ade80]/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider mr-2"
+                onClick={handleGeminiTranslateAll}
+                disabled={isTranslatingAll || !selectedChapter || !userApiKey}
+                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                title="Gemini Всё"
               >
-                <Check className="w-3.5 h-3.5" /> Отправить
+                {isTranslatingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span className="hidden lg:inline">Gemini Всё</span>
               </button>
 
-              <div className="h-6 w-px bg-white/10 mx-1 shrink-0" />
+              <button 
+                onClick={() => setShowExportModal(true)}
+                disabled={!selectedChapter || blocks.length === 0}
+                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-[#4ade80]/20 text-[#4ade80] hover:bg-[#4ade80]/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                title="Отправить"
+              >
+                <Check className="w-3.5 h-3.5" /> 
+                <span className="hidden lg:inline">Отправить</span>
+              </button>
+
+              <div className="h-6 w-px bg-white/10 mx-0.5 md:mx-1 shrink-0" />
 
               <button
                 onClick={handleExportCSV}
                 disabled={!selectedChapter || blocks.length === 0}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors disabled:opacity-30 text-[10px] font-bold uppercase tracking-wider"
+                className="flex items-center gap-2 px-2 md:px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors disabled:opacity-30 text-[10px] font-bold uppercase tracking-wider"
+                title="Экспорт CSV"
               >
-                <Download className="w-3.5 h-3.5" /> Экспорт CSV
+                <Download className="w-3.5 h-3.5" /> 
+                <span className="hidden xl:inline">Экспорт CSV</span>
               </button>
-              <label className={`flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors cursor-pointer text-[10px] font-bold uppercase tracking-wider ${!selectedChapter ? 'opacity-30 cursor-not-allowed' : ''}`}>
-                <Upload className="w-3.5 h-3.5" /> Импорт CSV
+              <label 
+                className={`flex items-center gap-2 px-2 md:px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors cursor-pointer text-[10px] font-bold uppercase tracking-wider ${!selectedChapter ? 'opacity-30 cursor-not-allowed' : ''}`}
+                title="Импорт CSV"
+              >
+                <Upload className="w-3.5 h-3.5" /> 
+                <span className="hidden xl:inline">Импорт CSV</span>
                 <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} disabled={!selectedChapter} />
               </label>
             </div>
@@ -1596,7 +1589,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                             </th>
 
                             {/* Reference Column */}
-                            <th className="p-3 font-bold uppercase tracking-widest text-white/40 min-w-[200px] border-l border-white/5">
+                            <th className="hidden md:table-cell p-3 font-bold uppercase tracking-widest text-white/40 min-w-[200px] border-l border-white/5">
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center justify-between">
                                   <span>Референс</span>
@@ -1650,32 +1643,47 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                 <td className="p-3 font-mono text-[10px] text-white/30 align-top sticky left-0 bg-[#111] group-hover:bg-[#1a1a1a] z-10">{block.id}</td>
                                 
                                 {/* Source Column */}
-                                <td className="p-3 align-top">
+                                <td className="p-2 md:p-3 align-top min-w-[120px] md:min-w-[200px]">
+                                  {block.prefix.includes('options="') && (
+                                    <div className="text-[10px] font-bold text-amber-400 mb-1 uppercase tracking-tight flex items-center gap-1">
+                                      <List className="w-3 h-3" /> <span className="hidden sm:inline">Выбор</span>
+                                    </div>
+                                  )}
                                   {block.content[sourceLang]?.name && (
                                     <div className="text-[10px] font-bold text-white/40 mb-1 uppercase tracking-tight">
                                       {block.content[sourceLang].name}
                                     </div>
                                   )}
-                                  <div className="text-white/70 whitespace-pre-wrap leading-relaxed">
+                                  <div className="text-[11px] md:text-xs text-white/70 whitespace-pre-wrap leading-relaxed">
                                     {block.content[sourceLang]?.text}
                                   </div>
                                 </td>
 
                                 {/* Reference Column */}
-                                <td className="p-3 align-top border-l border-white/5 bg-white/5">
+                                <td className="hidden md:table-cell p-3 align-top border-l border-white/5 bg-white/5 min-w-[200px]">
+                                  {block.prefix.includes('options="') && (
+                                    <div className="text-[10px] font-bold text-amber-400/60 mb-1 uppercase tracking-tight flex items-center gap-1">
+                                      <List className="w-3 h-3" /> Выбор
+                                    </div>
+                                  )}
                                   {block.content[referenceLangs[0] || 'en_US']?.name && (
                                     <div className="text-[10px] font-bold text-white/40 mb-1 uppercase tracking-tight">
                                       {block.content[referenceLangs[0] || 'en_US'].name}
                                     </div>
                                   )}
-                                  <div className="text-white/50 whitespace-pre-wrap leading-relaxed italic">
+                                  <div className="text-xs text-white/50 whitespace-pre-wrap leading-relaxed italic">
                                     {block.content[referenceLangs[0] || 'en_US']?.text || '---'}
                                   </div>
                                 </td>
 
                                 {/* Target Column */}
-                                <td className={`p-3 align-top border-l border-white/5 bg-[#4ade80]/5`}>
+                                <td className={`p-2 md:p-3 align-top border-l border-white/5 bg-[#4ade80]/5 min-w-[150px] md:min-w-[250px]`}>
                                   <div className="flex flex-col gap-2">
+                                    {block.prefix.includes('options="') && (
+                                      <div className="text-[10px] font-bold text-amber-400 mb-1 uppercase tracking-tight flex items-center gap-1">
+                                        <List className="w-3 h-3" /> Выбор
+                                      </div>
+                                    )}
                                     {block.content[sourceLang]?.name && (
                                       <input
                                         type="text"
