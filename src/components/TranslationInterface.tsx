@@ -826,13 +826,19 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setReferenceLangs(prev => prev.filter(l => l !== lang));
   };
 
+  const blocksRef = React.useRef(blocks);
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
+
   const handleBatchTranslationChange = (results: { id: string, translatedText: string, translatedCharacter: string }[], lang: Language = activeTargetLang) => {
     if (!selectedChapter) return;
+    
+    console.log(`Applying ${results.length} translation results to blocks...`);
 
     setBlocks(prev => {
       const next = [...prev];
       results.forEach(res => {
-        // Robust ID matching: handle both "line-X" and "X" formats
         const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
         const idx = next.findIndex(b => b.id === targetId);
         
@@ -845,7 +851,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           next[idx] = { ...block, content: newContent };
           
           // 2. If there's a character name, update it globally for this character
-          if (block.content[sourceLang]?.name) {
+          if (block.content[sourceLang]?.name && res.translatedCharacter) {
             const sourceName = block.content[sourceLang].name;
             next.forEach((b, bIdx) => {
               if (b.content[sourceLang]?.name === sourceName) {
@@ -864,13 +870,14 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     setAllTranslations(prev => {
       const chapterTranslations = { ...(prev[selectedChapter.storyTxt] || {}) };
+      const currentBlocks = blocksRef.current;
       
       results.forEach(res => {
         const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
-        const idx = blocks.findIndex(b => b.id === targetId);
+        const idx = currentBlocks.findIndex(b => b.id === targetId);
         
         if (idx !== -1) {
-          const block = blocks[idx];
+          const block = currentBlocks[idx];
           const current = chapterTranslations[idx] || {};
           const langData = current[lang] || {};
           
@@ -881,9 +888,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           };
 
           // Update character name globally if applicable
-          if (block.content[sourceLang]?.name) {
+          if (block.content[sourceLang]?.name && res.translatedCharacter) {
             const sourceName = block.content[sourceLang].name;
-            blocks.forEach((b, bIdx) => {
+            currentBlocks.forEach((b, bIdx) => {
               if (b.content[sourceLang]?.name === sourceName) {
                 const bCurrent = chapterTranslations[bIdx] || {};
                 const bLangData = bCurrent[lang] || {};
@@ -904,7 +911,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const handleGeminiTranslateAll = async (lang: Language = activeTargetLang) => {
     if (!selectedChapter || isTranslatingAll) return;
     
-    const dialogueBlocks = blocks.filter(b => b.type === 'dialogue');
+    // Use the latest blocks from ref
+    const currentBlocks = blocksRef.current;
+    const dialogueBlocks = currentBlocks.filter(b => b.type === 'dialogue');
     if (dialogueBlocks.length === 0) return;
 
     const apiKey = userApiKey || process.env.GEMINI_API_KEY;
@@ -915,10 +924,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     setIsTranslatingAll(true);
     setErrorMessage(null);
+    console.log(`Starting mass translation for ${dialogueBlocks.length} lines...`);
 
     try {
-      // Use batches of 30 for reliability and context balance
-      const BATCH_SIZE = 30;
+      // Use larger batches as requested by the user
+      const BATCH_SIZE = 100;
       const batches: TranslationBlock[][] = [];
       for (let i = 0; i < dialogueBlocks.length; i += BATCH_SIZE) {
         batches.push(dialogueBlocks.slice(i, i + BATCH_SIZE));
@@ -926,6 +936,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
+        console.log(`Processing batch ${i + 1}/${batches.length} (${batch.length} lines)...`);
         
         // Mark blocks in current batch as translating
         setTranslatingBlockIds(prev => {
@@ -934,9 +945,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           return next;
         });
 
-        // Get context from preceding blocks
-        const firstBlockIndex = blocks.findIndex(b => b.id === batch[0].id);
-        const context = blocks.slice(Math.max(0, firstBlockIndex - 5), firstBlockIndex).map(b => ({
+        // Get context from preceding blocks (using latest state from ref)
+        const latestBlocks = blocksRef.current;
+        const firstBlockIndex = latestBlocks.findIndex(b => b.id === batch[0].id);
+        const context = latestBlocks.slice(Math.max(0, firstBlockIndex - 5), firstBlockIndex).map(b => ({
           character: b.content[sourceLang]?.name || "Narrator/System",
           text: b.content[lang]?.text || b.content[sourceLang]?.text || ""
         }));
@@ -946,7 +958,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         if (results && results.length > 0) {
           handleBatchTranslationChange(results, lang);
         } else {
-          console.warn(`Batch ${i + 1} returned no results`);
+          console.error(`Batch ${i + 1} failed to return results.`);
+          setErrorMessage(`Ошибка при переводе блока ${i + 1}. Проверьте консоль.`);
         }
 
         // Clear translating status for this batch
@@ -956,19 +969,20 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           return next;
         });
 
-        // Small delay to avoid rate limits if there are many batches
+        // Small delay to avoid rate limits
         if (batches.length > 1 && i < batches.length - 1) {
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise(r => setTimeout(r, 1000));
         }
       }
+      console.log("Mass translation completed.");
     } catch (error: any) {
       console.error("Mass translation failed:", error);
       if (error.message === "QUOTA_EXCEEDED") {
-        setErrorMessage("Gemini API quota exceeded. Translation stopped.");
+        setErrorMessage("Превышена квота Gemini API. Перевод остановлен.");
       } else if (error.message === "GEMINI_API_KEY_MISSING") {
-        setErrorMessage("Gemini API Key is missing.");
+        setErrorMessage("Ключ Gemini API отсутствует.");
       } else {
-        setErrorMessage("Translation failed. Check console for details.");
+        setErrorMessage("Ошибка перевода. Подробности в консоли.");
       }
     } finally {
       setIsTranslatingAll(false);
