@@ -69,6 +69,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
 
   const currentIndexRef = useRef(0);
+  const predicateMismatchRef = useRef(false);
   const isProcessing = useRef(false);
   const selectedChoicesRef = useRef<Set<string>>(new Set());
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -108,7 +109,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     
     try {
       let index = startIndex;
-      let localPredicateMismatch = predicateMismatch;
+      let localPredicateMismatch = predicateMismatchRef.current;
       
       while (index < lines.length) {
         const line = lines[index];
@@ -119,6 +120,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           } else {
             localPredicateMismatch = false;
           }
+          predicateMismatchRef.current = localPredicateMismatch;
           dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: localPredicateMismatch });
           index++;
           continue;
@@ -474,8 +476,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     const loadStory = async () => {
       try {
         setLoading(true);
+        setError(null);
         selectedChoicesRef.current.clear();
+        predicateMismatchRef.current = false;
         dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
+        dispatch({ type: 'SET_INDEX', payload: 0 });
+        
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
         const parsed = parseStoryScript(script);
@@ -493,7 +499,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     };
     
     loadStory();
-  }, [storyTxt, customScript]);
+  }, [storyTxt, customScript, translator]);
 
   // Initialize volumes from audioManager
   useEffect(() => {
@@ -667,13 +673,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
         <LogModal 
           show={showLog}
-          history={lines
-            .filter(line => line.type === 'dialogue' || line.type === 'subtitle')
-            .map(line => ({
-              speaker: line.type === 'dialogue' ? line.characterName || null : null,
-              text: line.text || ''
-            }))
-          }
+          history={history}
           onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
           t={t}
         />

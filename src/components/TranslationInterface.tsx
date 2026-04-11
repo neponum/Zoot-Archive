@@ -60,28 +60,42 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
       return { id, type: 'command', originalText: line, prefix: '', content: {} };
     }
     
+    // Match prefix (multiple [tags]) and the rest of the line
     const match = line.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
     if (match) {
       const prefix = match[1];
       const textToTranslate = match[2];
       
-      // Check for decision options or other translatable attributes
-      const hasOptions = prefix.includes('options="');
+      // Extract name if present: [name="阿米娅"]
+      let name: string | undefined;
+      const nameMatch = prefix.match(/\[name="([^"]+)"\]/);
+      if (nameMatch) {
+        name = nameMatch[1];
+      }
+
+      // Extract options if present: [Decision(options="...", ...)]
+      const optionsMatch = prefix.match(/options="([^"]+)"/);
       
-      if (textToTranslate.trim() !== '' || hasOptions) {
+      if (textToTranslate.trim() !== '' || optionsMatch) {
+        const content: Record<string, { text: string, name?: string }> = {};
+        content['zh_CN'] = { 
+          text: textToTranslate.trim() !== '' ? textToTranslate : (optionsMatch ? optionsMatch[1] : ''),
+          name: name
+        };
+
         return { 
           id, 
           type: 'dialogue', 
           originalText: line, 
           prefix, 
-          content: {}
+          content
         };
       }
       
       return { id, type: 'command', originalText: line, prefix, content: {} };
     }
     
-    return { id, type: 'dialogue', originalText: line, prefix: '', content: {} };
+    return { id, type: 'dialogue', originalText: line, prefix: '', content: { zh_CN: { text: line } } };
   });
 }
 
@@ -935,11 +949,25 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     console.log(`Starting mass translation for ${dialogueBlocks.length} lines...`);
 
     try {
-      // Use larger batches as requested by the user
-      const BATCH_SIZE = 100;
+      // Dynamic balanced batching:
+      // Instead of fixed 100+30, for 130 lines we do 65+65.
+      // If lines are 101-110, we translate all in one batch as requested.
+      const TARGET_BATCH_SIZE = 100;
+      const SINGLE_BATCH_THRESHOLD = 110;
+      const totalLines = dialogueBlocks.length;
+      
       const batches: TranslationBlock[][] = [];
-      for (let i = 0; i < dialogueBlocks.length; i += BATCH_SIZE) {
-        batches.push(dialogueBlocks.slice(i, i + BATCH_SIZE));
+      
+      if (totalLines <= SINGLE_BATCH_THRESHOLD) {
+        batches.push(dialogueBlocks);
+        console.log(`Single batch: ${totalLines} lines (within threshold of ${SINGLE_BATCH_THRESHOLD}).`);
+      } else {
+        const numBatches = Math.ceil(totalLines / TARGET_BATCH_SIZE);
+        const actualBatchSize = Math.ceil(totalLines / numBatches);
+        for (let i = 0; i < totalLines; i += actualBatchSize) {
+          batches.push(dialogueBlocks.slice(i, i + actualBatchSize));
+        }
+        console.log(`Dynamic batching: ${totalLines} lines split into ${batches.length} batches of ~${actualBatchSize} lines.`);
       }
 
       for (let i = 0; i < batches.length; i++) {
@@ -1012,12 +1040,15 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         
         const optionsMatch = b.originalText.match(/options="([^"]+)"/);
         const sourceMatch = b.originalText.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
+        
+        // If it was an options-only line (like Decision)
         if (optionsMatch && sourceMatch && sourceMatch[2].trim() === '') {
            const translatedOptions = b.content[lang]?.text || b.content[sourceLang]?.text || optionsMatch[1];
            finalPrefix = finalPrefix.replace(`options="${optionsMatch[1]}"`, `options="${translatedOptions}"`);
            return finalPrefix;
         }
 
+        // If it has text after prefix
         return `${finalPrefix}${b.content[lang]?.text || b.content[sourceLang]?.text || ''}`;
       }
       return b.originalText;
