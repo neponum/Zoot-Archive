@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Download, Upload, Copy, Check, Globe, FileText, ChevronDown, AlertCircle, Play, Search, Sparkles, Loader2, User, UserPlus, Trash2, Plus, Key, MessageSquare, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Download, Upload, Copy, Check, Globe, FileText, ChevronDown, AlertCircle, Play, Search, Sparkles, Loader2, User, UserPlus, Trash2, Plus, Key, MessageSquare, ExternalLink, X, List } from 'lucide-react';
 import { StoryEpisode, Language, StoryChapter } from '../types';
-import { fetchChapterList, fetchStoryScript } from '../services/storyService';
+import { fetchChapterList, fetchStoryScript, checkScriptExists } from '../services/storyService';
+import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
 import { GoogleGenAI, Type } from "@google/genai";
 import Papa from 'papaparse';
+import { LogModal } from './story/LogModal';
 
 interface TranslationInterfaceProps {
   onClose: () => void;
@@ -131,6 +133,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem('ak-user-api-key') || '');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('ak-selected-model') || 'gemini-3-flash-preview');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [originalScriptText, setOriginalScriptText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -145,6 +148,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [discordUser, setDiscordUser] = useState<{ id: string; username: string; avatar: string | null } | null>(null);
   const [isDiscordMember, setIsDiscordMember] = useState(false);
   const [isCheckingDiscord, setIsCheckingDiscord] = useState(true);
+  const [availableTranslators, setAvailableTranslators] = useState<string[]>([]);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = React.useRef<HTMLDivElement>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -154,6 +160,29 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
+
+  useEffect(() => {
+    if (!selectedChapter || !activeTargetLang) return;
+    
+    const checkTranslators = async () => {
+      const registry = TRANSLATION_REGISTRY[activeTargetLang];
+      if (!registry || !registry.translators) {
+        setAvailableTranslators([]);
+        return;
+      }
+      
+      const results = await Promise.all(
+        registry.translators.map(async (t) => {
+          const exists = await checkScriptExists(selectedChapter.storyTxt, activeTargetLang, t);
+          return exists ? t : null;
+        })
+      );
+      
+      setAvailableTranslators(results.filter((t): t is string => t !== null));
+    };
+    
+    checkTranslators();
+  }, [selectedChapter, activeTargetLang]);
 
   // Persistent translations: Record<storyTxt, Record<lineIndex, { text?: string, name?: string }>>
   const [allTranslations, setAllTranslations] = useState<Record<string, Record<string, { text?: string, name?: string }>>>(() => {
@@ -252,6 +281,16 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -419,7 +458,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                 selectedChapter.storyTxt, 
                 lang, 
                 !LANGUAGES.find(l => l.id === lang)?.isOfficial,
-                activeProfile !== 'Default' ? activeProfile : undefined
+                activeProfile === 'Default' ? 'none' : activeProfile
               );
               return { lang, text };
             } catch (e) {
@@ -432,6 +471,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
         const sourceResult = scriptResults.find(r => r.lang === sourceLang);
         const sourceText = sourceResult?.text || '';
+        setOriginalScriptText(sourceText);
         
         const parsedBlocks = parseTranslationBlocks(sourceText);
         const dialogueBlocks = parsedBlocks.filter(b => b.type === 'dialogue');
@@ -449,8 +489,13 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           // Add source text
           const sourceMatch = block.originalText.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
           const sourceNameMatch = block.prefix.match(/name="([^"]+)"/);
-          const sourceText = sourceMatch ? sourceMatch[2] : block.originalText;
+          let sourceText = sourceMatch ? sourceMatch[2] : block.originalText;
           const sourceName = sourceNameMatch ? sourceNameMatch[1] : undefined;
+          
+          const optionsMatch = block.prefix.match(/options="([^"]+)"/);
+          if (optionsMatch && sourceText.trim() === '') {
+            sourceText = optionsMatch[1];
+          }
 
           content[sourceLang] = {
             text: sourceText,
@@ -472,6 +517,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                 const nameMatch = match[1].match(/name="([^"]+)"/);
                 text = match[2];
                 name = nameMatch ? nameMatch[1] : undefined;
+                
+                const optMatch = match[1].match(/options="([^"]+)"/);
+                if (optMatch && text.trim() === '') {
+                  text = optMatch[1];
+                }
               } else {
                 text = line;
               }
@@ -522,7 +572,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     loadScripts();
 
     return () => { isMounted = false; };
-  }, [selectedChapter, sourceLang, referenceLangs, targetLangs]);
+  }, [selectedChapter, sourceLang, referenceLangs, targetLangs, activeProfile]);
 
   const handleTranslationChange = (id: string, newText: string, lang: Language = activeTargetLang) => {
     setBlocks(prev => prev.map(b => {
@@ -847,6 +897,15 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         if (sourceName && targetName) {
           finalPrefix = finalPrefix.replace(`name="${sourceName}"`, `name="${targetName}"`);
         }
+        
+        const optionsMatch = b.originalText.match(/options="([^"]+)"/);
+        const sourceMatch = b.originalText.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
+        if (optionsMatch && sourceMatch && sourceMatch[2].trim() === '') {
+           const translatedOptions = b.content[lang]?.text || b.content[sourceLang]?.text || optionsMatch[1];
+           finalPrefix = finalPrefix.replace(`options="${optionsMatch[1]}"`, `options="${translatedOptions}"`);
+           return finalPrefix;
+        }
+
         return `${finalPrefix}${b.content[lang]?.text || b.content[sourceLang]?.text || ''}`;
       }
       return b.originalText;
@@ -1066,7 +1125,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#050505] text-white font-sans overflow-hidden select-none">
       {/* Unified Toolbar */}
-      <div className="h-14 border-b border-white/10 flex items-center px-4 bg-[#0a0a0a] gap-3 shrink-0 overflow-x-auto custom-scrollbar no-scrollbar">
+      <div className="h-14 border-b border-white/10 flex items-center px-4 bg-[#0a0a0a] gap-3 shrink-0 z-20">
         <button 
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-sm transition-colors shrink-0"
@@ -1103,31 +1162,118 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
             </button>
           )}
 
-          <div className="flex items-center gap-1 bg-white/5 px-2 py-1.5 border border-white/10 rounded-sm group relative">
-            <User className="w-3.5 h-3.5 text-white/40" />
-            <select 
-              value={activeProfile}
-              onChange={(e) => setActiveProfile(e.target.value)}
-              className="bg-transparent text-[10px] text-white outline-none cursor-pointer appearance-none pr-4"
+          <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-sm relative" ref={profileDropdownRef}>
+            <button 
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/5 transition-colors"
             >
-              {profiles.map(p => (
-                <option key={p} value={p} className="bg-[#111] text-white">{p}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-3 h-3 text-white/40 absolute right-1 pointer-events-none" />
+              <User className="w-3.5 h-3.5 text-white/40" />
+              <span className="text-[10px] font-bold text-white min-w-[60px] text-left">{activeProfile}</span>
+              <ChevronDown className={`w-3 h-3 text-white/40 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isProfileDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-[#111] border border-white/10 rounded-sm shadow-2xl z-[70] py-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="px-2 py-1.5 border-b border-white/5 mb-1">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Выберите профиль</span>
+                </div>
+                <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                  {profiles.map(p => (
+                    <div 
+                      key={p}
+                      className={`group flex items-center justify-between px-2 py-1.5 cursor-pointer transition-colors ${
+                        activeProfile === p ? 'bg-blue-500/10 text-blue-400' : 'hover:bg-white/5 text-white/60 hover:text-white'
+                      }`}
+                      onClick={() => {
+                        setActiveProfile(p);
+                        setIsProfileDropdownOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {p === 'Default' ? <Globe className="w-3 h-3 shrink-0" /> : <User className="w-3 h-3 shrink-0" />}
+                        <span className="text-[10px] font-bold truncate">{p}</span>
+                      </div>
+                      
+                      {p !== 'Default' && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProfileModalMode('rename');
+                              setProfileModalValue(p);
+                              setShowProfileModal(true);
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className="p-1 hover:bg-white/10 rounded-sm text-white/40 hover:text-white transition-colors"
+                            title="Переименовать"
+                          >
+                            <FileText className="w-3 h-3" />
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProfileModalMode('delete');
+                              setProfileModalValue(p);
+                              setShowProfileModal(true);
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className="p-1 hover:bg-red-500/20 rounded-sm text-white/40 hover:text-red-400 transition-colors"
+                            title="Удалить"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-1 pt-1 border-t border-white/5">
+                  <button 
+                    onClick={() => {
+                      setProfileModalMode('add');
+                      setProfileModalValue('');
+                      setShowProfileModal(true);
+                      setIsProfileDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-2 py-2 hover:bg-white/5 text-[#4ade80] transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Новый профиль</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           
-          <button 
-            onClick={() => {
-              setProfileModalMode('add');
-              setProfileModalValue('');
-              setShowProfileModal(true);
-            }}
-            className="w-7 h-7 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors"
-            title="Добавить профиль"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-          </button>
+          <div className="h-6 w-px bg-white/10 mx-1 shrink-0" />
+
+          {availableTranslators.length > 0 && (
+            <div className="flex items-center gap-1 ml-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-white/30 mr-1">Доступны:</span>
+              <div className="flex items-center gap-1">
+                {availableTranslators.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      if (!profiles.includes(t)) {
+                        handleAddProfile(t);
+                      } else {
+                        setActiveProfile(t);
+                      }
+                    }}
+                    className={`px-2 py-1 rounded-sm text-[9px] font-bold transition-all border ${
+                      activeProfile === t 
+                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' 
+                        : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white hover:border-white/10'
+                    }`}
+                    title={`Переключиться на перевод от ${t}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
@@ -1244,6 +1390,31 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
             {/* Actions & CSV Tools */}
             <div className="flex items-center gap-2 shrink-0">
+              {selectedChapter && (
+                <button 
+                  onClick={() => {
+                    const win = window.open('about:blank', '_blank');
+                    if (win) {
+                      win.document.write(`
+                        <html>
+                          <head>
+                            <title>Original Script: ${selectedChapter.storyTxt}</title>
+                            <style>
+                              body { font-family: monospace; white-space: pre-wrap; padding: 20px; background: white; color: black; }
+                            </style>
+                          </head>
+                          <body>${originalScriptText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</body>
+                        </html>
+                      `);
+                      win.document.close();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Скрипт
+                </button>
+              )}
+
               {onTestTranslation && (
                 <button 
                   onClick={() => onTestTranslation(selectedChapter!, generateExportText())}
@@ -1620,6 +1791,29 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                       />
                     </div>
                   </div>
+
+                  {profileModalMode === 'add' && TRANSLATION_REGISTRY[activeTargetLang]?.translators && TRANSLATION_REGISTRY[activeTargetLang]!.translators.length > 0 && (
+                    <div className="flex flex-col gap-2 mt-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Общие переводы</label>
+                      <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                        {TRANSLATION_REGISTRY[activeTargetLang]?.translators.map(t => (
+                          <button
+                            key={t}
+                            onClick={() => {
+                              handleAddProfile(t);
+                              setShowProfileModal(false);
+                            }}
+                            disabled={profiles.includes(t)}
+                            className="flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors text-left disabled:opacity-30"
+                          >
+                            <span className="text-[11px] font-medium">{t}</span>
+                            <Plus className="w-3 h-3 text-[#4ade80]" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <button 
                       onClick={() => setShowProfileModal(false)}

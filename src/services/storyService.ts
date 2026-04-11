@@ -761,6 +761,11 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     } else {
       // Unofficial language: fetch original (zh_CN) and apply CSV
       const originalScript = await fetchScript('zh_CN');
+      
+      if (translator === 'none') {
+        return originalScript;
+      }
+
       const registry = TRANSLATION_REGISTRY[lang];
       const defaultTranslator = (registry && registry.translators.length > 0) ? registry.translators[0] : undefined;
       const effectiveTranslator = translator || defaultTranslator;
