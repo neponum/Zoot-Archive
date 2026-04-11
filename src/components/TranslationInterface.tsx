@@ -142,6 +142,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = React.useRef<HTMLDivElement>(null);
 
+  const [translationProgress, setTranslationProgress] = useState<{current: number, total: number} | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -708,6 +709,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           Translate the dialogue lines in 'toTranslate' from ${fromLabel} to ${toLabel}. 
           Maintain the tone, style, and any specific terminology related to Arknights. 
           
+          CRITICAL: You MUST translate ALL lines provided in 'toTranslate'. Do not skip any lines. 
+          The output JSON array MUST have exactly the same number of items as the input 'toTranslate' array.
+          
           CRITICAL FOR RUSSIAN TRANSLATION:
           - Use the 'character' name and 'context' (previous lines) to determine the correct gender endings for verbs and adjectives.
           - If the character is female (e.g., Amiya, Kal'tsit, Ch'en, etc.), use feminine endings.
@@ -839,7 +843,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     setBlocks(prev => {
       const next = [...prev];
       results.forEach(res => {
-        const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
+        // Extremely robust ID matching: trim and handle formats
+        const rawId = res.id.toString().trim();
+        const targetId = rawId.startsWith('line-') ? rawId : `line-${rawId}`;
         const idx = next.findIndex(b => b.id === targetId);
         
         if (idx !== -1) {
@@ -873,7 +879,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       const currentBlocks = blocksRef.current;
       
       results.forEach(res => {
-        const targetId = res.id.toString().startsWith('line-') ? res.id : `line-${res.id}`;
+        const rawId = res.id.toString().trim();
+        const targetId = rawId.startsWith('line-') ? rawId : `line-${rawId}`;
         const idx = currentBlocks.findIndex(b => b.id === targetId);
         
         if (idx !== -1) {
@@ -924,6 +931,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     setIsTranslatingAll(true);
     setErrorMessage(null);
+    setTranslationProgress({ current: 0, total: dialogueBlocks.length });
     console.log(`Starting mass translation for ${dialogueBlocks.length} lines...`);
 
     try {
@@ -957,6 +965,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         
         if (results && results.length > 0) {
           handleBatchTranslationChange(results, lang);
+          setTranslationProgress(prev => prev ? { ...prev, current: prev.current + results.length } : null);
         } else {
           console.error(`Batch ${i + 1} failed to return results.`);
           setErrorMessage(`Ошибка при переводе блока ${i + 1}. Проверьте консоль.`);
@@ -987,6 +996,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     } finally {
       setIsTranslatingAll(false);
       setTranslatingBlockIds(new Set());
+      setTranslationProgress(null);
     }
   };
 
@@ -1521,15 +1531,23 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                 </button>
               )}
 
-              <button 
-                onClick={handleGeminiTranslateAll}
-                disabled={isTranslatingAll || !selectedChapter || !userApiKey}
-                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
-                title="Gemini Всё"
-              >
-                {isTranslatingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span className="hidden lg:inline">Gemini Всё</span>
-              </button>
+          <button 
+            onClick={() => handleGeminiTranslateAll()}
+            disabled={isTranslatingAll || !selectedChapter || !userApiKey}
+            className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-30 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider relative overflow-hidden"
+            title="Gemini Всё"
+          >
+            {isTranslatingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            <span className="hidden lg:inline">
+              {translationProgress ? `Перевод: ${translationProgress.current}/${translationProgress.total}` : 'Gemini Всё'}
+            </span>
+            {translationProgress && (
+              <div 
+                className="absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300" 
+                style={{ width: `${(translationProgress.current / translationProgress.total) * 100}%` }}
+              />
+            )}
+          </button>
 
               <button 
                 onClick={() => setShowExportModal(true)}
