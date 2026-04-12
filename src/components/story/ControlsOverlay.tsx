@@ -55,6 +55,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onSettingsClick(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
@@ -63,6 +65,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onLogClick(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
@@ -71,6 +75,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -80,6 +86,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); setShowUI(false); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
@@ -96,6 +104,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onToggleAuto(); }}
             className={cn(
               "font-bold text-base sm:text-[20px] tracking-[0.2em] transition-all drop-shadow-lg p-2",
@@ -107,6 +117,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onBackClick(); }}
             className={cn(
               "font-bold text-base sm:text-[20px] tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg p-2"

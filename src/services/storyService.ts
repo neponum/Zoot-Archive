@@ -2,7 +2,9 @@ import Papa from 'papaparse';
 import { StoryChapter, StoryLine, StoryEpisode, Language } from '../types';
 import { CacheService } from './cacheService';
 import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
-import audioMap from '../data/audioMap.json';
+import audioMusic from '../data/audio_music.json';
+import audioSound from '../data/audio_sound.json';
+import { UI_STRINGS } from '../translations';
 
 enum TokenType {
   LEFT_BRACKET,
@@ -330,6 +332,7 @@ class StoryParser {
         return {
           type: 'music',
           assetName: params.key || params.intro,
+          introAssetName: params.key ? params.intro : undefined,
           volume: params.volume ? parseFloat(params.volume) : 1,
           originalTag: original
         };
@@ -503,6 +506,17 @@ function getBaseUrl(lang: Language): string {
   return lang === 'zh_CN' ? BASE_DATA_URL_CN : BASE_DATA_URL_YOSTAR;
 }
 
+/**
+ * Maps the UI language to a language that has official game data.
+ */
+function getDataLanguage(lang: Language): Language {
+  const officialLanguages: Language[] = ['zh_CN', 'en_US', 'ja_JP', 'ko_KR', 'zh_TW'];
+  if (officialLanguages.includes(lang)) return lang;
+  
+  // Default to zh_CN for all other languages to get the most up-to-date content
+  return 'zh_CN';
+}
+
 let cachedEpisodes: Partial<Record<Language, StoryEpisode[] | null>> = {
   zh_CN: null,
   en_US: null,
@@ -584,8 +598,9 @@ function getArknightsYear(timestamp: number): number {
 }
 
 export async function fetchChapterList(): Promise<StoryEpisode[]> {
-  if (cachedEpisodes[currentLanguage]) {
-    return cachedEpisodes[currentLanguage]!;
+  const dataLang = getDataLanguage(currentLanguage);
+  if (cachedEpisodes[dataLang]) {
+    return cachedEpisodes[dataLang]!;
   }
 
   const fetchList = async (lang: Language) => {
@@ -608,7 +623,7 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
   let data;
   
   try {
-    data = await fetchList(currentLanguage);
+    data = await fetchList(dataLang);
     
     // Fetch reference data for search and fallback
     if (!zhReferenceData) {
@@ -626,13 +641,13 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
       }
     }
   } catch (err) {
-    console.warn(`Failed to fetch ${currentLanguage} data, falling back to zh_CN:`, err);
-    if (currentLanguage !== 'zh_CN') {
+    console.warn(`Failed to fetch ${dataLang} data, falling back to zh_CN:`, err);
+    if (dataLang !== 'zh_CN') {
       try {
         data = await fetchList('zh_CN');
         zhReferenceData = data;
       } catch (fallbackErr) {
-        throw new Error(`Failed to fetch both ${currentLanguage} and zh_CN data.`);
+        throw new Error(`Failed to fetch both ${dataLang} and zh_CN data.`);
       }
     } else {
       throw err;
@@ -680,10 +695,19 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
 
         // If current language is English and name is Chinese, try to use englishName if it's different
         let displayName = obj.name || key;
-        if (currentLanguage === 'en_US' && englishName && /[\u4e00-\u9fa5]/.test(displayName)) {
+        
+        // 1. Check manual translations first
+        const manualTranslations = UI_STRINGS[currentLanguage]?.story_titles;
+        if (manualTranslations && manualTranslations[key]) {
+          displayName = manualTranslations[key];
+        } else if (dataLang === 'en_US' && englishName && /[\u4e00-\u9fa5]/.test(displayName)) {
+          // 2. Fallback to English if data source is English
           if (!/[\u4e00-\u9fa5]/.test(englishName)) {
             displayName = englishName;
           }
+        } else if (currentLanguage !== 'zh_CN' && englishName && !/[\u4e00-\u9fa5]/.test(englishName)) {
+          // 3. Fallback to English reference data even if source is CN
+          displayName = englishName;
         }
 
         episodes.push({
@@ -701,7 +725,7 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
     }
   }
 
-  cachedEpisodes[currentLanguage] = episodes;
+  cachedEpisodes[dataLang] = episodes;
   return episodes;
 }
 
@@ -1249,22 +1273,22 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
       const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
       
       // 1. Check static audio map first (Highest priority)
-      if ((audioMap.music as any)[cleanAudioName]) {
-        return (audioMap.music as any)[cleanAudioName];
+      if ((audioMusic as any)[cleanAudioName]) {
+        return (audioMusic as any)[cleanAudioName];
       }
       
-      console.error(`Music file not found in audioMap: ${cleanAudioName}`);
+      console.error(`Music file not found in audioMusic: ${cleanAudioName}`);
       return '';
     }
     case 'sound': {
       const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
       
       // 1. Check static audio map first
-      if ((audioMap.sound as any)[cleanAudioName]) {
-        return (audioMap.sound as any)[cleanAudioName];
+      if ((audioSound as any)[cleanAudioName]) {
+        return (audioSound as any)[cleanAudioName];
       }
       
-      console.error(`Sound file not found in audioMap: ${cleanAudioName}`);
+      console.error(`Sound file not found in audioSound: ${cleanAudioName}`);
       return '';
     }
     case 'voice': {
@@ -1311,6 +1335,11 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
         if (line.assetName) {
           resolutionPromises.push(
             getImageUrl(line.type as any, line.assetName).then(url => { if (url) audioAssets.add(url); })
+          );
+        }
+        if (line.introAssetName) {
+          resolutionPromises.push(
+            getImageUrl(line.type as any, line.introAssetName).then(url => { if (url) audioAssets.add(url); })
           );
         }
       }

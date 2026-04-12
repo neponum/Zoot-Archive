@@ -22,9 +22,11 @@ export const LogModal: React.FC<LogModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col"
+          className="absolute inset-0 z-[100] bg-black flex flex-col"
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar */}

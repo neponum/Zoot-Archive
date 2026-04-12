@@ -299,7 +299,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'music':
             if (line.assetName) {
               const url = await getImageUrl('music', line.assetName);
-              if (url) audioManager.playBGM(url, line.volume || 0.5);
+              let introUrl: string | undefined = undefined;
+              if (line.introAssetName) {
+                introUrl = await getImageUrl('music', line.introAssetName);
+              }
+              if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl);
             }
             break;
             

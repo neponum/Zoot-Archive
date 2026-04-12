@@ -83,10 +83,10 @@ class AudioManager {
   }
 
   /**
-   * Play background music with optional crossfade
+   * Play background music with optional crossfade and intro
    */
-  public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000) {
-    if (this.bgmUrl === url) {
+  public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000, introUrl?: string) {
+    if (this.bgmUrl === url && !introUrl) {
       if (this.bgm) {
         this.bgm.volume = volume * this.masterBGMVolume;
       }
@@ -105,6 +105,7 @@ class AudioManager {
 
     // Fade out old BGM
     if (oldBgm) {
+      oldBgm.onended = null;
       this.fadeAudio(oldBgm, oldBgm.volume, 0, fadeDuration, () => {
         oldBgm.pause();
         oldBgm.src = '';
@@ -112,14 +113,37 @@ class AudioManager {
     }
 
     // Load and fade in new BGM
-    const newBgm = new Audio(url);
-    newBgm.loop = true;
+    const newBgm = new Audio(introUrl || url);
+    newBgm.loop = !introUrl;
     newBgm.volume = 0;
     
     try {
       await newBgm.play();
       this.bgm = newBgm;
       this.bgmFadeInterval = this.fadeAudio(newBgm, 0, volume * this.masterBGMVolume, fadeDuration);
+
+      if (introUrl) {
+        newBgm.onended = async () => {
+          // Only switch to loop if this intro is still the active BGM
+          if (this.bgm === newBgm) {
+            const loopBgm = new Audio(url);
+            loopBgm.loop = true;
+            loopBgm.volume = volume * this.masterBGMVolume;
+            try {
+              await loopBgm.play();
+              // Double check again after async play
+              if (this.bgm === newBgm) {
+                this.bgm = loopBgm;
+              } else {
+                loopBgm.pause();
+                loopBgm.src = '';
+              }
+            } catch (e) {
+              console.error('Failed to play loop BGM', e);
+            }
+          }
+        };
+      }
     } catch (e) {
       console.error('Failed to play BGM', e);
     }
@@ -131,6 +155,7 @@ class AudioManager {
   public stopBGM(fadeDuration: number = 1000) {
     if (this.bgm) {
       const currentBgm = this.bgm;
+      currentBgm.onended = null;
       if (this.bgmFadeInterval) {
         window.clearInterval(this.bgmFadeInterval);
       }

@@ -161,7 +161,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                     e.stopPropagation();
                     onChoice(currentDecision.values?.[idx] || String(idx + 1));
                   }}
-                  className="w-full p-4 sm:p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-lg sm:text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
+                  className="w-full p-3 sm:p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-base sm:text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
                 >
                   {option}
                 </motion.button>

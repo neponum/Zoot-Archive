@@ -140,8 +140,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const t = UI_STRINGS[lang];
 
   const tabs = [
-    { id: 'STORY', label: 'Story', subLabel: '剧情', icon: BookOpen },
-    { id: 'NONE', label: 'Records', subLabel: '干员密录', icon: User },
+    { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen },
+    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: User },
   ];
 
   const filteredEpisodes = React.useMemo(() => {
@@ -454,10 +454,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   </div>
                   <div className="w-px h-8 md:h-10 bg-white/10 shrink-0" />
                   <div className="flex flex-col min-w-max">
-                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">Current Sector</span>
+                    <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">{t.current_sector}</span>
                     <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">
-                      {viewMode === 'ALL' ? 'ALL ARCHIVES' : (viewMode === 'STORYLINE' 
-                        ? STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.topText 
+                      {viewMode === 'ALL' ? t.all_archives : (viewMode === 'STORYLINE' 
+                        ? (t.story_lines[selectedStoryLine] || STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.topText)
                         : t.year_n(selectedYear))}
                     </span>
                   </div>
@@ -469,7 +469,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                     className={`px-4 md:px-8 py-2 md:py-3 border transition-all flex items-center gap-3 group rounded-sm ${viewMode === 'ALL' ? 'bg-white border-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'border-white/20 text-white hover:bg-white/10 hover:border-white/40'}`}
                   >
                     <LayoutGrid className={`w-3.5 h-3.5 md:w-4 md:h-4 ${viewMode === 'ALL' ? 'text-black' : 'text-white/40 group-hover:text-white'}`} />
-                    <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase">All</span>
+                    <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase">{t.all}</span>
                   </button>
                 </div>
               </div>
@@ -494,19 +494,19 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                            onClick={() => setViewMode('STORYLINE')}
                            className={`flex-1 py-4 text-[10px] font-black tracking-[0.2em] uppercase transition-all ${viewMode === 'STORYLINE' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
                          >
-                           Story Line
+                           {t.storyline}
                          </button>
                          <button 
                            onClick={() => setViewMode('YEAR')}
                            className={`flex-1 py-4 text-[10px] font-black tracking-[0.2em] uppercase transition-all ${viewMode === 'YEAR' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
                          >
-                           Year
+                           {t.year}
                          </button>
                        </div>
 
                        <div className="py-4 px-6 mb-2 shrink-0 flex flex-col gap-1">
                          <span className="text-[10px] font-bold text-white/20 tracking-[0.2em] uppercase">
-                           {viewMode === 'STORYLINE' ? 'Storyline Selection' : 'Year Selection'}
+                           {viewMode === 'STORYLINE' ? t.storyline_selection : t.year_selection}
                          </span>
                          <span className="text-[8px] font-medium text-white/40 tracking-wider uppercase md:hidden">
                            {t.select_hint}
@@ -541,8 +541,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                  />
                                </div>
                                <div className="flex flex-col items-start overflow-hidden">
-                                 <span className={`text-[11px] font-black tracking-[0.15em] text-left uppercase transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{line.topText}</span>
-                                 <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>{line.bottomText}</span>
+                                 <span className={`text-[11px] font-black tracking-[0.15em] text-left uppercase transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
+                                   {t.story_lines[line.id] || line.topText}
+                                 </span>
+                                 <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
+                                   {line.id === 'main' ? t.mainline : t.storyline}
+                                 </span>
                                </div>
                                
                                {selectedStoryLine === line.id && (
@@ -573,7 +577,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                    {year.label}
                                  </span>
                                  <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedYear === year.value ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
-                                   Arknights Era
+                                   {t.arknights_era}
                                  </span>
                                </div>
                                
@@ -750,13 +754,13 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                     const hasAnyTranslation = Object.values(chapterScriptsExist).some(exists => exists);
                     const translators = (registry && registry.translators.length > 0) 
                       ? registry.translators 
-                      : ['Переводчики сообщества'];
+                      : [t.community_translators];
                     
                     if (hasAnyTranslation || translators.length > 1) {
                       return (
                         <div className="mt-2 flex items-center gap-4">
                           <div className="text-sm text-white/50 flex items-center gap-2">
-                            <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">Перевод</span>
+                            <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">{t.translation}</span>
                             <span className="font-medium">{selectedTranslator || translators[0]}</span>
                           </div>
                           
@@ -766,7 +770,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                 onClick={() => setIsTranslatorMenuOpen(!isTranslatorMenuOpen)}
                                 className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
                               >
-                                Изменить <ChevronDown className="w-3 h-3" />
+                                {t.change} <ChevronDown className="w-3 h-3" />
                               </button>
                               
                               {isTranslatorMenuOpen && (
@@ -854,7 +858,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           <div className="absolute top-1.5 left-1.5 flex items-center gap-1 z-20">
                             <div className={`w-1.5 h-1.5 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
                             <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
-                              {scriptExists ? (isOfficial ? 'RECORD' : 'TRANSLATED') : 'MISSING'}
+                              {scriptExists ? (isOfficial ? 'RECORD' : t.translated) : t.missing}
                             </span>
                           </div>
 
@@ -877,7 +881,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                 {displayCode}
                               </span>
                               <span className="text-[7px] font-light text-white/60 uppercase tracking-[0.2em] mt-0.5 mb-1">
-                                STORY
+                                {t.story}
                               </span>
                               <h3 className="text-xs font-medium text-white truncate w-full px-2">
                                 {chapter.name}
@@ -898,7 +902,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                             title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                           >
                             <Play className="w-3.5 h-3.5 fill-current group-hover/btn:scale-110 transition-transform" />
-                            <span className="text-[6px] font-black uppercase tracking-widest">Play</span>
+                            <span className="text-[6px] font-black uppercase tracking-widest">{t.play}</span>
                           </button>
                           
                           {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
@@ -908,7 +912,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               title="Открыть инструмент перевода"
                             >
                               <Languages className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
-                              <span className="text-[6px] font-black uppercase tracking-widest">Trans</span>
+                              <span className="text-[6px] font-black uppercase tracking-widest">{t.trans}</span>
                             </button>
                           )}
                         </div>
@@ -1024,7 +1028,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
             </div>
             <div className="flex flex-col gap-4">
               <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-wider">
-                Found an error in the archives?
+                {t.found_error}
               </p>
               <div className="h-px bg-white/5" />
               <p className="text-[10px] text-white/70 font-bold leading-relaxed uppercase tracking-tight">

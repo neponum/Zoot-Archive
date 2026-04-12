@@ -63,6 +63,7 @@ export interface StoryLine {
   text?: string;
   assetName?: string;
   assetName2?: string;
+  introAssetName?: string;
   slot?: string;
   focus?: number;
   volume?: number;
