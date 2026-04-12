@@ -76,10 +76,16 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
       // Extract options if present: [Decision(options="...", ...)]
       const optionsMatch = prefix.match(/options="([^"]+)"/);
       
-      if (textToTranslate.trim() !== '' || optionsMatch) {
+      // Extract subtitle text if present: [Subtitle(text="...", ...)]
+      const subtitleMatch = prefix.match(/\[Subtitle[^\]]*text="([^"]+)"/i);
+      
+      // Extract sticker text if present: [Sticker(text="...", ...)]
+      const stickerMatch = prefix.match(/\[Sticker[^\]]*text="([^"]+)"/i);
+      
+      if (textToTranslate.trim() !== '' || optionsMatch || subtitleMatch || stickerMatch) {
         const content: Record<string, { text: string, name?: string }> = {};
         content['zh_CN'] = { 
-          text: textToTranslate.trim() !== '' ? textToTranslate : (optionsMatch ? optionsMatch[1] : ''),
+          text: textToTranslate.trim() !== '' ? textToTranslate : (optionsMatch ? optionsMatch[1] : (subtitleMatch ? subtitleMatch[1] : (stickerMatch ? stickerMatch[1] : ''))),
           name: name
         };
 
@@ -509,8 +515,16 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           const sourceName = sourceNameMatch ? sourceNameMatch[1] : undefined;
           
           const optionsMatch = block.prefix.match(/options="([^"]+)"/);
-          if (optionsMatch && sourceText.trim() === '') {
-            sourceText = optionsMatch[1];
+          const subtitleMatch = block.prefix.match(/\[Subtitle[^\]]*text="([^"]+)"/i);
+          const stickerMatch = block.prefix.match(/\[Sticker[^\]]*text="([^"]+)"/i);
+          if (sourceText.trim() === '') {
+            if (optionsMatch) {
+              sourceText = optionsMatch[1];
+            } else if (subtitleMatch) {
+              sourceText = subtitleMatch[1];
+            } else if (stickerMatch) {
+              sourceText = stickerMatch[1];
+            }
           }
 
           content[sourceLang] = {
@@ -535,8 +549,16 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                 name = nameMatch ? nameMatch[1] : undefined;
                 
                 const optMatch = match[1].match(/options="([^"]+)"/);
-                if (optMatch && text.trim() === '') {
-                  text = optMatch[1];
+                const subMatch = match[1].match(/\[Subtitle[^\]]*text="([^"]+)"/i);
+                const stickMatch = match[1].match(/\[Sticker[^\]]*text="([^"]+)"/i);
+                if (text.trim() === '') {
+                  if (optMatch) {
+                    text = optMatch[1];
+                  } else if (subMatch) {
+                    text = subMatch[1];
+                  } else if (stickMatch) {
+                    text = stickMatch[1];
+                  }
                 }
               } else {
                 text = line;
@@ -1039,12 +1061,28 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         }
         
         const optionsMatch = b.originalText.match(/options="([^"]+)"/);
+        const subtitleMatch = b.originalText.match(/\[Subtitle[^\]]*text="([^"]+)"/i);
+        const stickerMatch = b.originalText.match(/\[Sticker[^\]]*text="([^"]+)"/i);
         const sourceMatch = b.originalText.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
         
         // If it was an options-only line (like Decision)
         if (optionsMatch && sourceMatch && sourceMatch[2].trim() === '') {
            const translatedOptions = b.content[lang]?.text || b.content[sourceLang]?.text || optionsMatch[1];
            finalPrefix = finalPrefix.replace(`options="${optionsMatch[1]}"`, `options="${translatedOptions}"`);
+           return finalPrefix;
+        }
+
+        // If it was a subtitle line
+        if (subtitleMatch && sourceMatch && sourceMatch[2].trim() === '') {
+           const translatedText = b.content[lang]?.text || b.content[sourceLang]?.text || subtitleMatch[1];
+           finalPrefix = finalPrefix.replace(`text="${subtitleMatch[1]}"`, `text="${translatedText}"`);
+           return finalPrefix;
+        }
+
+        // If it was a sticker line
+        if (stickerMatch && sourceMatch && sourceMatch[2].trim() === '') {
+           const translatedText = b.content[lang]?.text || b.content[sourceLang]?.text || stickerMatch[1];
+           finalPrefix = finalPrefix.replace(`text="${stickerMatch[1]}"`, `text="${translatedText}"`);
            return finalPrefix;
         }
 

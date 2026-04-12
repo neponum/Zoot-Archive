@@ -160,6 +160,7 @@ class StoryParser {
     const lineObjects: StoryLine[] = [];
     let lineText = '';
     let hasAnimText = false;
+    let hasSticker = false;
     const tagsOnThisLine: { name: string, params: Record<string, string>, original: string }[] = [];
 
     while (!this.isType(TokenType.NEWLINE) && !this.isType(TokenType.EOF)) {
@@ -167,6 +168,7 @@ class StoryParser {
         const tag = this.parseTag();
         tagsOnThisLine.push(tag);
         if (tag.name.toLowerCase() === 'animtext') hasAnimText = true;
+        if (tag.name.toLowerCase() === 'sticker') hasSticker = true;
       } else if (this.isType(TokenType.TEXT)) {
         lineText += this.eat(TokenType.TEXT).value;
       } else {
@@ -194,6 +196,12 @@ class StoryParser {
         type: 'dialogue',
         characterName: this.currentCharacterName,
         text: dialogueText
+      });
+    } else if (hasSticker) {
+      lineObjects.push({
+        type: 'dialogue',
+        characterName: this.currentCharacterName,
+        text: ''
       });
     }
 
@@ -428,6 +436,27 @@ class StoryParser {
       case 'animtextclean':
         return {
           type: 'animtextclean',
+          originalTag: original
+        };
+      case 'sticker':
+        return {
+          type: 'sticker',
+          id: params.id,
+          text: params.text,
+          x: params.x ? parseFloat(params.x) : undefined,
+          y: params.y ? parseFloat(params.y) : undefined,
+          alignment: params.alignment,
+          size: params.size ? parseFloat(params.size) : undefined,
+          width: params.width ? parseFloat(params.width) : undefined,
+          delay: params.delay ? parseFloat(params.delay) : undefined,
+          duration: params.duration ? parseFloat(params.duration) : undefined,
+          block: params.block === 'true',
+          multi: params.multi === 'true',
+          originalTag: original
+        };
+      case 'stickerclear':
+        return {
+          type: 'stickerclear',
           originalTag: original
         };
       default:
@@ -805,8 +834,10 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
           const textToTranslate = match[2];
           
           const optionsMatch = prefix.match(/options="([^"]+)"/);
+          const subtitleMatch = prefix.match(/\[Subtitle[^\]]*text="([^"]+)"/i);
+          const stickerMatch = prefix.match(/\[Sticker[^\]]*text="([^"]+)"/i);
           
-          if (textToTranslate.trim() === '' && !optionsMatch) {
+          if (textToTranslate.trim() === '' && !optionsMatch && !subtitleMatch && !stickerMatch) {
             return line;
           }
           
@@ -837,13 +868,37 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
                 return finalPrefix;
               } else {
                 // If there is dialogue text, we need to find a separate translation for options if it exists
-                // In the current CSV format, options usually share the same row if text is empty, 
-                // but if there is text, we might need to look for another row or handle it differently.
-                // However, parseTranslationBlocks puts options in 'zh_CN' text if text is empty.
-                // If both exist, we need to be careful.
                 const optionsTranslationRow = translations.find(row => row['Original Text'] === options && row['ID']?.startsWith('line-'));
                 if (optionsTranslationRow && optionsTranslationRow['Translation']) {
                   finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${optionsTranslationRow['Translation']}"`);
+                }
+              }
+            }
+
+            // Handle subtitle translation
+            if (subtitleMatch) {
+              const subtitleText = subtitleMatch[1];
+              if (textToTranslate.trim() === '') {
+                finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${translationRow['Translation']}"`);
+                return finalPrefix;
+              } else {
+                const subtitleTranslationRow = translations.find(row => row['Original Text'] === subtitleText && row['ID']?.startsWith('line-'));
+                if (subtitleTranslationRow && subtitleTranslationRow['Translation']) {
+                  finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${subtitleTranslationRow['Translation']}"`);
+                }
+              }
+            }
+
+            // Handle sticker translation
+            if (stickerMatch) {
+              const stickerText = stickerMatch[1];
+              if (textToTranslate.trim() === '') {
+                finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${translationRow['Translation']}"`);
+                return finalPrefix;
+              } else {
+                const stickerTranslationRow = translations.find(row => row['Original Text'] === stickerText && row['ID']?.startsWith('line-'));
+                if (stickerTranslationRow && stickerTranslationRow['Translation']) {
+                  finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${stickerTranslationRow['Translation']}"`);
                 }
               }
             }
@@ -1003,8 +1058,9 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     if (faceItem) {
       if (faceItem.group === -1 && faceItem.image) {
         const imagePath = faceItem.image.split('/').map(encodeURIComponent).join('/');
+        const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         return {
-          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
+          bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
           size: data.size
         };
       }
@@ -1012,9 +1068,11 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       if (group) {
         const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
         const facePath = faceItem.face.split('/').map(encodeURIComponent).join('/');
+        const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
+        const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
         return {
-          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
-          faceUrl: `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`,
+          bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
+          faceUrl: await CacheService.getCachedBlobUrl(rawFaceUrl) || rawFaceUrl,
           faceRect: group.faceRect,
           size: data.size
         };
@@ -1026,16 +1084,18 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     if (data.groups && data.groups.length > 0) {
       const group = data.groups[0];
       const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
+      const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
       return {
-        bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`,
+        bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
         size: data.size
       };
     } else if (data.array && data.array.length > 0) {
       const firstItem = data.array[0];
       if (firstItem.image) {
         const imagePath = firstItem.image.split('/').map(encodeURIComponent).join('/');
+        const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         return {
-          bodyUrl: `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`,
+          bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
           size: data.size
         };
       }
@@ -1071,8 +1131,9 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     }
   }
 
+  const fallbackBodyUrl = await getImageUrl('character_body', baseName);
   return {
-    bodyUrl: await getImageUrl('character_body', baseName),
+    bodyUrl: await CacheService.getCachedBlobUrl(fallbackBodyUrl) || fallbackBodyUrl,
     size: data?.size
   };
 }
@@ -1215,6 +1276,13 @@ async function _getImageUrl(type: 'background' | 'character' | 'image' | 'music'
   }
 }
 
+// Keep references to preloaded Image objects to prevent garbage collection
+let preloadedImages: HTMLImageElement[] = [];
+
+export function clearPreloadedImages() {
+  preloadedImages = [];
+}
+
 export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: number, total: number, currentFile?: string) => void): Promise<void> {
   const imageAssets = new Set<string>();
   const audioAssets = new Set<string>();
@@ -1276,6 +1344,7 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
               img.onload = resolve;
               img.onerror = resolve;
               img.src = blobUrl;
+              preloadedImages.push(img);
             });
           }
         }
@@ -1297,6 +1366,7 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
               img.onload = resolve;
               img.onerror = resolve;
               img.src = blobUrl;
+              preloadedImages.push(img);
             });
           }
         }

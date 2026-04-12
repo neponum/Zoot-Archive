@@ -20,6 +20,8 @@ export const BackConfirmation: React.FC<BackConfirmationProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-8"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           <motion.div 

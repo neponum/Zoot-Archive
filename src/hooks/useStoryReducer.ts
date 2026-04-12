@@ -33,6 +33,7 @@ export interface StoryState {
   currentDecision: StoryLine | null;
   currentSubtitle: StoryLine | null;
   activeAnimText: StoryLine | null;
+  stickers: StoryLine[];
   imageUrl: string | null;
   imageTween: any | null;
   isShaking: boolean;
@@ -75,6 +76,8 @@ export type StoryAction =
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
   | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
+  | { type: 'ADD_STICKER'; payload: StoryLine }
+  | { type: 'CLEAR_STICKERS' }
   | { type: 'TOGGLE_AUTO' }
   | { type: 'SET_AUTO'; payload: boolean }
   | { type: 'SET_SKIPPING'; payload: boolean }
@@ -104,6 +107,7 @@ export const initialState: StoryState = {
   currentDecision: null,
   currentSubtitle: null,
   activeAnimText: null,
+  stickers: [],
   imageUrl: null,
   imageTween: null,
   isShaking: false,
@@ -254,6 +258,33 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, blocker: action.payload };
     case 'SET_ANIM_TEXT':
       return { ...state, activeAnimText: action.payload };
+    case 'ADD_STICKER': {
+      let newStickers = [...state.stickers];
+      
+      if (action.payload.text === undefined) {
+        // If text is not provided, it's a command to clear this specific sticker
+        const existingIndex = newStickers.findIndex(s => s.id === action.payload.id);
+        if (existingIndex >= 0) {
+          newStickers[existingIndex] = { ...newStickers[existingIndex], isExiting: true, exitDuration: action.payload.duration };
+        }
+      } else {
+        // If multi is false, mark existing stickers as exiting
+        if (!action.payload.multi) {
+          newStickers = newStickers.map(s => ({ ...s, isExiting: true, exitDuration: 0.5 }));
+        }
+        
+        // If a sticker with the same id exists, replace it, otherwise add it
+        const existingIndex = newStickers.findIndex(s => s.id === action.payload.id);
+        if (existingIndex >= 0) {
+          newStickers[existingIndex] = action.payload;
+        } else {
+          newStickers.push(action.payload);
+        }
+      }
+      return { ...state, stickers: newStickers };
+    }
+    case 'CLEAR_STICKERS':
+      return { ...state, stickers: state.stickers.map(s => ({ ...s, isExiting: true, exitDuration: 0.5 })) };
     case 'TOGGLE_AUTO':
       return { ...state, isAuto: !state.isAuto, isSkipping: false };
     case 'SET_AUTO':

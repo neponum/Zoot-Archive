@@ -24,44 +24,12 @@ interface CharacterLayerProps {
 
 const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; characterSlots: Record<string, CharacterSlot> }> = ({ slot, data, characterSlots }) => {
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
-  const [responsiveScale, setResponsiveScale] = useState(() => {
-    if (typeof window === 'undefined') return 1;
-    const vh = window.innerHeight;
-    const vw = window.innerWidth;
-    const currentRatio = vw / vh;
-    const targetRatio = 16 / 9;
-    return currentRatio < targetRatio ? currentRatio / targetRatio : 1;
-  });
   const [faceLoaded, setFaceLoaded] = useState(false);
 
   // Reset face loaded state when URL changes
   useEffect(() => {
     setFaceLoaded(false);
   }, [data.faceUrl]);
-
-  // Calculate responsive scale based on aspect ratio
-  // We want to maintain a consistent look relative to a 16:9 "stage"
-  useEffect(() => {
-    const updateScale = () => {
-      const vh = window.innerHeight;
-      const vw = window.innerWidth;
-      const currentRatio = vw / vh;
-      const targetRatio = 16 / 9;
-
-      if (currentRatio < targetRatio) {
-        // Screen is narrower than 16:9 (e.g. mobile portrait or tablet)
-        // Scale down based on how much narrower it is
-        setResponsiveScale(currentRatio / targetRatio);
-      } else {
-        // Screen is wider than 16:9 (desktop)
-        setResponsiveScale(1);
-      }
-    };
-
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, []);
 
   // Dimming logic
   const isDimmed = !data.focus && !Object.values(characterSlots).every((s: any) => !s.focus);
@@ -105,19 +73,18 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   }
 
   // Arknights characters are designed on a specific coordinate system (usually 1024 or 2048).
-  // Some characters are drawn "far away" on a large canvas (e.g. size.y = 1024 but the character is small).
-  // However, usually, a larger size.y means a more detailed/larger asset.
-  
-  // We use the coordinate system height (data.size.y) to normalize the display.
-  // If size.y is 1024, we want them at a standard height.
-  // If size.y is 2048, they are twice as detailed, so we scale the container to match.
   const coordinateBase = 1024;
   const scaleFactor = data.size ? data.size.y / coordinateBase : 1;
   
-  // Base height in % of the parent container (which is the screen height)
-  // We multiply by responsiveScale to ensure it looks the same on narrow screens
+  // Base height in % of the parent container (which maintains a 16:9 aspect ratio)
+  // This completely removes the need for JS-based responsive scaling because % scales perfectly with the container.
   const baseHeight = 125; 
-  const normalizedHeight = baseHeight * scaleFactor * responsiveScale;
+  const normalizedHeight = baseHeight * scaleFactor;
+  
+  // Dynamic bottom offset based on scale factor
+  // Base offset is -35%. We adjust it so small characters are pushed up and large characters are pushed down.
+  const baseBottom = -35;
+  const bottomOffset = baseBottom - (scaleFactor - 1) * 60;
 
   return (
     <motion.div
@@ -128,17 +95,16 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       transition={transition}
       style={{ 
         zIndex: data.focus ? 20 : 10,
-        willChange: 'transform, opacity, filter'
+        willChange: 'transform, opacity, filter',
+        bottom: `${bottomOffset}%`,
+        height: `${normalizedHeight}%`
       }}
       className={cn(
-        "absolute bottom-[-35%] flex flex-col items-center justify-end",
+        "absolute flex flex-col items-center justify-end",
         slot === 'left' ? "left-[-5%]" : slot === 'right' ? "right-[-5%]" : "left-1/2"
       )}
     >
-      <div 
-        className="relative w-fit"
-        style={{ height: `${normalizedHeight}vh` }}
-      >
+      <div className="relative h-full w-fit">
         <img 
           src={data.url!} 
           alt={`Character ${slot}`} 

@@ -55,45 +55,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+          className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-2xl bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl overflow-hidden flex flex-col"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/5">
-              <h2 className="text-2xl font-bold text-white tracking-wider uppercase flex items-center gap-3">
-                <div className="w-2 h-8 bg-blue-500" />
-                {t.settings || 'Settings'}
-              </h2>
-              <button 
-                onClick={onClose}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+          {/* Top Bar */}
+          <div className="p-8 flex items-center justify-between">
+            <button 
+              onClick={onClose}
+              className="group flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+            >
+              <X className="w-10 h-10" />
+            </button>
+            <h2 className="text-2xl font-bold text-white tracking-wider uppercase">
+              {t.settings || 'Settings'}
+            </h2>
+            <div className="w-10" /> {/* Spacer for centering */}
+          </div>
 
-            {/* Content */}
-            <div className="p-8 space-y-10 overflow-y-auto max-h-[70vh]">
+          {/* Content */}
+          <div className="flex-grow overflow-y-auto scrollbar-none px-4 pb-24">
+            <div className="max-w-3xl mx-auto space-y-12 pt-8">
               {/* Sound Settings */}
-              <section className="space-y-6">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Volume2 className="w-4 h-4" />
+              <section className="space-y-8">
+                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Volume2 className="w-5 h-5" />
                   {t.sound_settings || 'Sound Settings'}
                 </h3>
                 
-                <div className="grid gap-6">
+                <div className="grid gap-8">
                   {[
                     { id: 'bgm', label: t.bgm_volume || 'BGM Volume', value: settings.bgmVolume },
                     { id: 'sfx', label: t.sfx_volume || 'SFX Volume', value: settings.sfxVolume },
                     { id: 'voice', label: t.voice_volume || 'Voice Volume', value: settings.voiceVolume },
                   ].map((item) => (
-                    <div key={item.id} className="space-y-3">
-                      <div className="flex justify-between text-sm">
+                    <div key={item.id} className="space-y-4">
+                      <div className="flex justify-between text-lg">
                         <span className="text-white/80">{item.label}</span>
                         <span className="text-blue-400 font-mono">{Math.round(item.value * 100)}%</span>
                       </div>
@@ -104,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         step="0.01"
                         value={item.value}
                         onChange={(e) => handleVolumeChange(item.id as any, parseFloat(e.target.value))}
-                        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                       />
                     </div>
                   ))}
@@ -112,14 +110,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </section>
 
               {/* Font Settings */}
-              <section className="space-y-6">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Type className="w-4 h-4" />
+              <section className="space-y-8">
+                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Type className="w-5 h-5" />
                   {t.display_settings || 'Display Settings'}
                 </h3>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-lg">
                     <span className="text-white/80">{t.font_size || 'Font Size'}</span>
                     <span className="text-blue-400 font-mono">{settings.fontSize}%</span>
                   </div>
@@ -130,38 +128,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     step="5"
                     value={settings.fontSize}
                     onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
-                  <div className="p-4 bg-white/5 rounded border border-white/5 mt-4">
+                  <div className="p-6 bg-white/5 rounded-lg border border-white/10 mt-6">
                     <p 
-                      className="text-white/60 leading-relaxed transition-all duration-200"
-                      style={{ fontSize: `${(settings.fontSize / 100) * 1}rem` }}
+                      className="text-white/80 leading-relaxed transition-all duration-200"
+                      style={{ fontSize: `${(settings.fontSize / 100) * 1.25}rem` }}
                     >
                       {t.font_preview || 'The quick brown fox jumps over the lazy dog.'}
                     </p>
                   </div>
                 </div>
               </section>
-            </div>
 
-            {/* Footer */}
-            <div className="p-6 bg-white/5 flex justify-between items-center">
-              <button
-                onClick={resetSettings}
-                className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest"
-              >
-                <RotateCcw className="w-4 h-4" />
-                {t.reset_settings || 'Reset to Default'}
-              </button>
-              
-              <button
-                onClick={onClose}
-                className="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-all uppercase tracking-widest shadow-lg shadow-blue-900/20"
-              >
-                {t.close || 'Close'}
-              </button>
+              {/* Reset Button */}
+              <div className="pt-8 flex justify-center">
+                <button
+                  onClick={resetSettings}
+                  className="flex items-center gap-2 text-sm font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest px-6 py-3 rounded-full hover:bg-white/5"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  {t.reset_settings || 'Reset to Default'}
+                </button>
+              </div>
             </div>
-          </motion.div>
+          </div>
+
+          {/* Bottom Gradient for readability */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
         </motion.div>
       )}
     </AnimatePresence>

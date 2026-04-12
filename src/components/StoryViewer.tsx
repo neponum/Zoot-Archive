@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useReducer, useRef } from 'react';
 import { motion } from 'motion/react';
-import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo } from '../services/storyService';
+import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { StoryLine } from '../types';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -10,6 +10,7 @@ import { CharacterLayer } from './story/CharacterLayer';
 import { DialogueUI } from './story/DialogueUI';
 import { ControlsOverlay } from './story/ControlsOverlay';
 import { CinematicEffectsLayer } from './story/CinematicEffectsLayer';
+import { StickerLayer } from './story/StickerLayer';
 import { BackConfirmation } from './story/BackConfirmation';
 import { SettingsModal } from './story/SettingsModal';
 import { LogModal } from './story/LogModal';
@@ -151,7 +152,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
 
           case 'dialogue':
-            dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text || '' } });
+            if (line.text) {
+              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text } });
+            }
             dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.characterName || null, text: line.text || '' } });
             if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
             return;
@@ -391,6 +394,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'animtextclean':
             dispatch({ type: 'SET_ANIM_TEXT', payload: null });
             break;
+          case 'sticker':
+            dispatch({ type: 'ADD_STICKER', payload: line });
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+            }
+            break;
+          case 'stickerclear':
+            dispatch({ type: 'CLEAR_STICKERS' });
+            break;
         }
         
         index++;
@@ -478,9 +490,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       try {
         setLoading(true);
         setError(null);
+        clearPreloadedImages();
         selectedChoicesRef.current.clear();
         predicateMismatchRef.current = false;
         dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
+        dispatch({ type: 'CLEAR_STICKERS' });
         dispatch({ type: 'SET_INDEX', payload: 0 });
         
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
@@ -630,6 +644,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           cameraEffect={cameraEffect}
           blocker={blocker} 
           activeAnimText={activeAnimText} 
+        />
+        
+        <StickerLayer 
+          stickers={state.stickers} 
+          isSkipping={isSkipping}
+          skipSpeed={skipSpeed}
         />
 
         <DialogueUI 

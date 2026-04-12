@@ -23,6 +23,9 @@ export const LogModal: React.FC<LogModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar */}
           <div className="p-8 flex items-center">

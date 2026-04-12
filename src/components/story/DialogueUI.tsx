@@ -51,7 +51,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   return (
     <>
       {/* Bottom Gradient Overlay (Arknights Style) */}
-      {!currentSubtitle && (
+      {!currentSubtitle && currentText !== '' && (
         <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black via-black/70 to-transparent z-20 pointer-events-none" />
       )}
 
@@ -95,7 +95,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
 
       {/* Dialogue Area */}
       <AnimatePresence>
-        {!currentSubtitle && !activeAnimText && !currentDecision && (
+        {!currentSubtitle && !activeAnimText && !currentDecision && currentText !== '' && (
           <motion.div 
             key="dialogue-area"
             initial={{ opacity: 0 }}
@@ -155,11 +155,13 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     onChoice(currentDecision.values?.[idx] || String(idx + 1));
                   }}
-                  className="w-full p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
+                  className="w-full p-4 sm:p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-lg sm:text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
                 >
                   {option}
                 </motion.button>

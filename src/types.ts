@@ -47,6 +47,8 @@ export type StoryLineType =
   | 'cameraeffect' 
   | 'animtext' 
   | 'animtextclean' 
+  | 'sticker'
+  | 'stickerclear'
   | 'unknown';
 
 export enum CharacterSlot {
@@ -77,6 +79,7 @@ export interface StoryLine {
   y?: number;
   alignment?: string;
   size?: number;
+  delay?: number;
   width?: number;
   r?: number;
   g?: number;
@@ -99,6 +102,10 @@ export interface StoryLine {
   id?: string;
   style?: string;
   pos?: string;
+  // New fields for sticker
+  multi?: boolean;
+  isExiting?: boolean;
+  exitDuration?: number;
 }
 
 export interface StoryChapter {

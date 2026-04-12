@@ -10,6 +10,7 @@ export class CacheService {
    * Caches a text response (like a story script)
    */
   static async cacheText(url: string, text: string): Promise<void> {
+    if (url.startsWith('blob:')) return;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = new Response(text, {
@@ -25,6 +26,7 @@ export class CacheService {
    * Retrieves cached text
    */
   static async getCachedText(url: string): Promise<string | null> {
+    if (url.startsWith('blob:')) return null;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(url);
@@ -41,6 +43,7 @@ export class CacheService {
    * Caches a blob (image or audio)
    */
   static async cacheBlob(url: string, blob: Blob): Promise<void> {
+    if (url.startsWith('blob:')) return;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = new Response(blob, {
@@ -62,6 +65,7 @@ export class CacheService {
    * Retrieves cached blob and returns a URL
    */
   static async getCachedBlobUrl(url: string): Promise<string | null> {
+    if (url.startsWith('blob:')) return url;
     if (this.blobUrlCache.has(url)) {
       return this.blobUrlCache.get(url)!;
     }
@@ -84,6 +88,7 @@ export class CacheService {
    * Checks if a URL is in cache
    */
   static async has(url: string): Promise<boolean> {
+    if (url.startsWith('blob:')) return false;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(url);
@@ -97,6 +102,7 @@ export class CacheService {
    * Caches a JSON object
    */
   static async cacheJson(url: string, data: any): Promise<void> {
+    if (url.startsWith('blob:')) return;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = new Response(JSON.stringify(data), {
@@ -112,6 +118,7 @@ export class CacheService {
    * Retrieves cached JSON
    */
   static async getCachedJson(url: string): Promise<any | null> {
+    if (url.startsWith('blob:')) return null;
     try {
       const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(url);
