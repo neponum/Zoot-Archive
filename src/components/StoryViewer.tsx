@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { StoryLine } from '../types';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
 import { BackgroundLayer } from './story/BackgroundLayer';
 import { CharacterLayer } from './story/CharacterLayer';
@@ -578,6 +578,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             )}
           </div>
         )}
+        
+        <button 
+          onClick={() => {
+            audioManager.stopAll();
+            onBack();
+          }}
+          className="mt-8 flex items-center gap-2 px-6 py-2 border border-white/20 text-white/60 rounded-full font-medium hover:bg-white/10 hover:text-white transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t.back_to_menu}
+        </button>
       </div>
     );
   }
