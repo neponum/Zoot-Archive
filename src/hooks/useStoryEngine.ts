@@ -329,7 +329,7 @@ export function useStoryEngine(lines: StoryLine[], onBack: () => void) {
           case 'music':
             if (line.assetName) {
               const url = await getImageUrl('music', line.assetName);
-              if (url) audioManager.playBGM(url, line.volume || 0.5);
+              if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, undefined, line.assetName);
             }
             break;
             

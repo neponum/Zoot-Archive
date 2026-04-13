@@ -304,7 +304,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               if (line.introAssetName) {
                 introUrl = await getImageUrl('music', line.introAssetName);
               }
-              if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl);
+              if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl, line.assetName, line.introAssetName);
             }
             break;
             

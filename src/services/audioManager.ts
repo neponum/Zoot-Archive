@@ -85,7 +85,7 @@ class AudioManager {
   /**
    * Play background music with optional crossfade and intro
    */
-  public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000, introUrl?: string) {
+  public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000, introUrl?: string, name?: string, introName?: string) {
     if (this.bgmUrl === url && !introUrl) {
       if (this.bgm) {
         this.bgm.volume = volume * this.masterBGMVolume;
@@ -117,6 +117,13 @@ class AudioManager {
     newBgm.loop = !introUrl;
     newBgm.volume = 0;
     
+    // Add error listener to catch native browser errors
+    newBgm.onerror = (e) => {
+      const target = e.target as HTMLAudioElement;
+      const errorMsg = target.error ? target.error.message : 'Unknown error';
+      console.error(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+    };
+    
     try {
       await newBgm.play();
       this.bgm = newBgm;
@@ -129,6 +136,13 @@ class AudioManager {
             const loopBgm = new Audio(url);
             loopBgm.loop = true;
             loopBgm.volume = volume * this.masterBGMVolume;
+            
+            loopBgm.onerror = (e) => {
+              const target = e.target as HTMLAudioElement;
+              const errorMsg = target.error ? target.error.message : 'Unknown error';
+              console.error(`Failed to load loop BGM audio resource: ${name || url}. Error: ${errorMsg}`);
+            };
+            
             try {
               await loopBgm.play();
               // Double check again after async play
@@ -139,13 +153,15 @@ class AudioManager {
                 loopBgm.src = '';
               }
             } catch (e) {
-              console.error('Failed to play loop BGM', e);
+              const errorMsg = e instanceof Error ? e.message : String(e);
+              console.error(`Failed to play loop BGM: ${name || url}. Error: ${errorMsg}`);
             }
           }
         };
       }
     } catch (e) {
-      console.error('Failed to play BGM', e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
     }
   }
 
@@ -182,13 +198,22 @@ class AudioManager {
     const sound = new Audio(url);
     sound.volume = volume * this.masterSFXVolume;
     
+    sound.onerror = (e) => {
+      const target = e.target as HTMLAudioElement;
+      const errorMsg = target.error ? target.error.message : 'Unknown error';
+      console.error(`Failed to load SFX audio resource: ${url}. Error: ${errorMsg}`);
+    };
+    
     sound.addEventListener('ended', () => {
       this.sfx.delete(sound);
       sound.src = '';
     });
     
     this.sfx.add(sound);
-    sound.play().catch(e => console.error('Failed to play SFX', e));
+    sound.play().catch(e => {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`Failed to play SFX: ${url}. Error: ${errorMsg}`);
+    });
   }
 
   /**
@@ -203,11 +228,20 @@ class AudioManager {
     this.voice = new Audio(url);
     this.voice.volume = volume * this.masterVoiceVolume;
     
+    this.voice.onerror = (e) => {
+      const target = e.target as HTMLAudioElement;
+      const errorMsg = target.error ? target.error.message : 'Unknown error';
+      console.error(`Failed to load voice audio resource: ${url}. Error: ${errorMsg}`);
+    };
+    
     this.voice.addEventListener('ended', () => {
       this.voice = null;
     });
     
-    this.voice.play().catch(e => console.error('Failed to play voice', e));
+    this.voice.play().catch(e => {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`Failed to play voice: ${url}. Error: ${errorMsg}`);
+    });
   }
 
   /**
