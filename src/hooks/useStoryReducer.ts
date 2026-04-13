@@ -9,6 +9,7 @@ export interface CharacterSlotData {
   faceUrl?: string | null;
   faceRect?: { x: number; y: number; w: number; h: number };
   size?: { x: number; y: number };
+  pos?: { x: number; y: number };
   focus: boolean;
   name: string | null;
   animation?: {

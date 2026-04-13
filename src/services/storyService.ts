@@ -1052,6 +1052,7 @@ export interface CharacterAssetInfo {
   faceUrl?: string;
   faceRect?: { x: number; y: number; w: number; h: number };
   size?: { x: number; y: number };
+  pos?: { x: number; y: number };
 }
 
 /**
@@ -1085,7 +1086,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         return {
           bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
-          size: data.size
+          size: data.size,
+          pos: data.pos
         };
       }
       const group = data.groups?.[faceItem.group];
@@ -1098,7 +1100,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
           bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
           faceUrl: await CacheService.getCachedBlobUrl(rawFaceUrl) || rawFaceUrl,
           faceRect: group.faceRect,
-          size: data.size
+          size: data.size,
+          pos: data.pos
         };
       }
     }
@@ -1111,7 +1114,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
       return {
         bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
-        size: data.size
+        size: data.size,
+        pos: data.pos
       };
     } else if (data.array && data.array.length > 0) {
       const firstItem = data.array[0];
@@ -1120,7 +1124,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         return {
           bodyUrl: await CacheService.getCachedBlobUrl(rawBodyUrl) || rawBodyUrl,
-          size: data.size
+          size: data.size,
+          pos: data.pos
         };
       }
     }
@@ -1137,13 +1142,13 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       const guessedPath = `${baseName}/${guessedName}`;
       const guessedUrl1 = await getImageUrl('character_body', guessedPath);
       if (await checkImageExists(guessedUrl1)) {
-        return { bodyUrl: guessedUrl1, size: data?.size };
+        return { bodyUrl: guessedUrl1, size: data?.size, pos: data?.pos };
       }
       
       // Try with guessedName as folder (e.g., char_002_amiya_6/char_002_amiya_6)
       const guessedUrl2 = await getImageUrl('character_body', guessedName);
       if (await checkImageExists(guessedUrl2)) {
-        return { bodyUrl: guessedUrl2, size: data?.size };
+        return { bodyUrl: guessedUrl2, size: data?.size, pos: data?.pos };
       }
     }
     

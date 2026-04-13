@@ -208,6 +208,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                   faceUrl: assetInfo.faceUrl,
                   faceRect: assetInfo.faceRect,
                   size: assetInfo.size,
+                  pos: assetInfo.pos,
                   focus: char.focus, 
                   name: char.name,
                   animation: line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined ? {

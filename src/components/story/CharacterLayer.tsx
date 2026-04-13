@@ -7,6 +7,7 @@ interface CharacterSlot {
   faceUrl?: string | null;
   faceRect?: { x: number; y: number; w: number; h: number };
   size?: { x: number; y: number };
+  pos?: { x: number; y: number };
   focus: boolean;
   name: string | null;
   animation?: {
@@ -34,8 +35,22 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   // Dimming logic
   const isDimmed = !data.focus && !Object.values(characterSlots).every((s: any) => !s.focus);
 
+  // Arknights characters are designed on a specific coordinate system (usually 1024 or 2048).
+  const coordinateBase = 1024;
+
   // Animation logic
-  const slotBaseX = slot === 'center' ? '-50%' : '0%';
+  let slotBaseX = slot === 'center' ? '-50%' : '0%';
+  
+  // Apply pos.x from character.json if available
+  if (data.pos && data.pos.x) {
+    // Convert pos.x to percentage of container width (assuming 16:9 aspect ratio)
+    // coordinateBase is 1024, which corresponds to the height.
+    // Width is 1024 * (16/9) = 1820.44
+    const coordinateWidth = coordinateBase * (16 / 9);
+    const xOffsetPercent = (data.pos.x / coordinateWidth) * 100;
+    slotBaseX = `calc(${slotBaseX} + ${xOffsetPercent}%)`;
+  }
+
   const initial: any = { opacity: 0, x: slotBaseX, y: 0 };
   const animate: any = { 
     opacity: 1, 
@@ -72,8 +87,6 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     }
   }
 
-  // Arknights characters are designed on a specific coordinate system (usually 1024 or 2048).
-  const coordinateBase = 1024;
   const scaleFactor = data.size ? data.size.y / coordinateBase : 1;
   
   // Base height in % of the parent container (which maintains a 16:9 aspect ratio)
@@ -83,8 +96,16 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   
   // Dynamic bottom offset based on scale factor
   // Base offset is -35%. We adjust it so small characters are pushed up and large characters are pushed down.
-  const baseBottom = -35;
-  const bottomOffset = baseBottom - (scaleFactor - 1) * 60;
+  const baseBottom = -55;
+  let bottomOffset = baseBottom - (scaleFactor - 1) * 60;
+
+  // Apply pos.y from character.json if available
+  if (data.pos && data.pos.y) {
+    // The pos.y value in character.json is an absolute offset.
+    // We convert it to a percentage of the container height.
+    // Positive pos.y means the character should be pushed up.
+    bottomOffset += (data.pos.y / coordinateBase) * baseHeight;
+  }
 
   return (
     <motion.div
