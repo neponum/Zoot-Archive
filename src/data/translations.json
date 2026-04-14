@@ -43,6 +43,7 @@
     "reset_settings": "恢复默认",
     "close": "关闭",
     "all_archives": "所有档案",
+    "coming_soon": "敬请期待",
     "storyline_selection": "系列选择",
     "year_selection": "年份选择",
     "storyline": "系列",
@@ -75,7 +76,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "返回主菜单？",
+    "confirm_exit_desc": "您确定要退出当前故事并返回章节选择吗？",
+    "cancel": "取消",
+    "confirm": "确认",
+    "back_to_storylines": "返回系列"
   },
   "en_US": {
     "archive": "Zoot Archive",
@@ -122,6 +128,7 @@
     "reset_settings": "Reset to Default",
     "close": "Close",
     "all_archives": "ALL ARCHIVES",
+    "coming_soon": "COMING SOON",
     "storyline_selection": "Storyline Selection",
     "year_selection": "Year Selection",
     "storyline": "STORYLINE",
@@ -154,7 +161,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "ja_JP": {
     "archive": "アーカイブ",
@@ -224,7 +236,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "メインメニューに戻りますか？",
+    "confirm_exit_desc": "現在のストーリーを終了してチャプター選択に戻りますか？",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "back_to_storylines": "ストーリーラインに戻る"
   },
   "ko_KR": {
     "archive": "아카이브",
@@ -294,12 +311,17 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "메인 메뉴로 돌아가시겠습니까?",
+    "confirm_exit_desc": "현재 스토리를 종료하고 챕터 선택으로 돌아가시겠습니까?",
+    "cancel": "취소",
+    "confirm": "확인",
+    "back_to_storylines": "스토리라인으로 돌아가기"
   },
   "ru_RU": {
     "archive": "Zoot Archive",
     "search": "Поиск...",
-    "all": "Все",
+    "all": "all",
     "mainline": "Основной сюжет",
     "activity": "Побочные истории",
     "mini_activity": "Виньетки",
@@ -341,9 +363,10 @@
     "reset_settings": "Сбросить настройки",
     "close": "Закрыть",
     "all_archives": "ВСЕ АРХИВЫ",
+    "coming_soon": "СКОРО",
     "storyline_selection": "Выбор сюжетной линии",
     "year_selection": "Выбор года",
-    "storyline": "СЮЖЕТНАЯ ЛИНИЯ",
+    "storyline": "ЛИНИЯ",
     "year": "ГОД",
     "community_translators": "Переводчики сообщества",
     "translated": "ПЕРЕВЕДЕНО",
@@ -358,20 +381,20 @@
     "play": "Играть",
     "trans": "Перевод",
     "story_lines": {
-      "main": "For Tomorrow",
-      "rhodes": "The Ark",
-      "ursus": "Wildfire",
-      "laterano": "The Blessed",
-      "kjerag": "Snow and Silver Steel",
-      "siracusa": "Sette Colli's Sprouts",
-      "kazimierz": "Under the Neon",
-      "sui": "Through the Ages",
-      "rhine": "Those Who Take The Future",
-      "abyssal": "Glimpse of the Depths",
-      "leithanien": "Spire Mirages",
-      "tara": "Rekindled Flame",
-      "siesta": "Summertime Beats",
-      "ts": "Tales of Terra"
+      "main": "Ради завтрашнего дня",
+      "rhodes": "Ковчег",
+      "ursus": "Степной пожар",
+      "laterano": "Благословенные",
+      "kjerag": "Снег и серебряная сталь",
+      "siracusa": "Ростки Сетте Колли",
+      "kazimierz": "Под неоном",
+      "sui": "Сквозь века",
+      "rhine": "Те, кто забирают будущее",
+      "abyssal": "Проблеск глубин",
+      "leithanien": "Миражи шпилей",
+      "tara": "Вновь зажженное пламя",
+      "siesta": "Летние ритмы",
+      "ts": "Сказания Терры"
     },
     "story_titles": {
       "main_0": "Пролог: Пылающий рассвет",
@@ -389,7 +412,12 @@
       "main_12": "Эпизод 12: Всевидящее око",
       "main_13": "Эпизод 13: Пепел надежды",
       "main_14": "Эпизод 14: Последний рубеж"
-    }
+    },
+    "confirm_exit_title": "Вернуться в главное меню?",
+    "confirm_exit_desc": "Вы уверены, что хотите выйти из текущей истории и вернуться к выбору глав?",
+    "cancel": "ОТМЕНА",
+    "confirm": "ПОДТВЕРДИТЬ",
+    "back_to_storylines": "Назад к сюжетным линиям"
   },
   "zh_TW": {
     "archive": "檔案庫",
@@ -459,7 +487,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "返回主菜單？",
+    "confirm_exit_desc": "您確定要退出當前故事並返回章節選擇嗎？",
+    "cancel": "取消",
+    "confirm": "確認",
+    "back_to_storylines": "返回系列"
   },
   "de_DE": {
     "archive": "Archiv",
@@ -529,7 +562,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "es_ES": {
     "archive": "Archivo",
@@ -599,7 +637,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "fr_FR": {
     "archive": "Archive",
@@ -669,7 +712,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "id_ID": {
     "archive": "Arsip",
@@ -739,7 +787,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "it_IT": {
     "archive": "Archivio",
@@ -809,7 +862,12 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   },
   "pt_PT": {
     "archive": "Arquivo",
@@ -879,6 +937,11 @@
       "siesta": "Summertime Beats",
       "ts": "Tales of Terra"
     },
-    "story_titles": {}
+    "story_titles": {},
+    "confirm_exit_title": "Return to Main Menu?",
+    "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
+    "cancel": "CANCEL",
+    "confirm": "CONFIRM",
+    "back_to_storylines": "Back to Storylines"
   }
 }

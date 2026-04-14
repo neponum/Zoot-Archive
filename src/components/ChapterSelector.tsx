@@ -77,7 +77,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
     return saved ? JSON.parse(saved) : null;
   });
   const [activeTab, setActiveTab] = useState<string>(() => {
-    return localStorage.getItem('ak-active-tab') || 'STORY';
+    const saved = localStorage.getItem('ak-active-tab');
+    if (saved === 'NONE') return 'STORY'; // Temporarily disable Records
+    return saved || 'STORY';
   });
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'chrono'>(() => {
     return (localStorage.getItem('ak-sort-order') as any) || 'chrono';
@@ -140,8 +142,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const t = UI_STRINGS[lang];
 
   const tabs = [
-    { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen },
-    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: User },
+    { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen, disabled: false },
+    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: User, disabled: true },
   ];
 
   const filteredEpisodes = React.useMemo(() => {
@@ -457,7 +459,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                     <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">{t.current_sector}</span>
                     <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">
                       {viewMode === 'ALL' ? t.all_archives : (viewMode === 'STORYLINE' 
-                        ? (t.story_lines[selectedStoryLine] || STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.bottomText)
+                        ? STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.topText
                         : t.year_n(selectedYear))}
                     </span>
                   </div>
@@ -576,9 +578,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                  <span className={`text-2xl font-black tracking-[0.2em] text-left uppercase transition-colors duration-300 ${selectedYear === year.value ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
                                    {year.label}
                                  </span>
-                                 <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedYear === year.value ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
-                                   {t.arknights_era}
-                                 </span>
                                </div>
                                
                                {selectedYear === year.value && (
@@ -606,7 +605,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         className="flex items-center gap-2 mb-6 text-white/40 hover:text-white transition-colors"
                       >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="text-[10px] font-black tracking-[0.2em] uppercase">Back to Storylines</span>
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase">{t.back_to_storylines}</span>
                       </button>
                     )}
                     {filteredEpisodes.length > 0 ? (
@@ -932,26 +931,38 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              disabled={tab.disabled}
               onClick={() => {
                 setActiveTab(tab.id);
                 setSelectedEpisode(null);
                 if (isMobile) setShowEpisodesOnMobile(false);
               }}
               className={`group flex flex-col items-center min-w-[70px] md:min-w-[80px] transition-all relative ${
+                tab.disabled ? 'opacity-40 cursor-not-allowed' : 
                 activeTab === tab.id ? 'text-white' : 'text-white/30 hover:text-white/60'
               }`}
             >
               <div className="flex flex-col items-center">
                 <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'text-white' : ''}`}>
-                  {tab.label}
+                  {tab.disabled ? (
+                    <>
+                      <span className="group-hover:hidden">{tab.label}</span>
+                      <span className="hidden group-hover:inline text-white/90">{t.coming_soon}</span>
+                    </>
+                  ) : tab.label}
                 </span>
                 <span className={`text-[7px] md:text-[8px] font-bold opacity-40 transition-all ${activeTab === tab.id ? 'opacity-100 text-white/60' : ''}`}>
-                  {tab.subLabel}
+                  {tab.disabled ? (
+                    <>
+                      <span className="group-hover:hidden">{tab.subLabel}</span>
+                      <span className="hidden group-hover:inline text-white/40 italic">SOON</span>
+                    </>
+                  ) : tab.subLabel}
                 </span>
               </div>
               
               {/* Active Indicator */}
-              {activeTab === tab.id && (
+              {activeTab === tab.id && !tab.disabled && (
                 <div className="absolute -bottom-6 md:-bottom-8 left-0 right-0 h-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.6)]" />
               )}
             </button>
