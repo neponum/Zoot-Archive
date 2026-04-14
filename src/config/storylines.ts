@@ -19,7 +19,7 @@ export const STORY_LINES_DATA = [
 export const STORY_LINE_FILTERS: Record<string, string[]> = {
   'main': ['main_'],
   'rhodes': ['act9d0', 'act18d0', 'act8mini', 'act33side', 'act37side', 'act18mini'],
-  'ursus': ['act4mini'],
+  'ursus': ['act10d5', 'act51side'],
   'laterano': ['act16side', 'act26side', 'act42side'],
   'kjerag': ['act14side', 'act30side', 'act46side'],
   'siracusa': ['act21side', 'act38side', 'act20mini'],
