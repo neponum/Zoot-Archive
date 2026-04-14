@@ -748,15 +748,16 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           CRITICAL: You MUST translate ALL lines provided in 'toTranslate'. Do not skip any lines. 
           The output JSON array MUST have exactly the same number of items as the input 'toTranslate' array.
           
-          CRITICAL FOR RUSSIAN TRANSLATION:
+          CRITICAL FOR RUSSIAN TRANSLATION (and other gendered languages):
           - Use the 'character' name and 'context' (previous lines) to determine the correct gender endings for verbs and adjectives.
-          - If the character is female (e.g., Amiya, Kal'tsit, Ch'en, etc.), use feminine endings.
-          - If the character is male (e.g., Doctor, SilverAsh, etc.), use masculine endings.
-          - Maintain a consistent tone (formal/informal) based on character relationships.
+          - If the character is female (e.g., Amiya, Kal'tsit, Ch'en, Exusiai, Texas, Lappland), use feminine endings (e.g., "пошла", "сделала", "готова").
+          - If the character is male (e.g., Doctor, SilverAsh, Phantom, Thorns), use masculine endings (e.g., "пошел", "сделал", "готов").
+          - If the character is "Doctor" (Доктор), ALWAYS use masculine endings by default unless specified otherwise.
+          - Maintain a consistent tone (formal/informal) based on character relationships. Kal'tsit is formal and verbose. Amiya is polite.
           
           CHARACTER NAMES:
           - Use the 'glossary' for consistent character name translations if available.
-          - Translate the 'character' name into ${toLabel} if it's a common name or title (e.g., "Guard" -> "Охранник").
+          - Translate the 'character' name into ${toLabel} if it's a common name or title (e.g., "Guard" -> "Охранник", "Medic" -> "Медик").
           - For unique names (e.g., "Amiya"), provide the transliteration/standard translation in ${toLabel} (e.g., "Амия").
           - If the character is "Narrator/System", keep it as is or translate appropriately.
           
@@ -804,7 +805,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     const block = blocks[blockIndex];
     
     // Provide some context from previous lines
-    const context = blocks.slice(Math.max(0, blockIndex - 3), blockIndex).map(b => ({
+    const context = blocks.slice(Math.max(0, blockIndex - 15), blockIndex).map(b => ({
       character: b.content[sourceLang]?.name || "Narrator/System",
       text: b.content[lang]?.text || b.content[sourceLang]?.text || ""
     }));
@@ -1006,7 +1007,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         // Get context from preceding blocks (using latest state from ref)
         const latestBlocks = blocksRef.current;
         const firstBlockIndex = latestBlocks.findIndex(b => b.id === batch[0].id);
-        const context = latestBlocks.slice(Math.max(0, firstBlockIndex - 5), firstBlockIndex).map(b => ({
+        const context = latestBlocks.slice(Math.max(0, firstBlockIndex - 15), firstBlockIndex).map(b => ({
           character: b.content[sourceLang]?.name || "Narrator/System",
           text: b.content[lang]?.text || b.content[sourceLang]?.text || ""
         }));
@@ -1306,7 +1307,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#050505] text-white font-sans overflow-hidden select-none">
       {/* Unified Toolbar */}
-      <div className="h-14 border-b border-white/10 flex items-center px-4 bg-[#0a0a0a] gap-3 shrink-0 z-20">
+      <div className="h-16 border-b border-white/10 flex items-center px-4 bg-[#0a0a0a] gap-3 shrink-0 z-20">
         <button 
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-sm transition-colors shrink-0"
@@ -1491,26 +1492,51 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
           <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
 
           {/* Gemini API Key */}
-          <div className="flex items-center gap-2 bg-white/5 px-2 py-1.5 border border-white/10 rounded-sm shrink-0">
-            <Key className="w-3.5 h-3.5 text-white/40" />
-            <input 
-              type="password"
-              placeholder="Ключ Gemini..."
-              value={userApiKey}
-              onChange={(e) => setUserApiKey(e.target.value)}
-              className="bg-transparent text-[10px] text-white outline-none w-24 placeholder:text-white/20"
-            />
-            {userApiKey && (
-              <select 
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-transparent text-[10px] text-white/60 outline-none cursor-pointer border-l border-white/10 pl-2 ml-1"
+          <div className="relative flex flex-col justify-center group">
+            <div className="flex items-center gap-2 bg-white/5 px-2 py-1 border border-white/10 rounded-sm shrink-0">
+              <Key className="w-3.5 h-3.5 text-white/40" />
+              <input 
+                type="password"
+                placeholder="Ключ Gemini..."
+                value={userApiKey}
+                onChange={(e) => setUserApiKey(e.target.value)}
+                className="bg-transparent text-[10px] text-white outline-none w-24 placeholder:text-white/20"
+              />
+              {userApiKey && (
+                <select 
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="bg-transparent text-[10px] text-white/60 outline-none cursor-pointer border-l border-white/10 pl-2 ml-1"
+                >
+                  <option value="gemini-3-flash-preview" className="bg-[#111]">Flash</option>
+                  <option value="gemini-3.1-pro-preview" className="bg-[#111]">Pro</option>
+                  <option value="gemini-3.1-flash-lite-preview" className="bg-[#111]">Lite</option>
+                </select>
+              )}
+            </div>
+            
+            {/* Info below API key */}
+            <div className="mt-0.5 whitespace-nowrap">
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-[8px] text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 opacity-80 transition-opacity"
+                title="API ключ нужен для нейросетевого перевода. Нажмите, чтобы получить бесплатно."
               >
-                <option value="gemini-3-flash-preview" className="bg-[#111]">Flash</option>
-                <option value="gemini-3.1-pro-preview" className="bg-[#111]">Pro</option>
-                <option value="gemini-3.1-flash-lite-preview" className="bg-[#111]">Lite</option>
-              </select>
-            )}
+                Что это и как получить? <ExternalLink className="w-2 h-2" />
+              </a>
+            </div>
+            
+            {/* Detailed Tooltip on Hover */}
+            <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-white/10 p-3 rounded-sm shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+              <p className="text-[10px] text-white/70 mb-2 leading-relaxed whitespace-normal">
+                <strong>API ключ Gemini</strong> используется для автоматического перевода текста с помощью ИИ. Ваш ключ сохраняется только локально в вашем браузере.
+              </p>
+              <p className="text-[10px] text-white/50 whitespace-normal">
+                Вы можете получить его бесплатно в Google AI Studio.
+              </p>
+            </div>
           </div>
 
           <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
