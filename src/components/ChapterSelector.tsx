@@ -457,7 +457,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                     <span className="text-[8px] md:text-[10px] font-bold text-white/30 tracking-widest uppercase">{t.current_sector}</span>
                     <span className="text-lg md:text-2xl font-black text-white tracking-widest uppercase">
                       {viewMode === 'ALL' ? t.all_archives : (viewMode === 'STORYLINE' 
-                        ? (t.story_lines[selectedStoryLine] || STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.topText)
+                        ? (t.story_lines[selectedStoryLine] || STORY_LINES_DATA.find(l => l.id === selectedStoryLine)?.bottomText)
                         : t.year_n(selectedYear))}
                     </span>
                   </div>
@@ -532,9 +532,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                )}
                                <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-transform duration-300 ${selectedStoryLine === line.id ? 'scale-110' : 'group-hover:scale-105'}`}>
                                  <img 
-                                   src={`https://raw.githubusercontent.com/fexli/ArknightsResource/main/camplogo/logo_${line.logo}.png`} 
+                                   src={`https://raw.githubusercontent.com/neponum/zoot-data/main/icons/${line.logo}.webp`} 
                                    alt={line.topText}
-                                   className={`max-w-full max-h-full object-contain brightness-0 invert transition-opacity duration-300 ${selectedStoryLine === line.id ? 'opacity-100' : 'opacity-30 group-hover:opacity-60'}`} 
+                                   className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${selectedStoryLine === line.id ? 'opacity-100' : 'opacity-30 group-hover:opacity-60'}`} 
                                    onError={(e) => {
                                      (e.target as HTMLImageElement).style.display = 'none';
                                    }}
@@ -542,10 +542,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                </div>
                                <div className="flex flex-col items-start overflow-hidden">
                                  <span className={`text-[11px] font-black tracking-[0.15em] text-left uppercase transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
-                                   {t.story_lines[line.id] || line.topText}
+                                   {line.topText}
                                  </span>
                                  <span className={`text-[9px] font-bold text-left mt-0.5 transition-colors duration-300 ${selectedStoryLine === line.id ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`}>
-                                   {line.id === 'main' ? t.mainline : t.storyline}
+                                   {t.story_lines[line.id] || line.bottomText}
                                  </span>
                                </div>
                                
