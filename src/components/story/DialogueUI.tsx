@@ -16,6 +16,7 @@ interface DialogueUIProps {
   currentSubtitle: StoryLine | null;
   activeAnimText: StoryLine | null;
   fontSize: number;
+  fontFamily?: string;
   showSettings: boolean;
   onChoice: (value: string) => void;
   onTypewriterFinished: () => void;
@@ -34,6 +35,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   currentSubtitle,
   activeAnimText,
   fontSize,
+  fontFamily = 'sans-serif',
   showSettings,
   onChoice,
   onTypewriterFinished,
@@ -78,6 +80,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
               className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
               style={{
                 fontSize: currentSubtitle.size !== undefined ? `${(currentSubtitle.size / 720) * 100 * fontScale}cqh` : `${3.33 * fontScale}cqh`,
+                fontFamily: fontFamily
               }}
             >
               <MemoizedTypewriter 
@@ -111,7 +114,10 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                   <div 
                     key={currentSpeaker}
                     className="text-white/60 text-[20px] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right"
-                    style={{ fontSize: `${20 * fontScale}px` }}
+                    style={{ 
+                      fontSize: `${20 * fontScale}px`,
+                      fontFamily: fontFamily
+                    }}
                   >
                     {currentSpeaker}
                   </div>
@@ -122,7 +128,10 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
               <div className="flex-grow">
                 <div 
                   className="text-white text-[20px] leading-[1.6] font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
-                  style={{ fontSize: `${20 * fontScale}px` }}
+                  style={{ 
+                    fontSize: `${20 * fontScale}px`,
+                    fontFamily: fontFamily
+                  }}
                 >
                   <MemoizedTypewriter 
                     key={`typewriter-dialogue-${currentIndex}`}
@@ -162,6 +171,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                     onChoice(currentDecision.values?.[idx] || String(idx + 1));
                   }}
                   className="w-full p-3 sm:p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-base sm:text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
+                  style={{ fontFamily: fontFamily }}
                 >
                   {option}
                 </motion.button>

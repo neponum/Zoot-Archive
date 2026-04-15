@@ -56,6 +56,7 @@ export interface StoryState {
     bgmVolume: number;
     sfxVolume: number;
     voiceVolume: number;
+    fontFamily: string;
   };
 }
 
@@ -130,6 +131,7 @@ export const initialState: StoryState = {
     bgmVolume: 1.0,
     sfxVolume: 1.0,
     voiceVolume: 1.0,
+    fontFamily: 'sans-serif',
   },
 };
 

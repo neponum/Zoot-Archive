@@ -27,7 +27,7 @@ export const STORY_LINE_FILTERS: Record<string, string[]> = {
   'sui': ['act6d5', 'act16d5', 'act15side', 'act23side', 'act14mini', 'act31side', 'act40side', 'act19mini', 'act49side'],
   'rhine': ['act15d0', 'act19side', 'act25side', 'act47side'],
   'abyssal': ['1stact', 'act18d3', 'act17side', 'act34side', 'act39side'],
-  'leithanien': ['act11d0', 'act16side', 'act29side'],
+  'leithanien': ['act11d0', 'act18side', 'act29side'],
   'tara': ['act22side', 'act41side'],
   'siesta': ['act3d0', 'act12d0', 'act12side', 'act20side', 'act27side', 'act35side', 'act44side'],
   'ts': ['act5d0', 'act28side', 'act43side', 'act48side', 'act4d0', 'act7d5', 'act10d5', 'act13d0', 'act15d5', 'act10d5', 'act7mini', 'act10mini', 'act11mini', 'act15mini', 'act16mini', 'act17mini']

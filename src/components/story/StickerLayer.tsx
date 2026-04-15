@@ -8,9 +8,10 @@ interface StickerLayerProps {
   stickers: StoryLine[];
   isSkipping?: boolean;
   skipSpeed?: number;
+  fontFamily?: string;
 }
 
-export const StickerLayer: React.FC<StickerLayerProps> = ({ stickers, isSkipping = false, skipSpeed = 1 }) => {
+export const StickerLayer: React.FC<StickerLayerProps> = ({ stickers, isSkipping = false, skipSpeed = 1, fontFamily = 'sans-serif' }) => {
   return (
     <div className="absolute inset-0 z-40 pointer-events-none">
       <AnimatePresence>
@@ -38,7 +39,7 @@ export const StickerLayer: React.FC<StickerLayerProps> = ({ stickers, isSkipping
                 className="text-white font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,1)] tracking-[0.1em] whitespace-pre-wrap flex flex-col gap-1"
                 style={{
                   fontSize: sticker.size ? `${(sticker.size / 720) * 100}cqh` : '3.5cqh',
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: fontFamily,
                 }}
               >
                 <MemoizedTypewriter 

@@ -10,6 +10,7 @@ interface SettingsModalProps {
     bgmVolume: number;
     sfxVolume: number;
     voiceVolume: number;
+    fontFamily: string;
   };
   onUpdateSettings: (settings: any) => void;
   onClose: () => void;
@@ -37,12 +38,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onUpdateSettings({ fontSize: value });
   };
 
+  const handleFontFamilyChange = (value: string) => {
+    onUpdateSettings({ fontFamily: value });
+  };
+
   const resetSettings = () => {
     const defaultSettings = {
       fontSize: 100,
       bgmVolume: 1.0,
       sfxVolume: 1.0,
-      voiceVolume: 1.0
+      voiceVolume: 1.0,
+      fontFamily: 'sans-serif'
     };
     onUpdateSettings(defaultSettings);
     audioManager.setVolumes(1.0, 1.0, 1.0);
@@ -132,10 +138,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
                     className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
+                  
+                  <div className="mt-8 space-y-4">
+                    <div className="flex justify-between text-lg">
+                      <span className="text-white/80">{t.font_family || 'Font Family'}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { id: 'sans-serif', label: 'Sans-serif' },
+                        { id: 'serif', label: 'Serif' },
+                        { id: 'monospace', label: 'Monospace' },
+                        { id: 'system-ui', label: 'System' },
+                        { id: '"Comic Sans MS", cursive', label: 'Comic Sans' }
+                      ].map(font => (
+                        <button
+                          key={font.id}
+                          onClick={() => handleFontFamilyChange(font.id)}
+                          className={`p-3 rounded-lg border transition-colors ${
+                            settings.fontFamily === font.id 
+                              ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                              : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                          }`}
+                          style={{ fontFamily: font.id }}
+                        >
+                          {font.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="p-6 bg-white/5 rounded-lg border border-white/10 mt-6">
                     <p 
                       className="text-white/80 leading-relaxed transition-all duration-200"
-                      style={{ fontSize: `${(settings.fontSize / 100) * 1.25}rem` }}
+                      style={{ 
+                        fontSize: `${(settings.fontSize / 100) * 1.25}rem`,
+                        fontFamily: settings.fontFamily || 'sans-serif'
+                      }}
                     >
                       {t.font_preview || 'The quick brown fox jumps over the lazy dog.'}
                     </p>

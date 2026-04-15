@@ -681,6 +681,11 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 )}
                                 
+                                {/* Technical ID Badge - Always visible */}
+                                <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
+                                  {episode.id}
+                                </div>
+                                
                                 {/* Content Overlay - Only visible on hover */}
                                 {(isMainline || failedImages[episode.id] || !episodeImages[episode.id]) && (
                                   <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">

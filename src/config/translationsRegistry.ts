@@ -11,11 +11,7 @@ export interface TranslationInfo {
 export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = {
   ru_RU: {
     translators: ['nep0num'],
-    translatedEpisodes: [
-      // Add episode IDs here to show specific translators for them
-      // Example: 'main_00', 'act17side'
-      'main_00'
-    ],
+    translatedEpisodes: [],
   },
   es_ES: {
     translators: [],

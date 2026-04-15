@@ -666,6 +666,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           stickers={state.stickers} 
           isSkipping={isSkipping}
           skipSpeed={skipSpeed}
+          fontFamily={settings.fontFamily}
         />
 
         <DialogueUI 
@@ -680,6 +681,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentSubtitle={currentSubtitle}
           activeAnimText={activeAnimText}
           fontSize={settings.fontSize}
+          fontFamily={settings.fontFamily}
           showSettings={showSettings}
           onChoice={(val) => {
             selectedChoicesRef.current.add(val);

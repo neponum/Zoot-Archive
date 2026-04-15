@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Download, Upload, Copy, Check, Globe, FileText, ChevronDown, AlertCircle, Play, Search, Sparkles, Loader2, User, UserPlus, Trash2, Plus, Key, MessageSquare, ExternalLink, X, List } from 'lucide-react';
+import { ArrowLeft, Download, Upload, Copy, Check, Globe, FileText, ChevronDown, AlertCircle, Play, Search, Sparkles, Loader2, User, UserPlus, Trash2, Plus, Key, MessageSquare, ExternalLink, X, List, Type as TypeIcon } from 'lucide-react';
 import { StoryEpisode, Language, StoryChapter } from '../types';
 import { fetchChapterList, fetchStoryScript, checkScriptExists } from '../services/storyService';
 import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
@@ -139,6 +139,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     return localStorage.getItem('ak-current-profile') || 'Default';
   });
 
+  const [readerFont, setReaderFont] = useState(() => localStorage.getItem('ak-reader-font') || 'sans-serif');
 
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem('ak-user-api-key') || '');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('ak-selected-model') || 'gemini-3-flash-preview');
@@ -171,6 +172,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
+
+  useEffect(() => {
+    localStorage.setItem('ak-reader-font', readerFont);
+  }, [readerFont]);
 
   useEffect(() => {
     if (!selectedChapter || !activeTargetLang) return;
@@ -1491,6 +1496,24 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
           <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
 
+          {/* Font Selector */}
+          <div className="flex items-center gap-2 bg-white/5 px-2 py-1 border border-white/10 rounded-sm shrink-0">
+            <TypeIcon className="w-3.5 h-3.5 text-white/40" />
+            <select 
+              value={readerFont}
+              onChange={(e) => setReaderFont(e.target.value)}
+              className="bg-transparent text-[10px] text-white outline-none cursor-pointer appearance-none pr-4"
+            >
+              <option value="sans-serif" className="bg-[#111]">Sans-serif</option>
+              <option value="serif" className="bg-[#111]">Serif</option>
+              <option value="monospace" className="bg-[#111]">Monospace</option>
+              <option value="system-ui" className="bg-[#111]">System</option>
+              <option value="'Comic Sans MS', cursive" className="bg-[#111]">Comic Sans</option>
+            </select>
+          </div>
+
+          <div className="h-8 w-px bg-white/10 mx-1 shrink-0" />
+
           {/* Gemini API Key */}
           <div className="relative flex flex-col justify-center group">
             <div className="flex items-center gap-2 bg-white/5 px-2 py-1 border border-white/10 rounded-sm shrink-0">
@@ -1888,7 +1911,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                       {block.content[sourceLang].name}
                                     </div>
                                   )}
-                                  <div className="text-[11px] md:text-xs text-white/70 whitespace-pre-wrap leading-relaxed">
+                                  <div 
+                                    className="text-[11px] md:text-xs text-white/70 whitespace-pre-wrap leading-relaxed"
+                                    style={{ fontFamily: readerFont }}
+                                  >
                                     {block.content[sourceLang]?.text}
                                   </div>
                                 </td>
@@ -1905,7 +1931,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                       {block.content[referenceLangs[0] || 'en_US'].name}
                                     </div>
                                   )}
-                                  <div className="text-xs text-white/50 whitespace-pre-wrap leading-relaxed italic">
+                                  <div 
+                                    className="text-xs text-white/50 whitespace-pre-wrap leading-relaxed italic"
+                                    style={{ fontFamily: readerFont }}
+                                  >
                                     {block.content[referenceLangs[0] || 'en_US']?.text || '---'}
                                   </div>
                                 </td>
@@ -1933,6 +1962,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                         onChange={(e) => handleTranslationChange(block.id, e.target.value, activeTargetLang)}
                                         className="w-full bg-black/50 border border-white/10 rounded-sm px-2 py-1.5 text-white outline-none focus:border-white/30 resize-y min-h-[60px] transition-colors placeholder:text-white/10"
                                         placeholder={`Перевести на ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}...`}
+                                        style={{ fontFamily: readerFont }}
                                       />
                                       <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover/cell:opacity-100 transition-opacity">
                                         <button 
