@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Volume2, Type, RotateCcw } from 'lucide-react';
+import { X, Volume2, Type, RotateCcw, User } from 'lucide-react';
 import { audioManager } from '../../services/audioManager';
 
 interface SettingsModalProps {
@@ -11,6 +11,7 @@ interface SettingsModalProps {
     sfxVolume: number;
     voiceVolume: number;
     fontFamily: string;
+    nickname: string;
   };
   onUpdateSettings: (settings: any) => void;
   onClose: () => void;
@@ -42,13 +43,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onUpdateSettings({ fontFamily: value });
   };
 
+  const handleNicknameChange = (value: string) => {
+    onUpdateSettings({ nickname: value });
+  };
+
   const resetSettings = () => {
     const defaultSettings = {
       fontSize: 100,
       bgmVolume: 1.0,
       sfxVolume: 1.0,
       voiceVolume: 1.0,
-      fontFamily: 'sans-serif'
+      fontFamily: 'sans-serif',
+      nickname: 'Доктор'
     };
     onUpdateSettings(defaultSettings);
     audioManager.setVolumes(1.0, 1.0, 1.0);
@@ -114,6 +120,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       />
                     </div>
                   ))}
+                </div>
+              </section>
+
+              {/* Profile Settings */}
+              <section className="space-y-8">
+                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <User className="w-5 h-5" />
+                  {t.profile_settings || 'Profile Settings'}
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between text-lg">
+                    <span className="text-white/80">{t.nickname || 'Nickname'}</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={settings.nickname}
+                    onChange={(e) => handleNicknameChange(e.target.value)}
+                    placeholder={t.enter_nickname || "Введите ваше имя..."}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <p className="text-xs text-white/40 italic">
+                    {t.nickname_hint || 'Это имя будет отображаться в диалогах вместо {@nickname}'}
+                  </p>
                 </div>
               </section>
 

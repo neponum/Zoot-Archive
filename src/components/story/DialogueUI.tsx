@@ -54,7 +54,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
     <>
       {/* Bottom Gradient Overlay (Arknights Style) */}
       {!currentSubtitle && currentText !== '' && (
-        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black via-black/70 to-transparent z-20 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black via-black/70 to-transparent z-[28] pointer-events-none" />
       )}
 
       {/* Subtitle Area */}

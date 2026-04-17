@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useReducer, useRef } from 'react';
+import React, { useEffect, useCallback, useReducer, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
@@ -78,6 +78,25 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const lastSkipTime = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  // Replacement logic for user nickname
+  const replaceNickname = useCallback((text: string | null | undefined): string => {
+    if (!text) return '';
+    return text.replace(/{@nickname}/g, settings.nickname || 'Доктор');
+  }, [settings.nickname]);
+
+  const processedCurrentText = useMemo(() => replaceNickname(currentText), [currentText, replaceNickname]);
+  const processedHistory = useMemo(() => history.map(h => ({ ...h, text: replaceNickname(h.text) })), [history, replaceNickname]);
+  const processedStickers = useMemo(() => state.stickers.map(s => ({ ...s, text: replaceNickname(s.text) })), [state.stickers, replaceNickname]);
+  const processedAnimText = useMemo(() => activeAnimText ? { ...activeAnimText, text: replaceNickname(activeAnimText.text) } : null, [activeAnimText, replaceNickname]);
+  const processedSubtitle = useMemo(() => currentSubtitle ? { ...currentSubtitle, text: replaceNickname(currentSubtitle.text) } : null, [currentSubtitle, replaceNickname]);
+  const processedDecision = useMemo(() => {
+    if (!currentDecision) return null;
+    return {
+      ...currentDecision,
+      options: currentDecision.options?.map(o => replaceNickname(o))
+    };
+  }, [currentDecision, replaceNickname]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -659,11 +678,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           isFlashing={isFlashing} 
           cameraEffect={cameraEffect}
           blocker={blocker} 
-          activeAnimText={activeAnimText} 
+          activeAnimText={processedAnimText} 
         />
         
         <StickerLayer 
-          stickers={state.stickers} 
+          stickers={processedStickers} 
           isSkipping={isSkipping}
           skipSpeed={skipSpeed}
           fontFamily={settings.fontFamily}
@@ -673,13 +692,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           showUI={showUI}
           currentIndex={currentIndex}
           currentSpeaker={currentSpeaker}
-          currentText={currentText}
+          currentText={processedCurrentText}
           isSkipping={isSkipping}
           skipSpeed={skipSpeed}
           shouldSkipTypewriter={shouldSkipTypewriter}
-          currentDecision={currentDecision}
-          currentSubtitle={currentSubtitle}
-          activeAnimText={activeAnimText}
+          currentDecision={processedDecision}
+          currentSubtitle={processedSubtitle}
+          activeAnimText={processedAnimText}
           fontSize={settings.fontSize}
           fontFamily={settings.fontFamily}
           showSettings={showSettings}
@@ -712,7 +731,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
         <LogModal 
           show={showLog}
-          history={history}
+          history={processedHistory}
           onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
           t={t}
         />

@@ -60,7 +60,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
               scaleX: { duration: imageTween?.duration || 0.5, ease: "linear" },
               scaleY: { duration: imageTween?.duration || 0.5, ease: "linear" }
             }}
-            className="absolute inset-0 z-5"
+            className="absolute inset-0 z-[24]"
             style={{ originX: 0.5, originY: 0.5 }}
           >
             <img 

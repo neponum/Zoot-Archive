@@ -57,6 +57,7 @@ export interface StoryState {
     sfxVolume: number;
     voiceVolume: number;
     fontFamily: string;
+    nickname: string;
   };
 }
 
@@ -132,6 +133,7 @@ export const initialState: StoryState = {
     sfxVolume: 1.0,
     voiceVolume: 1.0,
     fontFamily: 'sans-serif',
+    nickname: 'Доктор',
   },
 };
 
