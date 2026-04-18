@@ -82,7 +82,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Replacement logic for user nickname
   const replaceNickname = useCallback((text: string | null | undefined): string => {
     if (!text) return '';
-    return text.replace(/{@nickname}/g, settings.nickname || 'Доктор');
+    return text.replace(/{@nickname}/g, settings.nickname || '{@nickname}');
   }, [settings.nickname]);
 
   const processedCurrentText = useMemo(() => replaceNickname(currentText), [currentText, replaceNickname]);

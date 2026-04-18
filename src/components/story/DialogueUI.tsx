@@ -105,17 +105,17 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-0 left-0 right-0 px-24 pb-12 z-30 pointer-events-none flex justify-center"
+            className="absolute bottom-0 left-0 right-0 px-[4cqw] sm:px-[13.3cqh] pb-[6.5cqh] z-30 pointer-events-none flex justify-center"
           >
-            <div className="w-full max-w-5xl flex items-start gap-8">
+            <div className="w-full max-w-[140cqh] flex items-start gap-[4cqw] sm:gap-[4.4cqh]">
               {/* Name Tag */}
-              <div className="w-40 flex-shrink-0 text-right pt-1">
+              <div className="w-[20cqw] sm:w-[22.2cqh] flex-shrink-0 text-right">
                 {currentSpeaker && (
                   <div 
                     key={currentSpeaker}
-                    className="text-white/60 text-[20px] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right"
+                    className="text-white/60 leading-[1.6] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right break-words"
                     style={{ 
-                      fontSize: `${20 * fontScale}px`,
+                      fontSize: `max(14px, ${2.77 * fontScale}cqh)`,
                       fontFamily: fontFamily
                     }}
                   >
@@ -127,9 +127,9 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
               {/* Text Area */}
               <div className="flex-grow">
                 <div 
-                  className="text-white text-[20px] leading-[1.6] font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
+                  className="text-white leading-[1.6] font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
                   style={{ 
-                    fontSize: `${20 * fontScale}px`,
+                    fontSize: `max(14px, ${2.77 * fontScale}cqh)`,
                     fontFamily: fontFamily
                   }}
                 >
@@ -155,9 +155,9 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm p-8"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm p-[4cqh] sm:p-[8cqh]"
           >
-            <div className="w-full max-w-2xl space-y-4">
+            <div className="w-full max-w-[80cqh] space-y-[2.2cqh]">
               {currentDecision.options?.map((option, idx) => (
                 <motion.button
                   key={idx}
@@ -170,8 +170,11 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
                     e.stopPropagation();
                     onChoice(currentDecision.values?.[idx] || String(idx + 1));
                   }}
-                  className="w-full p-3 sm:p-6 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-base sm:text-xl font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
-                  style={{ fontFamily: fontFamily }}
+                  className="w-full p-[2cqh] sm:p-[3.3cqh] bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all text-center backdrop-blur-md pointer-events-auto"
+                  style={{ 
+                    fontFamily: fontFamily,
+                    fontSize: `max(14px, ${2.5 * fontScale}cqh)`
+                  }}
                 >
                   {option}
                 </motion.button>

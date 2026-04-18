@@ -50,8 +50,8 @@ export const LogModal: React.FC<LogModalProps> = ({
                 history.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-12 group">
                     {/* Speaker Name */}
-                    <div className="w-1/3 text-right pt-1">
-                      <span className="text-white/50 text-[20px] font-medium tracking-wider group-hover:text-white/90 transition-colors">
+                    <div className="w-1/3 text-right">
+                      <span className="text-white/50 text-[20px] leading-[1.6] font-medium tracking-wider group-hover:text-white/90 transition-colors">
                         {item.speaker || ''}
                       </span>
                     </div>

@@ -54,7 +54,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       sfxVolume: 1.0,
       voiceVolume: 1.0,
       fontFamily: 'sans-serif',
-      nickname: 'Доктор'
+      nickname: '{@nickname}'
     };
     onUpdateSettings(defaultSettings);
     audioManager.setVolumes(1.0, 1.0, 1.0);

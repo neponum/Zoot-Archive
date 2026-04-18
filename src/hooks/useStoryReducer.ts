@@ -133,7 +133,7 @@ export const initialState: StoryState = {
     sfxVolume: 1.0,
     voiceVolume: 1.0,
     fontFamily: 'sans-serif',
-    nickname: 'Доктор',
+    nickname: '{@nickname}',
   },
 };
 
