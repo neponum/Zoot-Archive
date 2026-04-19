@@ -118,7 +118,7 @@ class AudioManager {
     newBgm.volume = 0;
     
     // Add error listener to catch native browser errors
-    newBgm.onerror = (e) => {
+    newBgm.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;
       const errorMsg = target.error ? target.error.message : 'Unknown error';
       console.error(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
@@ -137,7 +137,7 @@ class AudioManager {
             loopBgm.loop = true;
             loopBgm.volume = volume * this.masterBGMVolume;
             
-            loopBgm.onerror = (e) => {
+            loopBgm.onerror = (e: any) => {
               const target = e.target as HTMLAudioElement;
               const errorMsg = target.error ? target.error.message : 'Unknown error';
               console.error(`Failed to load loop BGM audio resource: ${name || url}. Error: ${errorMsg}`);
@@ -198,7 +198,7 @@ class AudioManager {
     const sound = new Audio(url);
     sound.volume = volume * this.masterSFXVolume;
     
-    sound.onerror = (e) => {
+    sound.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;
       const errorMsg = target.error ? target.error.message : 'Unknown error';
       console.error(`Failed to load SFX audio resource: ${url}. Error: ${errorMsg}`);
@@ -228,7 +228,7 @@ class AudioManager {
     this.voice = new Audio(url);
     this.voice.volume = volume * this.masterVoiceVolume;
     
-    this.voice.onerror = (e) => {
+    this.voice.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;
       const errorMsg = target.error ? target.error.message : 'Unknown error';
       console.error(`Failed to load voice audio resource: ${url}. Error: ${errorMsg}`);

@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useReducer, useRef, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { StoryLine, StoryChapter } from '../types';
