@@ -170,7 +170,11 @@
     "confirm_exit_desc": "Are you sure you want to exit the current story and return to the chapter selection?",
     "cancel": "CANCEL",
     "confirm": "CONFIRM",
-    "back_to_storylines": "Back to Storylines"
+    "back_to_storylines": "Back to Storylines",
+    "chapter_end": "CHAPTER END",
+    "read_next": "READ NEXT ({{name}})",
+    "back_to_chapters": "EXIT TO CHAPTER SELECTION",
+    "last_chapter_hint": "This is the last available chapter."
   },
   "ja_JP": {
     "archive": "アーカイブ",
@@ -427,7 +431,11 @@
     "confirm_exit_desc": "Вы уверены, что хотите выйти из текущей истории и вернуться к выбору глав?",
     "cancel": "ОТМЕНА",
     "confirm": "ПОДТВЕРДИТЬ",
-    "back_to_storylines": "Назад к сюжетным линиям"
+    "back_to_storylines": "Назад к сюжетным линиям",
+    "chapter_end": "КОНЕЦ ГЛАВЫ",
+    "read_next": "Читать дальше ({{name}})",
+    "back_to_chapters": "Выйти к выбору глав",
+    "last_chapter_hint": "Это последняя доступная глава."
   },
   "zh_TW": {
     "archive": "檔案庫",

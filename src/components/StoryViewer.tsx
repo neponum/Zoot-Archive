@@ -516,12 +516,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       try {
         setLoading(true);
         setError(null);
+        setShowChapterEnd(false);
         clearPreloadedImages();
         selectedChoicesRef.current.clear();
         predicateMismatchRef.current = false;
         dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
         dispatch({ type: 'CLEAR_STICKERS' });
         dispatch({ type: 'SET_INDEX', payload: 0 });
+        currentIndexRef.current = 0;
         
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
@@ -769,9 +771,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             >
               <div className="w-full max-w-lg flex flex-col items-center justify-center text-center space-y-8">
                 <div className="space-y-4">
-                  <h2 className="text-3xl font-black text-white tracking-[0.2em] uppercase">КОНЕЦ ГЛАВЫ</h2>
+                  <h2 className="text-3xl font-black text-white tracking-[0.2em] uppercase">{t.chapter_end}</h2>
                   <p className="text-white/60 text-lg tracking-wider">
-                    {!nextChapter ? "Это последняя доступная глава." : ""}
+                    {!nextChapter ? t.last_chapter_hint : ""}
                   </p>
                 </div>
                 
@@ -785,7 +787,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                       }}
                       className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all text-center tracking-widest uppercase hover:scale-105"
                     >
-                      Читать дальше ({nextChapter.name})
+                      {t.read_next?.replace('{{name}}', nextChapter.name) || `READ NEXT (${nextChapter.name})`}
                     </button>
                   )}
                   <button
@@ -796,7 +798,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     }}
                     className="w-full py-4 bg-transparent hover:bg-white/5 border border-white/10 rounded-lg text-white/80 font-medium transition-all text-center tracking-widest uppercase"
                   >
-                    Выйти к выбору глав
+                    {t.back_to_chapters}
                   </button>
                 </div>
               </div>
