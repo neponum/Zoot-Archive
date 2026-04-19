@@ -178,6 +178,10 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   }, [readerFont]);
 
   useEffect(() => {
+    setSubmitStatus('idle');
+  }, [selectedChapter]);
+
+  useEffect(() => {
     if (!selectedChapter || !activeTargetLang) return;
     
     const checkTranslators = async () => {
@@ -1298,6 +1302,9 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
       if (response.ok) {
         setSubmitStatus('success');
+        setTimeout(() => {
+          setSubmitStatus(prev => prev === 'success' ? 'idle' : prev);
+        }, 3000);
       } else {
         throw new Error('Failed to submit to Discord');
       }
