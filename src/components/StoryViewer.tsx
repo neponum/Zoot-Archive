@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useReducer, useRef, useMemo } from 'reac
 import { motion } from 'motion/react';
 import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
-import { StoryLine } from '../types';
+import { StoryLine, StoryChapter } from '../types';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
 import { BackgroundLayer } from './story/BackgroundLayer';
@@ -25,12 +25,15 @@ interface StoryViewerProps {
   customScript?: string;
   translator?: string;
   onBack: () => void;
+  nextChapter?: StoryChapter;
+  onNextChapter?: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack, nextChapter, onNextChapter }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
+  const [showChapterEnd, setShowChapterEnd] = React.useState(false);
   const [state, dispatch] = useReducer(storyReducer, initialState);
   const {
     lines,
@@ -449,9 +452,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     
     if (currentIndexRef.current >= lines.length - 1) {
       dispatch({ type: 'SET_SKIPPING', payload: false });
-      audioManager.stopAll();
-      localStorage.removeItem(`ak-story-index-${storyTxt}`);
-      onBack();
+      dispatch({ type: 'SET_AUTO', payload: false });
+      setShowChapterEnd(true);
       return;
     }
     
@@ -754,6 +756,53 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}
           t={t}
         />
+
+        {/* Chapter End Screen */}
+        <AnimatePresence>
+          {showChapterEnd && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-full max-w-lg flex flex-col items-center justify-center text-center space-y-8">
+                <div className="space-y-4">
+                  <h2 className="text-3xl font-black text-white tracking-[0.2em] uppercase">КОНЕЦ ГЛАВЫ</h2>
+                  <p className="text-white/60 text-lg tracking-wider">
+                    {!nextChapter ? "Это последняя доступная глава." : ""}
+                  </p>
+                </div>
+                
+                <div className="flex flex-col w-full gap-4">
+                  {nextChapter && onNextChapter && (
+                    <button
+                      onClick={() => {
+                        audioManager.stopAll();
+                        localStorage.removeItem(`ak-story-index-${storyTxt}`);
+                        onNextChapter();
+                      }}
+                      className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all text-center tracking-widest uppercase hover:scale-105"
+                    >
+                      Читать дальше ({nextChapter.name})
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      audioManager.stopAll();
+                      localStorage.removeItem(`ak-story-index-${storyTxt}`);
+                      onBack();
+                    }}
+                    className="w-full py-4 bg-transparent hover:bg-white/5 border border-white/10 rounded-lg text-white/80 font-medium transition-all text-center tracking-widest uppercase"
+                  >
+                    Выйти к выбору глав
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <OrientationOverlay />
       </motion.div>

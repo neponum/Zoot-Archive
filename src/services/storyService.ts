@@ -163,6 +163,7 @@ class StoryParser {
     let lineText = '';
     let hasAnimText = false;
     let hasSticker = false;
+    let hasHeader = false;
     const tagsOnThisLine: { name: string, params: Record<string, string>, original: string }[] = [];
 
     while (!this.isType(TokenType.NEWLINE) && !this.isType(TokenType.EOF)) {
@@ -171,6 +172,7 @@ class StoryParser {
         tagsOnThisLine.push(tag);
         if (tag.name.toLowerCase() === 'animtext') hasAnimText = true;
         if (tag.name.toLowerCase() === 'sticker') hasSticker = true;
+        if (tag.name.toLowerCase() === 'header') hasHeader = true;
       } else if (this.isType(TokenType.TEXT)) {
         lineText += this.eat(TokenType.TEXT).value;
       } else {
@@ -193,7 +195,7 @@ class StoryParser {
 
     // Process dialogue
     const dialogueText = lineText.trim();
-    if (dialogueText && dialogueText !== 'undefined' && !hasAnimText) {
+    if (dialogueText && dialogueText !== 'undefined' && !hasAnimText && !hasHeader) {
       lineObjects.push({
         type: 'dialogue',
         characterName: this.currentCharacterName,

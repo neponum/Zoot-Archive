@@ -81,11 +81,11 @@ function parseTranslationBlocks(rawText: string): TranslationBlock[] {
       
       // Extract sticker text if present: [Sticker(text="...", ...)]
       const stickerMatch = prefix.match(/\[Sticker[^\]]*text="([^"]+)"/i);
-      
+
       if (textToTranslate.trim() !== '' || optionsMatch || subtitleMatch || stickerMatch) {
         const content: Record<string, { text: string, name?: string }> = {};
         content['zh_CN'] = { 
-          text: textToTranslate.trim() !== '' ? textToTranslate : (optionsMatch ? optionsMatch[1] : (subtitleMatch ? subtitleMatch[1] : (stickerMatch ? stickerMatch[1] : ''))),
+          text: textToTranslate.trim() !== '' ? textToTranslate.trim() : (optionsMatch ? optionsMatch[1] : (subtitleMatch ? subtitleMatch[1] : (stickerMatch ? stickerMatch[1] : ''))),
           name: name
         };
 

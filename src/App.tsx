@@ -27,6 +27,8 @@ function App() {
   });
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
 
+  const [nextChapter, setNextChapter] = useState<StoryChapter | undefined>(undefined);
+
   useEffect(() => {
     if (selectedChapter) {
       localStorage.setItem('ak-selected-chapter', JSON.stringify(selectedChapter));
@@ -34,6 +36,11 @@ function App() {
       localStorage.removeItem('ak-selected-chapter');
     }
   }, [selectedChapter]);
+
+  const handleSelectChapter = (chapter: StoryChapter, next?: StoryChapter) => {
+    setSelectedChapter(chapter);
+    setNextChapter(next);
+  };
 
   useEffect(() => {
     if (selectedTranslator) {
@@ -95,7 +102,7 @@ function App() {
             className="h-full"
           >
             <ChapterSelector 
-              onSelect={setSelectedChapter} 
+              onSelect={handleSelectChapter} 
               onOpenTranslation={handleOpenTranslation}
               onTranslatorChange={setSelectedTranslator}
             />
@@ -112,7 +119,9 @@ function App() {
               storyTxt={selectedChapter.storyTxt} 
               customScript={testScript}
               translator={selectedTranslator}
-              onBack={handleBackFromViewer} 
+              onBack={handleBackFromViewer}
+              nextChapter={nextChapter}
+              onNextChapter={nextChapter ? () => handleSelectChapter(nextChapter) : undefined}
             />
           </motion.div>
         )}
