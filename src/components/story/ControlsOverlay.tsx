@@ -8,7 +8,7 @@ interface ControlsOverlayProps {
   isSkipping: boolean;
   skipSpeed: number;
   isHoldingSkip: boolean;
-  activeAnimText: any;
+  forceHideUI: boolean;
   isFullscreen: boolean;
   onToggleAuto: () => void;
   onToggleSkip: () => void;
@@ -26,7 +26,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   isSkipping,
   skipSpeed,
   isHoldingSkip,
-  activeAnimText,
+  forceHideUI,
   isFullscreen,
   onToggleAuto,
   onToggleSkip,
@@ -41,7 +41,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
     <>
       <div className={cn(
         "absolute top-0 left-0 right-0 p-2 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
-        (showUI && !activeAnimText) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        (showUI && !forceHideUI) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}

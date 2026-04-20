@@ -7,10 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
 
 function App() {
-  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(() => {
-    const saved = localStorage.getItem('ak-selected-chapter');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
   const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(() => {
     return localStorage.getItem('ak-selected-translator') || undefined;
   });
@@ -26,14 +23,6 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (selectedChapter) {
-      localStorage.setItem('ak-selected-chapter', JSON.stringify(selectedChapter));
-    } else {
-      localStorage.removeItem('ak-selected-chapter');
-    }
-  }, [selectedChapter]);
 
   const handleSelectChapter = (chapter: StoryChapter) => {
     setSelectedChapter(chapter);
@@ -114,6 +103,7 @@ function App() {
           >
             <StoryViewer 
               storyTxt={selectedChapter.storyTxt} 
+              chapterId={selectedChapter.id}
               customScript={testScript}
               translator={selectedTranslator}
               onBack={handleBackFromViewer}

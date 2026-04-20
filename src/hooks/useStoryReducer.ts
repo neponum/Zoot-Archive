@@ -118,7 +118,7 @@ export const initialState: StoryState = {
   shakeConfig: null,
   isFlashing: false,
   cameraEffect: null,
-  blocker: null,
+  blocker: { a: 0, r: 0, g: 0, b: 0, duration: 0 },
   isAuto: false,
   isSkipping: false,
   skipSpeed: 2,

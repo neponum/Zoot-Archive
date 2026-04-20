@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Volume2, Type, RotateCcw, User } from 'lucide-react';
+import { X, Volume2, Type, RotateCcw, User, Trash2 } from 'lucide-react';
 import { audioManager } from '../../services/audioManager';
+import { CacheService } from '../../services/cacheService';
 
 interface SettingsModalProps {
   show: boolean;
@@ -211,8 +212,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </section>
 
-              {/* Reset Button */}
-              <div className="pt-8 flex justify-center">
+              {/* Reset & Cache Buttons */}
+              <div className="pt-8 flex flex-col items-center gap-4">
+                <button
+                  onClick={() => {
+                    if (window.confirm(t.confirm_clear_cache || 'Очистить кэш игры? Все ресурсы будут загружены повторно.')) {
+                      CacheService.clear().then(() => {
+                        window.location.reload();
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-2 text-sm font-bold text-red-500/60 hover:text-red-500 transition-colors uppercase tracking-widest px-6 py-3 rounded-full hover:bg-white/5"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  {t.clear_cache || 'Очистить кэш'}
+                </button>
+
                 <button
                   onClick={resetSettings}
                   className="flex items-center gap-2 text-sm font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest px-6 py-3 rounded-full hover:bg-white/5"

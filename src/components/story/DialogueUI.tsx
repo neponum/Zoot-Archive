@@ -41,8 +41,6 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   onTypewriterFinished,
   t,
 }) => {
-  if (!showUI) return null;
-
   // Use subtitle delay if available, otherwise default to 30ms
   const baseDelay = currentSubtitle?.duration ? currentSubtitle.duration * 1000 : 30;
   const typewriterSpeed = isSkipping ? (baseDelay / (skipSpeed * 2)) : baseDelay;
@@ -53,13 +51,13 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   return (
     <>
       {/* Bottom Gradient Overlay (Arknights Style) */}
-      {!currentSubtitle && currentText !== '' && (
+      {showUI && !currentSubtitle && currentText !== '' && (
         <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black via-black/70 to-transparent z-[28] pointer-events-none" />
       )}
 
       {/* Subtitle Area */}
       <AnimatePresence>
-        {currentSubtitle && (
+        {showUI && currentSubtitle && (
           <motion.div
             key={`subtitle-${currentIndex}`}
             initial={{ opacity: 0 }}
@@ -98,7 +96,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
 
       {/* Dialogue Area */}
       <AnimatePresence>
-        {!currentSubtitle && !activeAnimText && !currentDecision && currentText !== '' && (
+        {showUI && !currentSubtitle && !activeAnimText && !currentDecision && currentText !== '' && (
           <motion.div 
             key="dialogue-area"
             initial={{ opacity: 0 }}
@@ -150,7 +148,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
 
       {/* Decision Overlay */}
       <AnimatePresence>
-        {currentDecision && (
+        {showUI && currentDecision && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

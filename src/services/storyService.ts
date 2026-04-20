@@ -413,11 +413,11 @@ class StoryParser {
       case 'blocker':
         return {
           type: 'blocker',
-          a: params.a ? parseFloat(params.a) : 1,
-          r: params.r ? parseFloat(params.r) : 0,
-          g: params.g ? parseFloat(params.g) : 0,
-          b: params.b ? parseFloat(params.b) : 0,
-          duration: params.fadetime ? parseFloat(params.fadetime) : 0,
+          a: params.a !== undefined ? parseFloat(params.a) : 1,
+          r: params.r !== undefined ? parseFloat(params.r) : 0,
+          g: params.g !== undefined ? parseFloat(params.g) : 0,
+          b: params.b !== undefined ? parseFloat(params.b) : 0,
+          duration: params.fadetime !== undefined ? parseFloat(params.fadetime) : (params.time !== undefined ? parseFloat(params.time) : 0),
           block: params.block === 'true',
           originalTag: original
         };
@@ -826,7 +826,9 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const effectiveTranslator = translator || defaultTranslator;
       const translatorSuffix = effectiveTranslator && effectiveTranslator !== 'Community Translators' && effectiveTranslator !== 'Переводчики сообщества' ? `_${effectiveTranslator}` : '';
       const baseName = storyPath.split('/').pop();
-      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.csv`;
+      // Add timestamp to CSV URL to bypass CDN/Browser cache and ensure latest version from GitHub
+      const cacheBuster = `?t=${Math.floor(Date.now() / 3600000)}`; // Hourly cache buster
+      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.csv${cacheBuster}`;
       
       let csvText = await CacheService.getCachedText(csvUrl);
       
