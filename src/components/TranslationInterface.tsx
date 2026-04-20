@@ -1778,7 +1778,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                   </p>
                                 </div>
                                 <a 
-                                  href="https://discord.gg/arknights-story-archive" // Placeholder link
+                                  href="https://discord.gg/jYvWPeCjC3"
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest"
@@ -1810,7 +1810,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                         ) : (
                           <div className="flex flex-col gap-2">
                             <a 
-                              href="https://discord.gg/arknights-story-archive" // Placeholder link
+                              href="https://discord.gg/jYvWPeCjC3"
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest"
