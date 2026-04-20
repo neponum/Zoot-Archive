@@ -91,7 +91,8 @@ export type StoryAction =
   | { type: 'SET_SHOW_LOG'; payload: boolean }
   | { type: 'SET_PREDICATE_MISMATCH'; payload: boolean }
   | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string } }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> };
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> }
+  | { type: 'RESET_STATE' };
 
 export const initialState: StoryState = {
   lines: [],
@@ -139,6 +140,12 @@ export const initialState: StoryState = {
 
 export function storyReducer(state: StoryState, action: StoryAction): StoryState {
   switch (action.type) {
+    case 'RESET_STATE':
+      return { 
+        ...initialState, 
+        settings: state.settings,
+        // Make sure we keep the audio manager settings from the current state
+      };
     case 'SET_LINES':
       return { ...state, lines: action.payload };
     case 'SET_INDEX':

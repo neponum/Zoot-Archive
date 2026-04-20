@@ -19,6 +19,7 @@ import { useStoryControls } from '../hooks/useStoryControls';
 import { AUTO_ADVANCE_DELAY, SKIP_SPEEDS } from '../constants';
 
 import { OrientationOverlay } from './story/OrientationOverlay';
+import { getChapterDisplayCode, getChapterFullDisplayCode } from '../lib/utils';
 
 interface StoryViewerProps {
   storyTxt: string;
@@ -72,6 +73,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const [scriptContent, setScriptContent] = React.useState<string | null>(null);
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
 
+  const processToken = useRef({});
   const currentIndexRef = useRef(0);
   const predicateMismatchRef = useRef(false);
   const isProcessing = useRef(false);
@@ -128,6 +130,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const processLine = useCallback(async (startIndex: number) => {
     if (isProcessing.current) return;
+    const token = processToken.current;
     isProcessing.current = true;
     
     try {
@@ -135,6 +138,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       let localPredicateMismatch = predicateMismatchRef.current;
       
       while (index < lines.length) {
+        if (processToken.current !== token) return;
         const line = lines[index];
         
         if (line.type === 'predicate') {
@@ -188,6 +192,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName } });
               } else {
                 const url = await getImageUrl('background', line.assetName);
+                if (processToken.current !== token) return;
                 dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName } });
               }
             }
@@ -224,6 +229,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               const slotUpdates: Record<string, CharacterSlotData> = {};
               for (const char of charsToLoad) {
                 const assetInfo = await getCharacterAssetInfo(char.name);
+                if (processToken.current !== token) return;
 
                 slotUpdates[char.slot] = { 
                   url: assetInfo.bodyUrl,
@@ -290,6 +296,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'image':
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
+              if (processToken.current !== token) return;
               dispatch({ type: 'SET_IMAGE', payload: { url } });
             } else {
               dispatch({ type: 'SET_IMAGE', payload: { url: null } });
@@ -299,6 +306,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'imagetween':
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
+              if (processToken.current !== token) return;
               dispatch({ 
                 type: 'SET_IMAGE', 
                 payload: { 
@@ -316,15 +324,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
             if (line.block && line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
             
           case 'music':
             if (line.assetName) {
               const url = await getImageUrl('music', line.assetName);
+              if (processToken.current !== token) return;
               let introUrl: string | undefined = undefined;
               if (line.introAssetName) {
                 introUrl = await getImageUrl('music', line.introAssetName);
+                if (processToken.current !== token) return;
               }
               if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl, line.assetName, line.introAssetName);
             }
@@ -333,6 +344,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'sound':
             if (line.assetName) {
               const url = await getImageUrl('sound', line.assetName);
+              if (processToken.current !== token) return;
               if (url) audioManager.playSFX(url, line.volume || 1);
             }
             break;
@@ -340,6 +352,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'voice':
             if (line.assetName) {
               const url = await getImageUrl('voice', line.assetName);
+              if (processToken.current !== token) return;
               if (url) audioManager.playVoice(url, line.volume || 1);
             }
             break;
@@ -351,6 +364,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'delay':
             if (line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
 
@@ -373,6 +387,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               }
               if (line.block && line.duration && line.duration > 0 && !isSkipping) {
                 await new Promise(resolve => setTimeout(resolve, line.duration * 1000));
+                if (processToken.current !== token) return;
               }
             }
             break;
@@ -395,6 +410,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
             if (line.block && line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
           case 'blocker':
@@ -410,12 +426,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             });
             if (line.block && line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
           case 'animtext':
             dispatch({ type: 'SET_ANIM_TEXT', payload: line });
             if (line.block && line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
           case 'animtextclean':
@@ -425,6 +443,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             dispatch({ type: 'ADD_STICKER', payload: line });
             if (line.block && line.duration && !isSkipping) {
               await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
+              if (processToken.current !== token) return;
             }
             break;
           case 'stickerclear':
@@ -520,10 +539,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         clearPreloadedImages();
         selectedChoicesRef.current.clear();
         predicateMismatchRef.current = false;
-        dispatch({ type: 'SET_PREDICATE_MISMATCH', payload: false });
-        dispatch({ type: 'CLEAR_STICKERS' });
-        dispatch({ type: 'SET_INDEX', payload: 0 });
+        
+        // Full state reset
+        dispatch({ type: 'RESET_STATE' });
         currentIndexRef.current = 0;
+        
+        processToken.current = {};
+        isProcessing.current = false;
         
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
@@ -787,7 +809,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                       }}
                       className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all text-center tracking-widest uppercase hover:scale-105"
                     >
-                      {t.read_next?.replace('{{name}}', nextChapter.name) || `READ NEXT (${nextChapter.name})`}
+                      {t.read_next?.replace('{{name}}', getChapterFullDisplayCode(nextChapter)) || `READ NEXT (${getChapterFullDisplayCode(nextChapter)})`}
                     </button>
                   )}
                   <button

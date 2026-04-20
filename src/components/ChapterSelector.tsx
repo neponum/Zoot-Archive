@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists, fetchStoryScript } from '../services/storyService';
 import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
+import { getChapterDisplayCode } from '../lib/utils';
 import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
 import { OperationRecordsGraph } from './OperationRecordsGraph';
@@ -10,7 +11,7 @@ import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface ChapterSelectorProps {
-  onSelect: (chapter: StoryChapter, nextChapter?: StoryChapter) => void;
+  onSelect: (chapter: StoryChapter, nextChapter?: StoryChapter, episode?: StoryEpisode) => void;
   onOpenTranslation?: (chapter?: StoryChapter, episode?: StoryEpisode) => void;
   onTranslatorChange?: (translator: string | undefined) => void;
 }
@@ -823,15 +824,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'RECORD';
                   const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/20';
                   
-                  let displayCode = chapter.code;
-                  if (!displayCode) {
-                    const parts = chapter.id.split('_');
-                    if (['beg', 'mid', 'end'].includes(parts[parts.length - 1].toLowerCase())) {
-                      displayCode = parts[parts.length - 2]?.toUpperCase() || chapter.id;
-                    } else {
-                      displayCode = parts[parts.length - 1]?.toUpperCase() || chapter.id;
-                    }
-                  }
+                  let displayCode = getChapterDisplayCode(chapter);
 
                   return (
                     <div
@@ -855,7 +848,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         <button
                           onClick={() => {
                             const nextChapter = selectedEpisode.chapters[idx + 1];
-                            onSelect(chapter, nextChapter);
+                            onSelect(chapter, nextChapter, selectedEpisode);
                           }}
                           disabled={!scriptExists}
                           className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
@@ -905,7 +898,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           <button 
                             onClick={() => {
                               const nextChapter = selectedEpisode.chapters[idx + 1];
-                              onSelect(chapter, nextChapter);
+                              onSelect(chapter, nextChapter, selectedEpisode);
                             }}
                             disabled={!scriptExists}
                             className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white disabled:opacity-30 disabled:cursor-not-allowed group/btn"

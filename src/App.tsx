@@ -27,7 +27,14 @@ function App() {
   });
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
 
-  const [nextChapter, setNextChapter] = useState<StoryChapter | undefined>(undefined);
+  const [nextChapter, setNextChapter] = useState<StoryChapter | undefined>(() => {
+    const saved = localStorage.getItem('ak-next-chapter');
+    return saved ? JSON.parse(saved) : undefined;
+  });
+  const [viewerEpisode, setViewerEpisode] = useState<StoryEpisode | null>(() => {
+    const saved = localStorage.getItem('ak-viewer-episode');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   useEffect(() => {
     if (selectedChapter) {
@@ -37,9 +44,28 @@ function App() {
     }
   }, [selectedChapter]);
 
-  const handleSelectChapter = (chapter: StoryChapter, next?: StoryChapter) => {
+  useEffect(() => {
+    if (nextChapter) {
+      localStorage.setItem('ak-next-chapter', JSON.stringify(nextChapter));
+    } else {
+      localStorage.removeItem('ak-next-chapter');
+    }
+  }, [nextChapter]);
+
+  useEffect(() => {
+    if (viewerEpisode) {
+      localStorage.setItem('ak-viewer-episode', JSON.stringify(viewerEpisode));
+    } else {
+      localStorage.removeItem('ak-viewer-episode');
+    }
+  }, [viewerEpisode]);
+
+  const handleSelectChapter = (chapter: StoryChapter, next?: StoryChapter, episode?: StoryEpisode) => {
     setSelectedChapter(chapter);
     setNextChapter(next);
+    if (episode) {
+      setViewerEpisode(episode);
+    }
   };
 
   useEffect(() => {
@@ -90,6 +116,17 @@ function App() {
     }
   };
 
+  const handleNextChapter = () => {
+    if (!nextChapter || !viewerEpisode) return;
+    
+    const nextIdx = viewerEpisode.chapters.findIndex(c => c.id === nextChapter.id);
+    const subsequentChapter = nextIdx >= 0 && nextIdx < viewerEpisode.chapters.length - 1 
+                                ? viewerEpisode.chapters[nextIdx + 1] 
+                                : undefined;
+
+    handleSelectChapter(nextChapter, subsequentChapter, viewerEpisode);
+  };
+
   return (
     <div className="w-screen h-screen bg-black overflow-hidden font-sans select-none relative">
       <AnimatePresence mode="wait">
@@ -121,7 +158,7 @@ function App() {
               translator={selectedTranslator}
               onBack={handleBackFromViewer}
               nextChapter={nextChapter}
-              onNextChapter={nextChapter ? () => handleSelectChapter(nextChapter) : undefined}
+              onNextChapter={nextChapter ? handleNextChapter : undefined}
             />
           </motion.div>
         )}
