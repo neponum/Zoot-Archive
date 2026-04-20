@@ -23,13 +23,12 @@ import { getChapterDisplayCode, getChapterFullDisplayCode } from '../lib/utils';
 
 interface StoryViewerProps {
   storyTxt: string;
-  chapterId?: string;
   customScript?: string;
   translator?: string;
   onBack: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, customScript, translator, onBack }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
@@ -75,7 +74,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
   const currentIndexRef = useRef(0);
   const predicateMismatchRef = useRef(false);
   const isProcessing = useRef(false);
-  const processingIndexRef = useRef(0);
   const selectedChoicesRef = useRef<Set<string>>(new Set());
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAdvanceTime = useRef<number>(0);
@@ -128,20 +126,16 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
   }, [currentIndex]);
 
   const processLine = useCallback(async (startIndex: number) => {
-    // Generate new unique token to allow the NEW processLine to cancel OLD ones
-    const token = {};
-    processToken.current = token;
+    if (isProcessing.current) return;
+    const token = processToken.current;
     isProcessing.current = true;
-    processingIndexRef.current = startIndex;
     
     try {
       let index = startIndex;
       let localPredicateMismatch = predicateMismatchRef.current;
       
       while (index < lines.length) {
-        // If a new processLine has started, abort this one
         if (processToken.current !== token) return;
-        processingIndexRef.current = index;
         const line = lines[index];
         
         if (line.type === 'predicate') {
@@ -388,9 +382,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
               if (line.duration && line.duration > 0) {
                 setTimeout(() => dispatch({ type: 'SET_SHAKE', payload: { isShaking: false, config: null } }), line.duration * 1000);
               }
-              if (line.block && !isSkipping) {
-                const waitTime = Math.max((line.duration || 0) * 1000, 20);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
+              if (line.block && line.duration && line.duration > 0 && !isSkipping) {
+                await new Promise(resolve => setTimeout(resolve, line.duration * 1000));
                 if (processToken.current !== token) return;
               }
             }
@@ -412,9 +405,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
                 } 
               });
             }
-            if (line.block && !isSkipping) {
-              const waitTime = Math.max((line.duration || 0) * 1000, 20);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
               if (processToken.current !== token) return;
             }
             break;
@@ -429,17 +421,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
                 duration: line.duration ?? 0
               } 
             });
-            if (line.block && !isSkipping) {
-              const waitTime = Math.max((line.duration || 0) * 1000, 20); // Wait at least 20ms to allow React to flush
-              await new Promise(resolve => setTimeout(resolve, waitTime));
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
               if (processToken.current !== token) return;
             }
             break;
           case 'animtext':
             dispatch({ type: 'SET_ANIM_TEXT', payload: line });
-            if (line.block && !isSkipping) {
-              const waitTime = Math.max((line.duration || 0) * 1000, 20);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
               if (processToken.current !== token) return;
             }
             break;
@@ -448,9 +438,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
             break;
           case 'sticker':
             dispatch({ type: 'ADD_STICKER', payload: line });
-            if (line.block && !isSkipping) {
-              const waitTime = Math.max((line.duration || 0) * 1000, 20);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
+            if (line.block && line.duration && !isSkipping) {
+              await new Promise(resolve => setTimeout(resolve, line.duration! * 1000));
               if (processToken.current !== token) return;
             }
             break;
@@ -466,9 +455,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
         }
       }
     } finally {
-      if (processToken.current === token) {
-        isProcessing.current = false;
-      }
+      isProcessing.current = false;
     }
   }, [lines, characterSlots, predicateMismatch]);
 
@@ -483,20 +470,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
       dispatch({ type: 'SET_SKIPPING', payload: false });
       dispatch({ type: 'SET_AUTO', payload: false });
       audioManager.stopAll();
-      
-      // Mark as read
-      const saved = localStorage.getItem('ak-completed-chapters');
-      let completed: string[] = [];
-      try {
-        completed = saved ? JSON.parse(saved) : [];
-      } catch (e) {}
-      
-      const marker = chapterId || storyTxt;
-      if (!completed.includes(marker)) {
-        completed.push(marker);
-        localStorage.setItem('ak-completed-chapters', JSON.stringify(completed));
-      }
-
+      localStorage.removeItem(`ak-story-index-${storyTxt}`);
       onBack();
       return;
     }
@@ -510,8 +484,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
     // If we just skipped the typewriter, prevent immediate advance to next line
     if (now - lastSkipTime.current < 250) return;
 
-    const nextIndex = Math.max(currentIndexRef.current, processingIndexRef.current) + 1;
-    processLine(nextIndex);
+    processLine(currentIndexRef.current + 1);
   }, [lines, processLine, isSkipping, onBack, currentDecision, isTypewriterFinished]);
 
   const controls = useStoryControls({
@@ -543,7 +516,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     };
-  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog, currentIndex]);
+  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog]);
 
   // Skip logic
   useEffect(() => {
@@ -614,11 +587,23 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
 
   useEffect(() => {
     if (lines.length > 0 && !loading) {
-      if (currentIndex === 0) {
+      const savedIndex = localStorage.getItem(`ak-story-index-${storyTxt}`);
+      const startIndex = savedIndex ? parseInt(savedIndex) : 0;
+      
+      if (currentIndex === 0 && startIndex > 0 && startIndex < lines.length) {
+        dispatch({ type: 'SET_INDEX', payload: startIndex });
+        processLine(startIndex);
+      } else if (currentIndex === 0) {
         processLine(0);
       }
     }
   }, [lines, loading, processLine, storyTxt]);
+
+  useEffect(() => {
+    if (currentIndex > 0) {
+      localStorage.setItem(`ak-story-index-${storyTxt}`, currentIndex.toString());
+    }
+  }, [currentIndex, storyTxt]);
 
   if (loading) {
     return (
@@ -736,7 +721,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
         />
 
         <DialogueUI 
-          showUI={showUI && !(blocker && blocker.a > 0.99)}
+          showUI={showUI && !(blocker && blocker.a > 0)}
           currentIndex={currentIndex}
           currentSpeaker={currentSpeaker}
           currentText={processedCurrentText}
@@ -764,7 +749,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
           isSkipping={isSkipping}
           skipSpeed={skipSpeed}
           isHoldingSkip={isHoldingSkip}
-          forceHideUI={!!activeAnimText || !!(blocker && blocker.a > 0.99)}
+          forceHideUI={!!activeAnimText || !!(blocker && blocker.a > 0)}
           isFullscreen={isFullscreen}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
           onToggleSkip={() => {}}
@@ -795,6 +780,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, chapterId, c
           show={showBackConfirm}
           onConfirm={() => {
             audioManager.stopAll();
+            localStorage.removeItem(`ak-story-index-${storyTxt}`);
             onBack();
           }}
           onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}

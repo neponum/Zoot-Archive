@@ -351,18 +351,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   }, [episodes]);
 
   const [chapterScriptsExist, setChapterScriptsExist] = useState<Record<string, boolean>>({});
-  const [completedChapters, setCompletedChapters] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const saved = localStorage.getItem('ak-completed-chapters');
-    if (saved) {
-      try {
-        setCompletedChapters(new Set(JSON.parse(saved)));
-      } catch (e) {
-        console.error('Failed to parse completed chapters', e);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (selectedEpisode) {
@@ -833,7 +821,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   const isBeg = chapter.id.toLowerCase().includes('_beg');
                   const isMid = chapter.id.toLowerCase().includes('_mid');
                   const isEnd = chapter.id.toLowerCase().includes('_end');
-                  const isRead = completedChapters.has(chapter.id);
                   const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'RECORD';
                   const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/20';
                   
@@ -863,7 +850,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                             onSelect(chapter);
                           }}
                           disabled={!scriptExists}
-                          className="w-40 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
+                          className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
                           title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                         >
                           {/* Top Left REC / MISSING */}
@@ -878,14 +865,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           <span className={`text-[6px] font-black absolute top-1.5 right-1.5 tracking-widest ${typeColor} z-20`}>
                             {typeLabel}
                           </span>
-
-                          {/* Read Marker Badge */}
-                          {isRead && (
-                            <div className="absolute bottom-1 right-1 px-1 py-0.5 bg-green-500/90 backdrop-blur-sm rounded-xs flex items-center gap-0.5 z-20 border border-green-400/50">
-                              <Check className="w-2 h-2 text-white" strokeWidth={4} />
-                              <span className="text-[5px] font-black tracking-tighter text-white uppercase">{t.read}</span>
-                            </div>
-                          )}
                           
                           <div className="flex flex-col items-center justify-center w-full h-full pt-1 text-center relative overflow-hidden">
                             {chapterImages[chapter.id] && (

@@ -171,13 +171,10 @@
     "cancel": "CANCEL",
     "confirm": "CONFIRM",
     "back_to_storylines": "Back to Storylines",
-    "read": "READ",
     "chapter_end": "CHAPTER END",
     "read_next": "READ NEXT ({{name}})",
     "back_to_chapters": "EXIT TO CHAPTER SELECTION",
-    "last_chapter_hint": "This is the last available chapter.",
-    "confirm_clear_cache": "Clear the game cache? All resources will be downloaded again.",
-    "clear_cache": "Clear Cache"
+    "last_chapter_hint": "This is the last available chapter."
   },
   "ja_JP": {
     "archive": "アーカイブ",
@@ -435,13 +432,10 @@
     "cancel": "ОТМЕНА",
     "confirm": "ПОДТВЕРДИТЬ",
     "back_to_storylines": "Назад к сюжетным линиям",
-    "read": "ПРОЧИТАНО",
     "chapter_end": "КОНЕЦ ГЛАВЫ",
     "read_next": "Читать дальше ({{name}})",
     "back_to_chapters": "Выйти к выбору глав",
-    "last_chapter_hint": "Это последняя доступная глава.",
-    "confirm_clear_cache": "Очистить кэш игры? Все ресурсы будут загружены повторно.",
-    "clear_cache": "Очистить кэш"
+    "last_chapter_hint": "Это последняя доступная глава."
   },
   "zh_TW": {
     "archive": "檔案庫",

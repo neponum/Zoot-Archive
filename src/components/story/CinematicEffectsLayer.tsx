@@ -17,19 +17,14 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
   blocker,
   activeAnimText,
 }) => {
-  // Convert Arknights 0-1 range to 0-255 for CSS rgba
-  const getRgbValue = (val: number) => {
-    return val <= 1 && val > 0 ? Math.round(val * 255) : Math.round(val);
-  };
-
   return (
     <>
       {/* Blocker Layer */}
       <div 
-        className="absolute inset-0 z-[45] pointer-events-none"
+        className="absolute inset-0 z-[25] pointer-events-none"
         style={{
-          backgroundColor: `rgba(${getRgbValue(blocker?.r || 0)}, ${getRgbValue(blocker?.g || 0)}, ${getRgbValue(blocker?.b || 0)}, ${blocker?.a || 0})`,
-          transition: blocker?.duration ? `background-color ${blocker.duration}s ease-in-out` : 'none'
+          backgroundColor: blocker ? `rgba(${blocker.r}, ${blocker.g}, ${blocker.b}, ${blocker.a})` : 'transparent',
+          transition: blocker ? `background-color ${blocker.duration}s ease-in-out` : 'none'
         }}
       />
 
