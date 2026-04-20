@@ -11,7 +11,7 @@ import { TRANSLATION_REGISTRY } from '../config/translationsRegistry';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface ChapterSelectorProps {
-  onSelect: (chapter: StoryChapter, nextChapter?: StoryChapter, episode?: StoryEpisode) => void;
+  onSelect: (chapter: StoryChapter) => void;
   onOpenTranslation?: (chapter?: StoryChapter, episode?: StoryEpisode) => void;
   onTranslatorChange?: (translator: string | undefined) => void;
 }
@@ -847,8 +847,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         {/* Chapter Info (The Black Square) */}
                         <button
                           onClick={() => {
-                            const nextChapter = selectedEpisode.chapters[idx + 1];
-                            onSelect(chapter, nextChapter, selectedEpisode);
+                            onSelect(chapter);
                           }}
                           disabled={!scriptExists}
                           className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
@@ -897,8 +896,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                         <div className="flex flex-col w-12 bg-zinc-950 border-l border-white/10 shrink-0">
                           <button 
                             onClick={() => {
-                              const nextChapter = selectedEpisode.chapters[idx + 1];
-                              onSelect(chapter, nextChapter, selectedEpisode);
+                              onSelect(chapter);
                             }}
                             disabled={!scriptExists}
                             className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white disabled:opacity-30 disabled:cursor-not-allowed group/btn"

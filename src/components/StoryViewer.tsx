@@ -26,15 +26,12 @@ interface StoryViewerProps {
   customScript?: string;
   translator?: string;
   onBack: () => void;
-  nextChapter?: StoryChapter;
-  onNextChapter?: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack, nextChapter, onNextChapter }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
-  const [showChapterEnd, setShowChapterEnd] = React.useState(false);
   const [state, dispatch] = useReducer(storyReducer, initialState);
   const {
     lines,
@@ -472,7 +469,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     if (currentIndexRef.current >= lines.length - 1) {
       dispatch({ type: 'SET_SKIPPING', payload: false });
       dispatch({ type: 'SET_AUTO', payload: false });
-      setShowChapterEnd(true);
+      audioManager.stopAll();
+      localStorage.removeItem(`ak-story-index-${storyTxt}`);
+      onBack();
       return;
     }
     
@@ -535,7 +534,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       try {
         setLoading(true);
         setError(null);
-        setShowChapterEnd(false);
         clearPreloadedImages();
         selectedChoicesRef.current.clear();
         predicateMismatchRef.current = false;
@@ -550,6 +548,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
         const parsed = parseStoryScript(script);
+        
+        // --- Inject end of chapter dialog ---
+        parsed.push({
+          type: 'dialogue',
+          characterName: null,
+          text: `— ${t.chapter_end || 'КОНЕЦ ГЛАВЫ'} —`
+        });
+
         dispatch({ type: 'SET_LINES', payload: parsed });
         
         await preloadAssets(parsed, (loaded, total, currentFile) => {
@@ -780,53 +786,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}
           t={t}
         />
-
-        {/* Chapter End Screen */}
-        <AnimatePresence>
-          {showChapterEnd && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-full max-w-lg flex flex-col items-center justify-center text-center space-y-8">
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-black text-white tracking-[0.2em] uppercase">{t.chapter_end}</h2>
-                  <p className="text-white/60 text-lg tracking-wider">
-                    {!nextChapter ? t.last_chapter_hint : ""}
-                  </p>
-                </div>
-                
-                <div className="flex flex-col w-full gap-4">
-                  {nextChapter && onNextChapter && (
-                    <button
-                      onClick={() => {
-                        audioManager.stopAll();
-                        localStorage.removeItem(`ak-story-index-${storyTxt}`);
-                        onNextChapter();
-                      }}
-                      className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all text-center tracking-widest uppercase hover:scale-105"
-                    >
-                      {t.read_next?.replace('{{name}}', getChapterFullDisplayCode(nextChapter)) || `READ NEXT (${getChapterFullDisplayCode(nextChapter)})`}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      audioManager.stopAll();
-                      localStorage.removeItem(`ak-story-index-${storyTxt}`);
-                      onBack();
-                    }}
-                    className="w-full py-4 bg-transparent hover:bg-white/5 border border-white/10 rounded-lg text-white/80 font-medium transition-all text-center tracking-widest uppercase"
-                  >
-                    {t.back_to_chapters}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <OrientationOverlay />
       </motion.div>
