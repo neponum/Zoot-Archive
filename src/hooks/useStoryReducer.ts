@@ -69,7 +69,7 @@ export type StoryAction =
   | { type: 'SET_BG'; payload: { bgUrl: string | null; assetName: string | null } }
   | { type: 'UPDATE_CHARACTER_SLOT'; payload: { slot: string; data: CharacterSlotData } }
   | { type: 'UPDATE_CHARACTER_SLOTS'; payload: Record<string, CharacterSlotData> }
-  | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string } // Optional slot to clear
+  | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string | { slot?: string; duration?: number } } // Optional slot to clear
   | { type: 'SET_FOCUS'; payload: number }
   | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; isSubtitle?: boolean; line?: StoryLine } }
   | { type: 'SET_TYPEWRITER_FINISHED'; payload: boolean }
@@ -210,13 +210,39 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
 
       return hasChanges ? { ...state, characterSlots: nextSlots } : state;
     }
-    case 'CLEAR_CHARACTER_SLOTS':
-      if (action.payload) {
+    case 'CLEAR_CHARACTER_SLOTS': {
+      let targetSlot: string | undefined = undefined;
+      let duration: number | undefined = undefined;
+      
+      if (typeof action.payload === 'string') {
+        targetSlot = action.payload;
+      } else if (action.payload) {
+        targetSlot = action.payload.slot;
+        duration = action.payload.duration;
+      }
+
+      if (duration && duration > 0) {
+        const nextSlots = { ...state.characterSlots };
+        const doFade = (s: string) => {
+          if (nextSlots[s]?.url) {
+            nextSlots[s] = { ...nextSlots[s], animation: { ...(nextSlots[s].animation || {}), aTo: 0, duration } };
+          }
+        };
+        
+        if (targetSlot) {
+          doFade(targetSlot);
+        } else {
+          Object.keys(nextSlots).forEach(doFade);
+        }
+        return { ...state, characterSlots: nextSlots };
+      }
+
+      if (targetSlot) {
         return {
           ...state,
           characterSlots: {
             ...state.characterSlots,
-            [action.payload]: { url: null, focus: false, name: null },
+            [targetSlot]: { url: null, focus: false, name: null },
           },
         };
       }
@@ -228,6 +254,7 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
           right: { url: null, focus: false, name: null },
         },
       };
+    }
     case 'SET_FOCUS': {
       const slotMap: Record<number, string> = { 1: 'left', 2: 'center', 3: 'right' };
       const targetSlot = slotMap[action.payload];

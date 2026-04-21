@@ -61,9 +61,9 @@ class AudioManager {
 
   private fadeAudio(audio: HTMLAudioElement, startVol: number, endVol: number, duration: number, onComplete?: () => void) {
     const steps = 20;
-    // Prevent zero or negative duration
-    const safeDuration = Math.max(duration, 0.05);
-    const stepTime = (safeDuration * 1000) / steps;
+    // Prevent zero or negative duration. The `duration` here is already passed in milliseconds from playBGM/stopBGM.
+    const safeDuration = Math.max(duration, 50);
+    const stepTime = safeDuration / steps;
     const volumeStep = (endVol - startVol) / steps;
     let currentStep = 0;
 

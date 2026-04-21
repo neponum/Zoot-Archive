@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 
 interface CharacterSlot {
@@ -118,7 +118,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       key={`${slot}-${data.name}`}
       initial={initial}
       animate={animate}
-      exit={{ opacity: 0, y: 0 }}
+      exit={{ opacity: 0 }}
       transition={transition}
       style={{ 
         zIndex: data.focus ? 20 : 10,
@@ -185,11 +185,13 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
 export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ characterSlots }) => {
   return (
     <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end overflow-hidden">
-      {(Object.entries(characterSlots) as [string, CharacterSlot][])
-        .filter(([slot, data]) => !!(data.url && data.name))
-        .map(([slot, data]) => (
-          <CharacterSlotItem key={`${slot}-${data.name}`} slot={slot} data={data} characterSlots={characterSlots} />
-        ))}
+      <AnimatePresence>
+        {(Object.entries(characterSlots) as [string, CharacterSlot][])
+          .filter(([slot, data]) => !!(data.url && data.name))
+          .map(([slot, data]) => (
+            <CharacterSlotItem key={`${slot}-${data.name}`} slot={slot} data={data} characterSlots={characterSlots} />
+          ))}
+      </AnimatePresence>
     </div>
   );
 });

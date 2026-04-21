@@ -308,9 +308,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 if (s === '3' || s === 'r') return 'right';
                 return ['left', 'center', 'right'].includes(s) ? s : 'center';
               };
-              dispatch({ type: 'CLEAR_CHARACTER_SLOTS', payload: getSlotName(line.slot) });
+              dispatch({ 
+                type: 'CLEAR_CHARACTER_SLOTS', 
+                payload: { slot: getSlotName(line.slot), duration: isSkipping ? 0 : line.duration } 
+              });
             } else {
-              dispatch({ type: 'CLEAR_CHARACTER_SLOTS' });
+              dispatch({ 
+                type: 'CLEAR_CHARACTER_SLOTS', 
+                payload: { duration: isSkipping ? 0 : line.duration } 
+              });
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
