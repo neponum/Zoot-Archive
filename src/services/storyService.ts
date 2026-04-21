@@ -310,11 +310,12 @@ class StoryParser {
           assetName2: params.name2,
           slot: params.slot,
           focus: params.focus ? parseInt(params.focus) : undefined,
-          duration: params.duration ? parseFloat(params.duration) : undefined,
+          duration: params.duration ? parseFloat(params.duration) : (params.fadetime ? parseFloat(params.fadetime) : undefined),
           posFrom: params.posfrom,
           posTo: params.posto,
           aFrom: params.afrom ? parseFloat(params.afrom) : undefined,
           aTo: params.ato ? parseFloat(params.ato) : undefined,
+          block: params.block === 'true',
           originalTag: original
         };
       case 'background':
@@ -424,7 +425,11 @@ class StoryParser {
           r: params.r ? parseFloat(params.r) : 0,
           g: params.g ? parseFloat(params.g) : 0,
           b: params.b ? parseFloat(params.b) : 0,
-          duration: params.fadetime ? parseFloat(params.fadetime) : 0,
+          initr: params.initr ? parseFloat(params.initr) : undefined,
+          initg: params.initg ? parseFloat(params.initg) : undefined,
+          initb: params.initb ? parseFloat(params.initb) : undefined,
+          inita: params.inita ? parseFloat(params.inita) : undefined,
+          duration: params.fadetime ? parseFloat(params.fadetime) : (params.duration ? parseFloat(params.duration) : 0),
           block: params.block === 'true',
           originalTag: original
         };

@@ -62,8 +62,14 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
 
   if (data.animation) {
     const parsePos = (pos: string) => {
-      const [x, y] = pos.split(',').map(v => parseFloat(v));
-      return { x, y: -y }; // Invert Y for screen coordinates
+      if (!pos || typeof pos !== 'string') return { x: 0, y: 0 };
+      const parts = pos.split(',');
+      const x = parseFloat(parts[0] || '0');
+      const y = parseFloat(parts[parts.length > 1 ? 1 : 0] || '0');
+      return { 
+        x: isNaN(x) ? 0 : x, 
+        y: isNaN(y) ? 0 : -y // Invert Y for screen coordinates
+      };
     };
 
     if (data.animation.posFrom) {

@@ -7,9 +7,17 @@ import { parseTags } from '../../lib/textUtils';
 interface CinematicEffectsLayerProps {
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string, duration: number, amount: number } | null;
-  blocker: { a: number, r: number, g: number, b: number, duration: number } | null;
+  blocker: { a: number, r: number, g: number, b: number, duration: number, initr?: number; initg?: number; initb?: number; inita?: number } | null;
   activeAnimText: StoryLine | null;
 }
+
+const getRgba = (r: number, g: number, b: number, a: number) => {
+  const safeR = isNaN(r) ? 0 : (r <= 1 ? Math.round(r * 255) : Math.round(r));
+  const safeG = isNaN(g) ? 0 : (g <= 1 ? Math.round(g * 255) : Math.round(g));
+  const safeB = isNaN(b) ? 0 : (b <= 1 ? Math.round(b * 255) : Math.round(b));
+  const safeA = isNaN(a) ? 0 : Math.max(0, Math.min(1, a));
+  return `rgba(${safeR}, ${safeG}, ${safeB}, ${safeA})`;
+};
 
 export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
   isFlashing,
@@ -17,16 +25,32 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
   blocker,
   activeAnimText,
 }) => {
+  const blockerProps = React.useMemo(() => {
+    if (!blocker) return null;
+    const target = getRgba(blocker.r, blocker.g, blocker.b, blocker.a);
+    const initial = blocker.initr !== undefined 
+      ? getRgba(blocker.initr, blocker.initg || 0, blocker.initb || 0, blocker.inita || 0)
+      : undefined;
+    
+    return { target, initial, duration: Math.max(blocker.duration, 0) };
+  }, [blocker]);
+
   return (
     <>
       {/* Blocker Layer */}
-      <div 
-        className="absolute inset-0 z-[25] pointer-events-none"
-        style={{
-          backgroundColor: blocker ? `rgba(${blocker.r <= 1 ? Math.round(blocker.r * 255) : blocker.r}, ${blocker.g <= 1 ? Math.round(blocker.g * 255) : blocker.g}, ${blocker.b <= 1 ? Math.round(blocker.b * 255) : blocker.b}, ${blocker.a})` : 'transparent',
-          transition: blocker ? `background-color ${blocker.duration}s ease-in-out` : 'none'
-        }}
-      />
+      {blockerProps && (
+        <motion.div 
+          // Re-mount only if initial colors are provided to ensure a "snap"
+          key={blocker?.initr !== undefined ? `snap-${blocker.initr}-${blocker.initg}-${blocker.initb}-${blocker.inita}-${Date.now()}` : 'continuous'}
+          initial={blockerProps.initial ? { backgroundColor: blockerProps.initial } : false}
+          animate={{ backgroundColor: blockerProps.target }}
+          transition={{ 
+            duration: blockerProps.duration,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 z-[25] pointer-events-none"
+        />
+      )}
 
       {/* Camera Effects Layer */}
       <AnimatePresence>
@@ -41,8 +65,8 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
             exit={{ opacity: 0 }}
             transition={{ 
               opacity: { duration: 1 },
-              x: { duration: 0.8, repeat: Infinity, ease: "linear" }, // Reduced frequency as requested
-              y: { duration: 1.2, repeat: Infinity, ease: "linear" }  // Reduced frequency as requested
+              x: { duration: 0.8, repeat: Infinity, ease: "linear" }, 
+              y: { duration: 1.2, repeat: Infinity, ease: "linear" }  
             }}
             className="absolute inset-0 z-[30] pointer-events-none overflow-hidden"
           >
@@ -76,8 +100,21 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="absolute z-40 pointer-events-none"
             style={{
-              left: activeAnimText.pos && activeAnimText.pos.includes(',') ? `${((parseFloat(activeAnimText.pos.split(',')[0]) + 640) / 1280) * 100}%` : '50%',
-              top: activeAnimText.pos && activeAnimText.pos.includes(',') ? `${((360 - parseFloat(activeAnimText.pos.split(',')[1])) / 720) * 100}%` : '50%',
+              left: (() => {
+                if (!activeAnimText.pos) return '50%';
+                const parts = activeAnimText.pos.split(',');
+                if (parts.length < 1) return '50%';
+                const val = parseFloat(parts[0]);
+                if (isNaN(val)) return '50%';
+                return `${((val + 640) / 1280) * 100}%`;
+              })(),
+              top: (() => {
+                if (!activeAnimText.pos) return '50%';
+                const parts = activeAnimText.pos.split(',');
+                const val = parseFloat(parts.length > 1 ? parts[1] : parts[0]);
+                if (isNaN(val)) return '50%';
+                return `${((360 - val) / 720) * 100}%`;
+              })(),
               transform: activeAnimText.pos && activeAnimText.pos.includes(',') ? 'none' : 'translate(-50%, -50%)',
             }}
           >

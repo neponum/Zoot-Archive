@@ -253,8 +253,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const handleDiscordLogin = () => {
     const width = 600;
     const height = 800;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+    const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+    const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
     
     // Open window immediately with a real URL to avoid popup blockers
     // Using a direct relative URL that redirects on the server

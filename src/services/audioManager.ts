@@ -8,6 +8,7 @@ class AudioManager {
   private bgmUrl: string | null = null;
   private bgmVolume: number = 0.5;
   private bgmFadeInterval: number | null = null;
+  private currentPlayId: number = 0;
   
   private masterBGMVolume: number = 1.0;
   private masterSFXVolume: number = 1.0;
@@ -44,7 +45,7 @@ class AudioManager {
     this.masterVoiceVolume = voice;
     
     if (this.bgm) {
-      this.bgm.volume = this.bgmVolume * this.masterBGMVolume;
+      this.bgm.volume = Math.max(0, Math.min(1, this.bgmVolume * this.masterBGMVolume));
     }
     
     localStorage.setItem('arknights_avg_volumes', JSON.stringify({ bgm, sfx, voice }));
@@ -60,11 +61,13 @@ class AudioManager {
 
   private fadeAudio(audio: HTMLAudioElement, startVol: number, endVol: number, duration: number, onComplete?: () => void) {
     const steps = 20;
-    const stepTime = duration / steps;
+    // Prevent zero or negative duration
+    const safeDuration = Math.max(duration, 0.05);
+    const stepTime = (safeDuration * 1000) / steps;
     const volumeStep = (endVol - startVol) / steps;
     let currentStep = 0;
 
-    audio.volume = startVol;
+    audio.volume = Math.max(0, Math.min(1, startVol));
 
     const interval = window.setInterval(() => {
       currentStep++;
@@ -88,16 +91,19 @@ class AudioManager {
   public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000, introUrl?: string, name?: string, introName?: string) {
     if (this.bgmUrl === url && !introUrl) {
       if (this.bgm) {
-        this.bgm.volume = volume * this.masterBGMVolume;
+        this.bgm.volume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
       }
       return;
     }
+
+    this.currentPlayId++;
+    const playId = this.currentPlayId;
 
     const oldBgm = this.bgm;
     const oldInterval = this.bgmFadeInterval;
     
     this.bgmUrl = url;
-    this.bgmVolume = volume;
+    this.bgmVolume = Math.max(0, volume);
 
     if (oldInterval) {
       window.clearInterval(oldInterval);
@@ -126,16 +132,24 @@ class AudioManager {
     
     try {
       await newBgm.play();
+      
+      // If stopAll or another playBGM was called while waiting for play() to resolve, abort.
+      if (playId !== this.currentPlayId) {
+        newBgm.pause();
+        newBgm.src = '';
+        return;
+      }
+
       this.bgm = newBgm;
-      this.bgmFadeInterval = this.fadeAudio(newBgm, 0, volume * this.masterBGMVolume, fadeDuration);
+      this.bgmFadeInterval = this.fadeAudio(newBgm, 0, Math.max(0, Math.min(1, volume * this.masterBGMVolume)), fadeDuration);
 
       if (introUrl) {
         newBgm.onended = async () => {
           // Only switch to loop if this intro is still the active BGM
-          if (this.bgm === newBgm) {
+          if (this.bgm === newBgm && playId === this.currentPlayId) {
             const loopBgm = new Audio(url);
             loopBgm.loop = true;
-            loopBgm.volume = volume * this.masterBGMVolume;
+            loopBgm.volume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
             
             loopBgm.onerror = (e: any) => {
               const target = e.target as HTMLAudioElement;
@@ -146,7 +160,7 @@ class AudioManager {
             try {
               await loopBgm.play();
               // Double check again after async play
-              if (this.bgm === newBgm) {
+              if (this.bgm === newBgm && playId === this.currentPlayId) {
                 this.bgm = loopBgm;
               } else {
                 loopBgm.pause();
@@ -160,8 +174,10 @@ class AudioManager {
         };
       }
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+      if (playId === this.currentPlayId) {
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        console.error(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+      }
     }
   }
 
@@ -169,6 +185,8 @@ class AudioManager {
    * Stop background music with fade out
    */
   public stopBGM(fadeDuration: number = 1000) {
+    this.currentPlayId++; // Invalidate any pending play requests
+    
     if (this.bgm) {
       const currentBgm = this.bgm;
       currentBgm.onended = null;
@@ -196,7 +214,7 @@ class AudioManager {
    */
   public playSFX(url: string, volume: number = 1.0) {
     const sound = new Audio(url);
-    sound.volume = volume * this.masterSFXVolume;
+    sound.volume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
     
     sound.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;
@@ -226,7 +244,7 @@ class AudioManager {
     }
 
     this.voice = new Audio(url);
-    this.voice.volume = volume * this.masterVoiceVolume;
+    this.voice.volume = Math.max(0, Math.min(1, volume * this.masterVoiceVolume));
     
     this.voice.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;

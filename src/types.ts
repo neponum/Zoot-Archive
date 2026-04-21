@@ -93,6 +93,10 @@ export interface StoryLine {
   vibrato?: number;
   randomness?: number;
   fadeout?: boolean;
+  initr?: number;
+  initg?: number;
+  initb?: number;
+  inita?: number;
   // New fields for ImageTween and CameraEffect
   xScaleFrom?: number;
   yScaleFrom?: number;

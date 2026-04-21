@@ -41,7 +41,7 @@ export interface StoryState {
   shakeConfig: { x: number; y: number; vibrato: number } | null;
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string; duration: number; amount: number } | null;
-  blocker: { a: number; r: number; g: number; b: number; duration: number } | null;
+  blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null;
   isAuto: boolean;
   isSkipping: boolean;
   skipSpeed: number;
@@ -79,7 +79,7 @@ export type StoryAction =
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
   | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
-  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number } | null }
+  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
   | { type: 'ADD_STICKER'; payload: StoryLine }
   | { type: 'CLEAR_STICKERS' }
@@ -155,7 +155,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
     case 'SET_LINES':
       return { ...state, lines: action.payload };
     case 'SET_INDEX':
-      return { ...state, currentIndex: action.payload };
+      const safeIndex = isNaN(action.payload) ? 0 : Math.max(0, action.payload);
+      return { ...state, currentIndex: safeIndex };
     case 'SET_BG':
       return { ...state, bgUrl: action.payload.bgUrl, currentBg: action.payload.assetName };
     case 'UPDATE_CHARACTER_SLOT': {

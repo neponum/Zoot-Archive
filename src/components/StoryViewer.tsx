@@ -142,7 +142,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         // Enforce a minimum 50ms wait to ensure CSS states (like a sudden fadetime=0 blocker) 
         // have enough time to be parsed, committed by React, and painted by the browser
         // before we send the next state (which could immediately cancel it).
-        const ms = Math.max(duration * 1000, 50);
+        const safeDuration = isNaN(duration) ? 0 : Math.max(duration, 0);
+        const ms = Math.max(safeDuration * 1000, 50);
+        if (ms <= 0) return true;
+        
         const start = Date.now();
         
         while (Date.now() - start < ms) {
@@ -309,6 +312,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             } else {
               dispatch({ type: 'CLEAR_CHARACTER_SLOTS' });
             }
+            if (line.block && line.duration !== undefined && !isSkipping) {
+              dispatch({ type: 'SET_BLOCKING', payload: true });
+              if (!await waitForCompletion(line.duration)) return;
+              dispatch({ type: 'SET_BLOCKING', payload: false });
+            }
             break;
             
           case 'image':
@@ -461,6 +469,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 r: line.r ?? 0,
                 g: line.g ?? 0,
                 b: line.b ?? 0,
+                initr: line.initr,
+                initg: line.initg,
+                initb: line.initb,
+                inita: line.inita,
                 duration: line.duration ?? 0
               } 
             });
@@ -644,6 +656,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         voiceVolume: volumes.voice 
       } 
     });
+  }, []);
+
+  // Clean up audio on unmount to prevent invisible ghost tracks playing
+  useEffect(() => {
+    return () => {
+      audioManager.stopAll();
+    };
   }, []);
 
   useEffect(() => {
