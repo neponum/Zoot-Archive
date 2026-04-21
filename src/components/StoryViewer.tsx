@@ -26,9 +26,10 @@ interface StoryViewerProps {
   customScript?: string;
   translator?: string;
   onBack: () => void;
+  onComplete?: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack, onComplete }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
@@ -471,6 +472,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       dispatch({ type: 'SET_AUTO', payload: false });
       audioManager.stopAll();
       localStorage.removeItem(`ak-story-index-${storyTxt}`);
+      onComplete?.();
       onBack();
       return;
     }

@@ -14,6 +14,7 @@ interface ChapterSelectorProps {
   onSelect: (chapter: StoryChapter) => void;
   onOpenTranslation?: (chapter?: StoryChapter, episode?: StoryEpisode) => void;
   onTranslatorChange?: (translator: string | undefined) => void;
+  readChapters?: Set<string>;
 }
 
 const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
@@ -69,7 +70,7 @@ const CHRONO_ORDER: Record<string, number> = {
 
 const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
 
-export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation, onTranslatorChange }) => {
+export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation, onTranslatorChange, readChapters }) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -853,12 +854,22 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
                           title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                         >
-                          {/* Top Left REC / MISSING */}
-                          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 z-20">
-                            <div className={`w-1.5 h-1.5 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
-                            <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
-                              {scriptExists ? (isOfficial ? 'RECORD' : t.translated) : t.missing}
-                            </span>
+                          {/* Top Left REC / MISSING / READ */}
+                          <div className="absolute top-1.5 left-1.5 flex flex-col items-start gap-0.5 z-20">
+                            <div className="flex items-center gap-0.5">
+                              <div className={`w-1 h-1 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
+                              <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
+                                {scriptExists ? (isOfficial ? 'RECORD' : t.translated) : t.missing}
+                              </span>
+                            </div>
+                            {readChapters?.has(chapter.id) && (
+                              <div className="flex items-center gap-0.5">
+                                <Check className="w-2 h-2 text-blue-400" />
+                                <span className="text-[6px] font-bold tracking-widest text-blue-400 uppercase">
+                                  {t.read || 'READ'}
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Top Right Type Label (BEG/MID/END) */}

@@ -609,16 +609,29 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
     const baseUrl = getBaseUrl(lang);
     const url = `${baseUrl}/${lang}/gamedata/excel/story_review_table.json`;
     
-    // Check cache first
-    const cached = await CacheService.getCachedJson(url);
-    if (cached) return cached;
+    let data = null;
     
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${lang} story review table: ${response.status}`);
+    // Try to fetch fresh data first
+    try {
+      const response = await fetchWithTimeout(url, { cache: 'no-cache' });
+      if (response.ok) {
+        data = await response.json();
+        // Cache for next time
+        await CacheService.cacheJson(url, data);
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch fresh ${lang} list, trying cache:`, err);
+    }
+
+    if (!data) {
+      // Check cache as fallback
+      data = await CacheService.getCachedJson(url);
+    }
     
-    const data = await response.json();
-    // Cache for next time
-    await CacheService.cacheJson(url, data);
+    if (!data) {
+      throw new Error(`Failed to load ${lang} story review table from both network and cache.`);
+    }
+    
     return data;
   };
 
@@ -797,21 +810,33 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const baseUrl = getBaseUrl(lang);
       const url = `${baseUrl}/${lang}/gamedata/story/${storyPath}.txt`;
       
-      // Check cache first
-      const cached = await CacheService.getCachedText(url);
-      if (cached) return cached;
+      let text = null;
       
-      const response = await fetchWithTimeout(url);
-      if (!response.ok) throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
-      
-      const text = await response.text();
-      const lowerText = text.trim().toLowerCase();
-      if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
-        throw new Error(`Failed to fetch ${lang} story script: ${storyPath} (Invalid content or Not Found)`);
+      // Try to fetch fresh script first
+      try {
+        const response = await fetchWithTimeout(url, { cache: 'no-cache' });
+        if (response.ok) {
+          text = await response.text();
+          const lowerText = text.trim().toLowerCase();
+          if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
+            await CacheService.cacheText(url, text);
+          } else {
+            text = null; // Invalid content
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch fresh ${lang} official script, trying cache:`, e);
       }
-      
-      // Cache for next time
-      await CacheService.cacheText(url, text);
+
+      if (!text) {
+        // Fallback to cache
+        text = await CacheService.getCachedText(url);
+      }
+
+      if (!text) {
+        throw new Error(`Failed to fetch ${lang} story script: ${storyPath}`);
+      }
+
       return text;
     } else {
       // Unofficial language: fetch original (zh_CN) and apply CSV
@@ -828,17 +853,32 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const baseName = storyPath.split('/').pop();
       const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.csv`;
       
-      let csvText = await CacheService.getCachedText(csvUrl);
+      let csvText = null;
+      
+      // Try to fetch fresh translation first to ensure edits are seen
+      try {
+        const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' });
+        if (response.ok) {
+          csvText = await response.text();
+          const lowerText = csvText.trim().toLowerCase();
+          if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
+            await CacheService.cacheText(csvUrl, csvText);
+          } else {
+            csvText = null; // Invalid content
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch fresh translation, trying cache:', e);
+      }
+
+      // Fallback to cache if fetch failed or returned invalid content
+      if (!csvText) {
+        csvText = await CacheService.getCachedText(csvUrl);
+      }
       
       if (!csvText) {
-        const response = await fetchWithTimeout(csvUrl);
-        if (!response.ok) {
-          // If CSV doesn't exist, just return the original script
-          console.warn(`No CSV translation found for ${lang} at ${csvUrl}`);
-          return originalScript;
-        }
-        csvText = await response.text();
-        await CacheService.cacheText(csvUrl, csvText);
+        // If still no CSV, it might not exist yet
+        return originalScript;
       }
       
       // Parse CSV and apply to originalScript

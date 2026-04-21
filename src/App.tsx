@@ -7,10 +7,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
 
 function App() {
-  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(() => {
-    const saved = localStorage.getItem('ak-selected-chapter');
-    return saved ? JSON.parse(saved) : null;
+  const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
+  const [readChapters, setReadChapters] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('ak-read-chapters');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+
   const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(() => {
     return localStorage.getItem('ak-selected-translator') || undefined;
   });
@@ -27,16 +29,17 @@ function App() {
   });
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    if (selectedChapter) {
-      localStorage.setItem('ak-selected-chapter', JSON.stringify(selectedChapter));
-    } else {
-      localStorage.removeItem('ak-selected-chapter');
-    }
-  }, [selectedChapter]);
-
   const handleSelectChapter = (chapter: StoryChapter) => {
     setSelectedChapter(chapter);
+  };
+
+  const handleChapterComplete = (chapterId: string) => {
+    setReadChapters(prev => {
+      const next = new Set(prev);
+      next.add(chapterId);
+      localStorage.setItem('ak-read-chapters', JSON.stringify(Array.from(next)));
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -102,6 +105,7 @@ function App() {
               onSelect={handleSelectChapter} 
               onOpenTranslation={handleOpenTranslation}
               onTranslatorChange={setSelectedTranslator}
+              readChapters={readChapters}
             />
           </motion.div>
         ) : (
@@ -117,6 +121,7 @@ function App() {
               customScript={testScript}
               translator={selectedTranslator}
               onBack={handleBackFromViewer}
+              onComplete={() => handleChapterComplete(selectedChapter.id)}
             />
           </motion.div>
         )}
