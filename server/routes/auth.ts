@@ -23,6 +23,25 @@ router.get('/url', (req, res) => {
   res.json({ url: `https://discord.com/api/oauth2/authorize?${params}` });
 });
 
+router.get('/redirect', (req, res) => {
+  if (!config.discord.clientId) {
+    return res.status(500).send("Discord Client ID not configured");
+  }
+
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  const redirectUri = `${protocol}://${host}/auth/discord/callback`;
+
+  const params = new URLSearchParams({
+    client_id: config.discord.clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "identify guilds",
+  });
+
+  res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
+});
+
 router.get('/user', async (req, res) => {
   const token = req.cookies.discord_token;
   if (!token) {

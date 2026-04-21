@@ -250,34 +250,22 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     }
   };
 
-  const handleDiscordLogin = async () => {
-    try {
-      const width = 600;
-      const height = 800;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      // Open window immediately to avoid popup blockers
-      const authWindow = window.open(
-        '',
-        'discord_auth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
+  const handleDiscordLogin = () => {
+    const width = 600;
+    const height = 800;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    // Open window immediately with a real URL to avoid popup blockers
+    // Using a direct relative URL that redirects on the server
+    const authWindow = window.open(
+      '/api/auth/discord/redirect',
+      'discord_auth',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
 
-      if (!authWindow) {
-        alert('Пожалуйста, разрешите всплывающие окна для входа через Discord');
-        return;
-      }
-
-      authWindow.document.write('<div style="font-family: sans-serif; padding: 20px; text-align: center; background: #0a0a0a; color: white;">Загрузка входа через Discord...</div>');
-
-      const response = await fetch('/api/auth/discord/url');
-      if (!response.ok) throw new Error('Failed to get auth URL');
-      const { url } = await response.json();
-      
-      authWindow.location.href = url;
-    } catch (error) {
-      console.error('Discord login error:', error);
+    if (!authWindow) {
+      alert('Всплывающее окно было заблокировано браузером.\n\nПожалуйста, нажмите на иконку блокировщика всплывающих окон в адресной строке Firefox и разрешите их для этого сайта, а затем попробуйте снова.');
     }
   };
 
