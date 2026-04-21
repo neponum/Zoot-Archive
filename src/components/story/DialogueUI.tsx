@@ -109,7 +109,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
           >
             <div className="w-full max-w-[140cqh] flex items-start gap-[4cqw] sm:gap-[4.4cqh]">
               {/* Name Tag */}
-              <div className="w-[20cqw] sm:w-[22.2cqh] flex-shrink-0 text-right">
+              <div className="w-[25cqw] sm:w-[28cqh] flex-shrink-0 text-right">
                 {currentSpeaker && (
                   <div 
                     key={currentSpeaker}
