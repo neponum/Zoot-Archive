@@ -854,7 +854,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                           className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
                           title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                         >
-                          {/* Top Left REC / MISSING / READ */}
+                          {/* Top Left REC / MISSING */}
                           <div className="absolute top-1.5 left-1.5 flex flex-col items-start gap-0.5 z-20">
                             <div className="flex items-center gap-0.5">
                               <div className={`w-1 h-1 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
@@ -862,15 +862,19 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                 {scriptExists ? (isOfficial ? 'RECORD' : t.translated) : t.missing}
                               </span>
                             </div>
-                            {readChapters?.has(chapter.id) && (
-                              <div className="flex items-center gap-0.5">
-                                <Check className="w-2 h-2 text-blue-400" />
-                                <span className="text-[6px] font-bold tracking-widest text-blue-400 uppercase">
+                          </div>
+
+                          {/* Top Center READ Mark */}
+                          {readChapters?.has(chapter.id) && (
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-blue-500/20 text-blue-300 px-2 pt-0.5 pb-[2px] rounded-b-sm border-b border-x border-blue-500/30 z-20 backdrop-blur-sm mt-[40px] ml-[14px] mr-0">
+                              <div className="flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" />
+                                <span className="text-[7px] font-black tracking-[0.2em] uppercase">
                                   {t.read || 'READ'}
                                 </span>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
 
                           {/* Top Right Type Label (BEG/MID/END) */}
                           <span className={`text-[6px] font-black absolute top-1.5 right-1.5 tracking-widest ${typeColor} z-20`}>
