@@ -21,6 +21,7 @@ interface DialogueUIProps {
   onChoice: (value: string) => void;
   onTypewriterFinished: () => void;
   t: any;
+  className?: string;
 }
 
 export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
@@ -40,6 +41,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   onChoice,
   onTypewriterFinished,
   t,
+  className
 }) => {
   // Use subtitle delay if available, otherwise default to 30ms
   const baseDelay = currentSubtitle?.duration ? currentSubtitle.duration * 1000 : 30;
@@ -49,7 +51,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   const fontScale = fontSize / 100;
 
   return (
-    <>
+    <div className={className}>
       {/* Bottom Gradient Overlay (Arknights Style) */}
       {showUI && !currentSubtitle && currentText !== '' && (
         <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black via-black/70 to-transparent z-[28] pointer-events-none" />
@@ -181,6 +183,6 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 });

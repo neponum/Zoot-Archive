@@ -328,6 +328,13 @@ class StoryParser {
         return {
           type: 'image',
           assetName: params.image || params.name,
+          duration: params.time ? parseFloat(params.time) : undefined,
+          block: params.block === 'true',
+          originalTag: original
+        };
+      case 'dialog':
+        return {
+          type: 'dialog',
           originalTag: original
         };
       case 'playmusic':

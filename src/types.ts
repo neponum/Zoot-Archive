@@ -42,6 +42,7 @@ export type StoryLineType =
   | 'predicate' 
   | 'subtitle' 
   | 'blocker' 
+  | 'dialog'
   | 'header' 
   | 'imagetween' 
   | 'cameraeffect' 

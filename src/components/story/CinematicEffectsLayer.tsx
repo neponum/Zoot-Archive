@@ -23,7 +23,7 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
       <div 
         className="absolute inset-0 z-[25] pointer-events-none"
         style={{
-          backgroundColor: blocker ? `rgba(${blocker.r}, ${blocker.g}, ${blocker.b}, ${blocker.a})` : 'transparent',
+          backgroundColor: blocker ? `rgba(${blocker.r <= 1 ? Math.round(blocker.r * 255) : blocker.r}, ${blocker.g <= 1 ? Math.round(blocker.g * 255) : blocker.g}, ${blocker.b <= 1 ? Math.round(blocker.b * 255) : blocker.b}, ${blocker.a})` : 'transparent',
           transition: blocker ? `background-color ${blocker.duration}s ease-in-out` : 'none'
         }}
       />

@@ -46,6 +46,8 @@ export interface StoryState {
   isSkipping: boolean;
   skipSpeed: number;
   showUI: boolean;
+  isBlocking: boolean;
+  isCinematic: boolean;
   showBackConfirm: boolean;
   showSettings: boolean;
   showLog: boolean;
@@ -86,6 +88,8 @@ export type StoryAction =
   | { type: 'SET_SKIPPING'; payload: boolean }
   | { type: 'SET_SKIP_SPEED'; payload: number }
   | { type: 'SET_SHOW_UI'; payload: boolean }
+  | { type: 'SET_BLOCKING'; payload: boolean }
+  | { type: 'SET_CINEMATIC'; payload: boolean }
   | { type: 'SET_SHOW_BACK_CONFIRM'; payload: boolean }
   | { type: 'SET_SHOW_SETTINGS'; payload: boolean }
   | { type: 'SET_SHOW_LOG'; payload: boolean }
@@ -123,6 +127,8 @@ export const initialState: StoryState = {
   isSkipping: false,
   skipSpeed: 2,
   showUI: true,
+  isBlocking: false,
+  isCinematic: false,
   showBackConfirm: false,
   showSettings: false,
   showLog: false,
@@ -307,6 +313,10 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, skipSpeed: action.payload };
     case 'SET_SHOW_UI':
       return { ...state, showUI: action.payload };
+    case 'SET_BLOCKING':
+      return { ...state, isBlocking: action.payload };
+    case 'SET_CINEMATIC':
+      return { ...state, isCinematic: action.payload };
     case 'SET_SHOW_BACK_CONFIRM':
       return { ...state, showBackConfirm: action.payload };
     case 'SET_SHOW_SETTINGS':

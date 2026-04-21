@@ -18,6 +18,7 @@ interface ControlsOverlayProps {
   onToggleFullscreen: () => void;
   setShowUI: (show: boolean) => void;
   t: any;
+  className?: string;
 }
 
 export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
@@ -36,9 +37,10 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   onToggleFullscreen,
   setShowUI,
   t,
+  className
 }) => {
   return (
-    <>
+    <div className={className}>
       <div className={cn(
         "absolute top-0 left-0 right-0 p-2 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
         (showUI && !forceHideUI) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -136,6 +138,6 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowUI(true); }}
         />
       )}
-    </>
+    </div>
   );
 };
