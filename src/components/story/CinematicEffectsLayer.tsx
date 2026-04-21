@@ -5,7 +5,7 @@ import { StoryLine } from '../../types';
 import { parseTags } from '../../lib/textUtils';
 
 interface CinematicEffectsLayerProps {
-  isFlashing: boolean;
+  isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string, duration: number, amount: number } | null;
   blocker: { a: number, r: number, g: number, b: number, duration: number } | null;
   activeAnimText: StoryLine | null;
@@ -119,13 +119,14 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
 
       {/* Flash Overlay */}
       <AnimatePresence>
-        {isFlashing && (
+        {isFlashing.active && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
+            transition={{ duration: isFlashing.duration, ease: "easeOut" }}
             className="absolute inset-0 bg-white z-[60] pointer-events-none"
+            style={{ mixBlendMode: 'screen' }}
           />
         )}
       </AnimatePresence>

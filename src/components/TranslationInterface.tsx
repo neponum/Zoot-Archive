@@ -1268,6 +1268,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const handleSubmitToDiscord = async () => {
     if (!SUBMISSION_WEBHOOK_URL || !selectedChapter) return;
 
+    if (discordUser && activeProfile !== discordUser.username) {
+      alert(`Отправка перевода возможна только под вашим Discord-именем (${discordUser.username}).\n\nПожалуйста, переименуйте текущий профиль или переключитесь на нужный перед отправкой.`);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
@@ -1787,24 +1792,33 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
                                 </a>
                               </div>
                             ) : (
-                              <button 
-                                onClick={handleSubmitToDiscord}
-                                disabled={isSubmitting || submitStatus === 'success'}
-                                className={`flex items-center justify-center gap-2 py-2.5 text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest ${
-                                  submitStatus === 'success' 
-                                    ? 'bg-green-600' 
-                                    : 'bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50'
-                                }`}
-                              >
-                                {isSubmitting ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : submitStatus === 'success' ? (
-                                  <Check className="w-4 h-4" />
-                                ) : (
-                                  <MessageSquare className="w-4 h-4" />
+                              <div className="flex flex-col gap-2">
+                                {discordUser && activeProfile !== discordUser.username && (
+                                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
+                                    <p className="text-[10px] text-red-400 font-bold uppercase text-center">
+                                      Имя профиля должно совпадать с вашим Discord-именем ({discordUser.username}) для отправки.
+                                    </p>
+                                  </div>
                                 )}
-                                {submitStatus === 'success' ? 'Успешно отправлено' : isSubmitting ? 'Отправка...' : 'Отправить в Discord'}
-                              </button>
+                                <button 
+                                  onClick={handleSubmitToDiscord}
+                                  disabled={isSubmitting || submitStatus === 'success' || (discordUser && activeProfile !== discordUser.username)}
+                                  className={`flex items-center justify-center gap-2 py-2.5 text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest ${
+                                    submitStatus === 'success' 
+                                      ? 'bg-green-600' 
+                                      : 'bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50'
+                                  }`}
+                                >
+                                  {isSubmitting ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : submitStatus === 'success' ? (
+                                    <Check className="w-4 h-4" />
+                                  ) : (
+                                    <MessageSquare className="w-4 h-4" />
+                                  )}
+                                  {submitStatus === 'success' ? 'Успешно отправлено' : isSubmitting ? 'Отправка...' : 'Отправить в Discord'}
+                                </button>
+                              </div>
                             )}
                           </div>
                         ) : (

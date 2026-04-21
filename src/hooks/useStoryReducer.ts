@@ -39,7 +39,7 @@ export interface StoryState {
   imageTween: any | null;
   isShaking: boolean;
   shakeConfig: { x: number; y: number; vibrato: number } | null;
-  isFlashing: boolean;
+  isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string; duration: number; amount: number } | null;
   blocker: { a: number; r: number; g: number; b: number; duration: number } | null;
   isAuto: boolean;
@@ -77,7 +77,7 @@ export type StoryAction =
   | { type: 'SET_DECISION'; payload: StoryLine | null }
   | { type: 'SET_IMAGE'; payload: { url: string | null; tween?: any } }
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
-  | { type: 'SET_FLASH'; payload: boolean }
+  | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
   | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
@@ -120,7 +120,7 @@ export const initialState: StoryState = {
   imageTween: null,
   isShaking: false,
   shakeConfig: null,
-  isFlashing: false,
+  isFlashing: { active: false, duration: 0.5 },
   cameraEffect: null,
   blocker: null,
   isAuto: false,

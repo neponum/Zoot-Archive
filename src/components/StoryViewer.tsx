@@ -139,11 +139,16 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       let localPredicateMismatch = predicateMismatchRef.current;
 
       const waitForCompletion = async (duration: number) => {
-        const ms = duration * 1000;
+        // Enforce a minimum 50ms wait to ensure CSS states (like a sudden fadetime=0 blocker) 
+        // have enough time to be parsed, committed by React, and painted by the browser
+        // before we send the next state (which could immediately cancel it).
+        const ms = Math.max(duration * 1000, 50);
         const start = Date.now();
+        
         while (Date.now() - start < ms) {
           if (skipBlockerRef.current || isSkipping) break;
-          await new Promise(r => setTimeout(r, 32));
+          // Shorter polling interval for smoother timing resolution
+          await new Promise(r => setTimeout(r, 16));
           if (processToken.current !== token) return false;
         }
         skipBlockerRef.current = false;
@@ -314,7 +319,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             } else {
               dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             }
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -347,7 +352,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 } 
               });
             }
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -415,7 +420,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               if (line.duration && line.duration > 0) {
                 setTimeout(() => dispatch({ type: 'SET_SHAKE', payload: { isShaking: false, config: null } }), line.duration * 1000);
               }
-              if (line.block && line.duration && line.duration > 0 && !isSkipping) {
+              if (line.block && line.duration !== undefined && !isSkipping) {
                 dispatch({ type: 'SET_BLOCKING', payload: true });
                 // We keep UI visible during shake even if blocked
                 if (!await waitForCompletion(line.duration)) return;
@@ -424,8 +429,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
             break;
           case 'flash':
-            dispatch({ type: 'SET_FLASH', payload: true });
-            setTimeout(() => dispatch({ type: 'SET_FLASH', payload: false }), (line.duration || 0.5) * 1000);
+            dispatch({ type: 'SET_FLASH', payload: { active: true, duration: line.duration || 0.5 } });
+            setTimeout(() => dispatch({ type: 'SET_FLASH', payload: { active: false, duration: line.duration || 0.5 } }), (line.duration || 0.5) * 1000);
             break;
           case 'cameraeffect':
             if (line.effect === 'none' || !line.effect) {
@@ -440,7 +445,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 } 
               });
             }
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -460,7 +465,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               } 
             });
             if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -470,7 +475,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
           case 'animtext':
             dispatch({ type: 'SET_ANIM_TEXT', payload: line });
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -483,7 +488,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
           case 'sticker':
             dispatch({ type: 'ADD_STICKER', payload: line });
-            if (line.block && line.duration && !isSkipping) {
+            if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               // Sticker doesn't necessarily hide the UI in base case
               if (!await waitForCompletion(line.duration)) return;
