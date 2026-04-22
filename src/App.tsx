@@ -5,6 +5,7 @@ import { TranslationInterface } from './components/TranslationInterface';
 import { StoryChapter, StoryEpisode } from './types';
 import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
+import { audioManager } from './services/audioManager';
 
 function App() {
   const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
@@ -30,6 +31,7 @@ function App() {
   const [testScript, setTestScript] = useState<string | undefined>(undefined);
 
   const handleSelectChapter = (chapter: StoryChapter) => {
+    audioManager.unlock();
     setSelectedChapter(chapter);
   };
 
@@ -77,6 +79,7 @@ function App() {
   };
 
   const handleTestTranslation = (chapter: StoryChapter, script: string) => {
+    audioManager.unlock();
     setTestScript(script);
     setSelectedChapter(chapter);
     setShowTranslationUI(false);
@@ -91,7 +94,7 @@ function App() {
   };
 
   return (
-    <div className="w-screen h-screen bg-black overflow-hidden font-sans select-none relative">
+    <div className="w-screen h-[100dvh] bg-black overflow-hidden font-sans select-none relative">
       <AnimatePresence mode="wait">
         {!selectedChapter ? (
           <motion.div

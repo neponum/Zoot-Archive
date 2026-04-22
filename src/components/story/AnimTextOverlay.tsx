@@ -8,9 +8,10 @@ interface AnimTextOverlayProps {
 
 export const AnimTextOverlay: React.FC<AnimTextOverlayProps> = ({ activeAnimText }) => {
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {activeAnimText && (
         <motion.div
+          key={activeAnimText.id || activeAnimText.text}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

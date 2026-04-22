@@ -9,6 +9,7 @@ interface DialogueUIProps {
   currentIndex: number;
   currentSpeaker: string | null;
   currentText: string;
+  dialogueKey: number;
   isSkipping: boolean;
   skipSpeed: number;
   shouldSkipTypewriter: boolean;
@@ -16,6 +17,7 @@ interface DialogueUIProps {
   currentSubtitle: StoryLine | null;
   activeAnimText: StoryLine | null;
   fontSize: number;
+  textSpeed: number;
   fontFamily?: string;
   showSettings: boolean;
   onChoice: (value: string) => void;
@@ -29,6 +31,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   currentIndex,
   currentSpeaker,
   currentText,
+  dialogueKey,
   isSkipping,
   skipSpeed,
   shouldSkipTypewriter,
@@ -36,6 +39,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   currentSubtitle,
   activeAnimText,
   fontSize,
+  textSpeed,
   fontFamily = 'sans-serif',
   showSettings,
   onChoice,
@@ -43,10 +47,10 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
   t,
   className
 }) => {
-  // Use subtitle delay if available, otherwise default to 30ms
-  const baseDelay = currentSubtitle?.duration ? currentSubtitle.duration * 1000 : 30;
+  // Use subtitle delay if available, otherwise default to settings textSpeed
+  const baseDelay = currentSubtitle?.duration ? currentSubtitle.duration * 1000 : textSpeed;
   const typewriterSpeed = isSkipping ? (baseDelay / (skipSpeed * 2)) : baseDelay;
-  const skip = isSkipping || shouldSkipTypewriter;
+  const skip = isSkipping || shouldSkipTypewriter || (textSpeed === 0 && !currentSubtitle);
 
   const fontScale = fontSize / 100;
 
@@ -58,7 +62,7 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
       )}
 
       {/* Subtitle Area */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showUI && currentSubtitle && (
           <motion.div
             key={`subtitle-${currentIndex}`}
@@ -96,60 +100,57 @@ export const DialogueUI: React.FC<DialogueUIProps> = React.memo(({
         )}
       </AnimatePresence>
 
-      {/* Dialogue Area */}
-      <AnimatePresence>
-        {showUI && !currentSubtitle && !activeAnimText && !currentDecision && currentText !== '' && (
-          <motion.div 
-            key="dialogue-area"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-0 left-0 right-0 px-[4cqw] sm:px-[13.3cqh] pb-[6.5cqh] z-30 pointer-events-none flex justify-center"
-          >
-            <div className="w-full max-w-[140cqh] flex items-start gap-[4cqw] sm:gap-[4.4cqh]">
-              {/* Name Tag */}
-              <div className="w-[25cqw] sm:w-[28cqh] flex-shrink-0 text-right">
-                {currentSpeaker && (
-                  <div 
-                    key={currentSpeaker}
-                    className="text-white/60 leading-[1.6] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right break-words"
-                    style={{ 
-                      fontSize: `max(14px, ${2.77 * fontScale}cqh)`,
-                      fontFamily: fontFamily
-                    }}
-                  >
-                    {currentSpeaker}
-                  </div>
-                )}
-              </div>
-              
-              {/* Text Area */}
-              <div className="flex-grow">
+      {/* Dialogue Area - Stable version without AnimatePresence to prevent duplication */}
+      {showUI && !currentSubtitle && !activeAnimText && !currentDecision && currentText !== '' && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="absolute bottom-0 left-0 right-0 px-[4cqw] sm:px-[13.3cqh] pb-[6.5cqh] z-30 pointer-events-none flex justify-center"
+        >
+          <div className="w-full max-w-[140cqh] flex items-start gap-[4cqw] sm:gap-[4.4cqh]">
+            {/* Name Tag */}
+            <div className="w-[25cqw] sm:w-[28cqh] flex-shrink-0 text-right">
+              {currentSpeaker && (
                 <div 
-                  className="text-white leading-[1.6] font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
+                  key={currentSpeaker}
+                  className="text-white/60 leading-[1.6] font-normal tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-right break-words"
                   style={{ 
                     fontSize: `max(14px, ${2.77 * fontScale}cqh)`,
                     fontFamily: fontFamily
                   }}
                 >
-                  <MemoizedTypewriter 
-                    key={`typewriter-dialogue-${currentIndex}`}
-                    text={currentText}
-                    speed={typewriterSpeed}
-                    onFinished={onTypewriterFinished}
-                    skip={skip}
-                    paused={showSettings}
-                  />
+                  {currentSpeaker}
                 </div>
+              )}
+            </div>
+            
+            {/* Text Area */}
+            <div className="flex-grow">
+              <div 
+                className="text-white leading-[1.6] font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide"
+                style={{ 
+                  fontSize: `max(14px, ${2.77 * fontScale}cqh)`,
+                  fontFamily: fontFamily
+                }}
+              >
+                <MemoizedTypewriter 
+                  key={`typewriter-dialogue-${dialogueKey}`}
+                  text={currentText}
+                  speed={typewriterSpeed}
+                  onFinished={onTypewriterFinished}
+                  skip={skip}
+                  paused={showSettings}
+                />
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
 
       {/* Decision Overlay */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showUI && currentDecision && (
           <motion.div 
             initial={{ opacity: 0 }}

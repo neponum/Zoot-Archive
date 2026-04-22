@@ -124,6 +124,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     }
   }, []);
 
+  // Settings persistence
+  useEffect(() => {
+    localStorage.setItem('ak-story-settings', JSON.stringify(settings));
+  }, [settings]);
+
   // Sync ref with state for callbacks
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -189,11 +194,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'subtitle':
             if (line.text) {
               dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: null, text: line.text } });
-              dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: line.text, isSubtitle: true, line } });
-              if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
+              dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: line.text, index, isSubtitle: true, line } });
+              currentIndexRef.current = index;
               return;
             } else {
-              dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: '', isSubtitle: true, line: null } });
+              dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: '', index, isSubtitle: true, line: null } });
+              currentIndexRef.current = index;
               dispatch({ type: 'SET_TYPEWRITER_FINISHED', payload: true });
             }
             break;
@@ -202,8 +208,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.text) {
               dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text } });
             }
-            dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.characterName || null, text: line.text || '' } });
-            if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
+            dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.characterName || null, text: line.text || '', index } });
+            currentIndexRef.current = index;
             return;
         
           case 'background':
@@ -409,7 +415,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
             
           case 'delay':
-            if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
+            if (index !== currentIndexRef.current) {
+               dispatch({ type: 'SET_INDEX', payload: index });
+               currentIndexRef.current = index;
+            }
             if (line.duration && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -482,7 +491,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 duration: line.duration ?? 0
               } 
             });
-            if (index !== currentIndexRef.current) dispatch({ type: 'SET_INDEX', payload: index });
+            if (index !== currentIndexRef.current) {
+               dispatch({ type: 'SET_INDEX', payload: index });
+               currentIndexRef.current = index;
+            }
             if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               dispatch({ type: 'SET_CINEMATIC', payload: true });
@@ -541,7 +553,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     }
     
     const now = Date.now();
-    if (!isSkipping && now - lastAdvanceTime.current < 150) return;
+    if (!isSkipping && now - lastAdvanceTime.current < 250) return;
     lastAdvanceTime.current = now;
     
     if (currentIndexRef.current >= lines.length - 1) {
@@ -590,7 +602,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     if (isAuto && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && isTypewriterFinished) {
       autoAdvanceTimer.current = setTimeout(() => {
         advance();
-      }, AUTO_ADVANCE_DELAY);
+      }, settings.autoDelay);
     }
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
@@ -768,7 +780,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           duration: shakeConfig ? (1 / Math.max(shakeConfig.vibrato, 1)) * 5 : 0.1,
           repeat: Infinity,
         } : { duration: 0.2 }}
-        className="relative w-full max-w-[177.78vh] aspect-video bg-black shadow-2xl overflow-hidden @container"
+        className="relative w-full max-w-[177.78dvh] aspect-video bg-black shadow-2xl overflow-hidden @container"
       >
         <BackgroundLayer 
           bgUrl={bgUrl} 
@@ -799,6 +811,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentIndex={currentIndex}
           currentSpeaker={currentSpeaker}
           currentText={processedCurrentText}
+          dialogueKey={state.dialogueKey}
           isSkipping={isSkipping}
           skipSpeed={skipSpeed}
           shouldSkipTypewriter={shouldSkipTypewriter}
@@ -806,6 +819,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentSubtitle={processedSubtitle}
           activeAnimText={processedAnimText}
           fontSize={settings.fontSize}
+          textSpeed={settings.textSpeed}
           fontFamily={settings.fontFamily}
           showSettings={showSettings}
           onChoice={(val) => {

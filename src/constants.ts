@@ -1,5 +1,5 @@
 export const ASPECT_RATIO = 16 / 9;
-export const MAX_WIDTH_VH = '177.78vh';
+export const MAX_WIDTH_VH = '177.78dvh';
 
 export const TYPEWRITER_SPEED_DEFAULT = 30;
 export const AUTO_ADVANCE_DELAY = 2000;

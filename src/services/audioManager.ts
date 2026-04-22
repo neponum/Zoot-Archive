@@ -16,6 +16,7 @@ class AudioManager {
   
   private sfx: Set<HTMLAudioElement> = new Set();
   private voice: HTMLAudioElement | null = null;
+  private isUnlocked = false;
   
   private constructor() {
     // Load volumes from localStorage if available
@@ -37,6 +38,17 @@ class AudioManager {
       AudioManager.instance = new AudioManager();
     }
     return AudioManager.instance;
+  }
+
+  public unlock() {
+    if (this.isUnlocked) return;
+    this.isUnlocked = true;
+    
+    // Play a tiny silent audio to bless the audio context on iOS Safari
+    const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
+    silentAudio.play().catch(() => {
+      // Ignore errors if it fails
+    });
   }
 
   public setVolumes(bgm: number, sfx: number, voice: number) {

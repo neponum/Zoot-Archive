@@ -58,7 +58,10 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     y: 0,
     filter: isDimmed ? 'brightness(0.7)' : 'brightness(1)'
   };
-  const transition: any = { duration: 0.3, ease: "easeOut" };
+  
+  // Arknights default is instant or very fast unless specified
+  const duration = data.animation?.duration !== undefined ? data.animation.duration : 0.05;
+  const transition: any = { duration, ease: "easeOut" };
 
   if (data.animation) {
     const parsePos = (pos: string) => {
@@ -118,7 +121,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       key={`${slot}-${data.name}`}
       initial={initial}
       animate={animate}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, transition: { duration: data.animation?.duration !== undefined ? data.animation.duration : 0 } }}
       transition={transition}
       style={{ 
         zIndex: data.focus ? 20 : 10,
@@ -183,15 +186,22 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
 };
 
 export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ characterSlots }) => {
+  const slots = ['left', 'center', 'right'];
+  
   return (
     <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end overflow-hidden">
-      <AnimatePresence>
-        {(Object.entries(characterSlots) as [string, CharacterSlot][])
-          .filter(([slot, data]) => !!(data.url && data.name))
-          .map(([slot, data]) => (
-            <CharacterSlotItem key={`${slot}-${data.name}`} slot={slot} data={data} characterSlots={characterSlots} />
-          ))}
-      </AnimatePresence>
+      {slots.map(slot => (
+        <AnimatePresence key={slot}>
+          {characterSlots[slot]?.url && characterSlots[slot]?.name && (
+            <CharacterSlotItem 
+              key={`${slot}-${characterSlots[slot].name}`} 
+              slot={slot} 
+              data={characterSlots[slot]} 
+              characterSlots={characterSlots} 
+            />
+          )}
+        </AnimatePresence>
+      ))}
     </div>
   );
 });

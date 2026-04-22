@@ -74,17 +74,19 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           >
             <History className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
           </button>
-          <button 
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
-            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-          >
-            {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />}
-          </button>
+          {document.fullscreenEnabled && (
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
+              className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />}
+            </button>
+          )}
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}

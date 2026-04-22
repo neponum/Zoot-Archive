@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Volume2, Type, RotateCcw, User } from 'lucide-react';
+import { X, Volume2, Type, RotateCcw, User, Play } from 'lucide-react';
 import { audioManager } from '../../services/audioManager';
 
 interface SettingsModalProps {
@@ -10,6 +10,8 @@ interface SettingsModalProps {
     bgmVolume: number;
     sfxVolume: number;
     voiceVolume: number;
+    textSpeed: number;
+    autoDelay: number;
     fontFamily: string;
     nickname: string;
   };
@@ -53,6 +55,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       bgmVolume: 1.0,
       sfxVolume: 1.0,
       voiceVolume: 1.0,
+      textSpeed: 30,
+      autoDelay: 2000,
       fontFamily: 'sans-serif',
       nickname: '{@nickname}'
     };
@@ -144,6 +148,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <p className="text-xs text-white/40 italic">
                     {t.nickname_hint || 'Это имя будет отображаться в диалогах вместо {@nickname}'}
                   </p>
+                </div>
+              </section>
+
+              {/* Auto Play Settings */}
+              <section className="space-y-8">
+                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Play className="w-5 h-5" />
+                  {t.auto_play_settings || 'Auto Play Settings'}
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                  {/* Text Speed */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-lg">
+                      <span className="text-white/80">{t.text_speed || 'Text Appearance'}</span>
+                      <span className="text-blue-400 font-mono">
+                        {settings.textSpeed === 0 ? (t.instant || 'Instant') : `${settings.textSpeed}ms`}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={settings.textSpeed}
+                      onChange={(e) => onUpdateSettings({ textSpeed: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest font-bold">
+                      <span>{t.fast || 'Speed'}</span>
+                      <span>{t.slow || 'Slow'}</span>
+                    </div>
+                  </div>
+
+                  {/* Auto Delay */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-lg">
+                      <span className="text-white/80">{t.auto_delay || 'Auto Pause'}</span>
+                      <span className="text-blue-400 font-mono">{(settings.autoDelay / 1000).toFixed(1)}s</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="500"
+                      max="10000"
+                      step="500"
+                      value={settings.autoDelay}
+                      onChange={(e) => onUpdateSettings({ autoDelay: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest font-bold">
+                      <span>{t.short || 'Short'}</span>
+                      <span>{t.long || 'Long'}</span>
+                    </div>
+                  </div>
                 </div>
               </section>
 

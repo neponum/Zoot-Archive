@@ -52,12 +52,15 @@ export interface StoryState {
   showSettings: boolean;
   showLog: boolean;
   predicateMismatch: boolean;
+  dialogueKey: number;
   history: { speaker: string | null; text: string }[];
   settings: {
     fontSize: number;
     bgmVolume: number;
     sfxVolume: number;
     voiceVolume: number;
+    textSpeed: number;
+    autoDelay: number;
     fontFamily: string;
     nickname: string;
   };
@@ -71,7 +74,7 @@ export type StoryAction =
   | { type: 'UPDATE_CHARACTER_SLOTS'; payload: Record<string, CharacterSlotData> }
   | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string | { slot?: string; duration?: number } } // Optional slot to clear
   | { type: 'SET_FOCUS'; payload: number }
-  | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; isSubtitle?: boolean; line?: StoryLine } }
+  | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; index?: number; isSubtitle?: boolean; line?: StoryLine } }
   | { type: 'SET_TYPEWRITER_FINISHED'; payload: boolean }
   | { type: 'SET_SKIP_TYPEWRITER'; payload: boolean }
   | { type: 'SET_DECISION'; payload: StoryLine | null }
@@ -97,6 +100,29 @@ export type StoryAction =
   | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string } }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> }
   | { type: 'RESET_STATE' };
+
+const getInitialSettings = () => {
+  const defaultSettings = {
+    fontSize: 100, // Percentage
+    bgmVolume: 1.0,
+    sfxVolume: 1.0,
+    voiceVolume: 1.0,
+    textSpeed: 30, // ms per character
+    autoDelay: 2000, // ms delay after typing
+    fontFamily: 'sans-serif',
+    nickname: '{@nickname}',
+  };
+
+  try {
+    const saved = localStorage.getItem('ak-story-settings');
+    if (saved) {
+      return { ...defaultSettings, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Failed to load settings', e);
+  }
+  return defaultSettings;
+};
 
 export const initialState: StoryState = {
   lines: [],
@@ -133,15 +159,9 @@ export const initialState: StoryState = {
   showSettings: false,
   showLog: false,
   predicateMismatch: false,
+  dialogueKey: 0,
   history: [],
-  settings: {
-    fontSize: 100, // Percentage
-    bgmVolume: 1.0,
-    sfxVolume: 1.0,
-    voiceVolume: 1.0,
-    fontFamily: 'sans-serif',
-    nickname: '{@nickname}',
-  },
+  settings: getInitialSettings(),
 };
 
 export function storyReducer(state: StoryState, action: StoryAction): StoryState {
@@ -271,6 +291,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
           currentSubtitle: action.payload.line || null,
           currentSpeaker: null,
           currentText: action.payload.text,
+          currentIndex: action.payload.index !== undefined ? action.payload.index : state.currentIndex,
+          dialogueKey: action.payload.index !== undefined ? action.payload.index : state.dialogueKey,
           isTypewriterFinished: false,
           shouldSkipTypewriter: false,
         };
@@ -280,6 +302,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
         currentSubtitle: null,
         currentSpeaker: action.payload.speaker,
         currentText: action.payload.text,
+        currentIndex: action.payload.index !== undefined ? action.payload.index : state.currentIndex,
+        dialogueKey: action.payload.index !== undefined ? action.payload.index : state.dialogueKey,
         isTypewriterFinished: false,
         shouldSkipTypewriter: false,
       };
