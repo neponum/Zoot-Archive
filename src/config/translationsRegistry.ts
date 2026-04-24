@@ -10,7 +10,7 @@ export interface TranslationInfo {
 // которые уже переведены и готовы к отображению для конкретного языка.
 export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = {
   ru_RU: {
-    translators: ['nep0num'],
+    translators: ['nep0num', 'frostymisery17'],
     translatedEpisodes: [],
   },
   es_ES: {

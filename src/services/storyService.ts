@@ -227,14 +227,17 @@ class StoryParser {
       this.eat(TokenType.LEFT_PAREN);
       while (!this.isType(TokenType.RIGHT_PAREN) && !this.isType(TokenType.EOF) && !this.isType(TokenType.NEWLINE)) {
         if (this.isType(TokenType.IDENTIFIER)) {
-          const key = this.eat(TokenType.IDENTIFIER).value.toLowerCase();
+          const keyOrValue = this.eat(TokenType.IDENTIFIER).value;
           if (this.isType(TokenType.EQUALS)) {
             this.eat(TokenType.EQUALS);
+            const key = keyOrValue.toLowerCase();
             if (this.isType(TokenType.STRING)) {
               params[key] = this.eat(TokenType.STRING).value;
             } else if (this.isType(TokenType.IDENTIFIER)) {
               params[key] = this.eat(TokenType.IDENTIFIER).value;
             }
+          } else {
+            params['_direct'] = keyOrValue;
           }
         } else if (this.isType(TokenType.COMMA)) {
           this.eat(TokenType.COMMA);
@@ -273,7 +276,7 @@ class StoryParser {
     const lowerTagName = tagName.toLowerCase();
 
     if (lowerTagName === 'name') {
-      this.currentCharacterName = params.name || this.currentCharacterName;
+      this.currentCharacterName = params.name || params._direct || this.currentCharacterName;
       return null;
     }
 
@@ -288,8 +291,29 @@ class StoryParser {
           yScaleFrom: params.yscalefrom ? parseFloat(params.yscalefrom) : undefined,
           xScaleTo: params.xscaleto ? parseFloat(params.xscaleto) : undefined,
           yScaleTo: params.yscaleto ? parseFloat(params.yscaleto) : undefined,
+          xFrom: params.xfrom ? parseFloat(params.xfrom) : undefined,
+          xTo: params.xto ? parseFloat(params.xto) : undefined,
+          yFrom: params.yfrom ? parseFloat(params.yfrom) : undefined,
+          yTo: params.yto ? parseFloat(params.yto) : undefined,
           duration: params.duration ? parseFloat(params.duration) : undefined,
+          ease: params.ease,
           tiled: params.tiled === 'true',
+          block: params.block === 'true',
+          originalTag: original
+        };
+      case 'backgroundtween':
+        return {
+          type: 'backgroundtween',
+          assetName: params.image || params.name,
+          xScaleFrom: params.xscalefrom ? parseFloat(params.xscalefrom) : undefined,
+          yScaleFrom: params.yscalefrom ? parseFloat(params.yscalefrom) : undefined,
+          xScaleTo: params.xscaleto ? parseFloat(params.xscaleto) : undefined,
+          yScaleTo: params.yscaleto ? parseFloat(params.yscaleto) : undefined,
+          xFrom: params.xfrom ? parseFloat(params.xfrom) : undefined,
+          xTo: params.xto ? parseFloat(params.xto) : undefined,
+          yFrom: params.yfrom ? parseFloat(params.yfrom) : undefined,
+          yTo: params.yto ? parseFloat(params.yto) : undefined,
+          duration: params.duration ? parseFloat(params.duration) : undefined,
           block: params.block === 'true',
           originalTag: original
         };
@@ -299,6 +323,7 @@ class StoryParser {
           effect: params.effect,
           duration: params.fadetime ? parseFloat(params.fadetime) : undefined,
           a: params.amount ? parseFloat(params.amount) : undefined,
+          keep: params.keep === 'true',
           block: params.block === 'true',
           originalTag: original
         };
@@ -322,6 +347,28 @@ class StoryParser {
         return {
           type: 'background',
           assetName: params.image || params.name,
+          block: params.block === 'true',
+          duration: params.fadetime ? parseFloat(params.fadetime) : (params.time ? parseFloat(params.time) : undefined),
+          height: params.height ? parseFloat(params.height) : undefined,
+          width: params.width ? parseFloat(params.width) : undefined,
+          x: params.x ? parseFloat(params.x) : undefined,
+          y: params.y ? parseFloat(params.y) : undefined,
+          xScale: params.xscale ? parseFloat(params.xscale) : undefined,
+          yScale: params.yscale ? parseFloat(params.yscale) : undefined,
+          screenadapt: params.screenadapt === 'true',
+          originalTag: original
+        };
+      case 'charactercutin':
+        return {
+          type: 'charactercutin',
+          assetName: params.name,
+          block: params.block === 'true',
+          duration: params.fadetime ? parseFloat(params.fadetime) : undefined,
+          fadestyle: params.fadestyle,
+          offsetx: params.offsetx ? parseFloat(params.offsetx) : undefined,
+          style: params.style,
+          widgetID: params.widgetid,
+          width: params.width ? parseFloat(params.width) : undefined,
           originalTag: original
         };
       case 'image':
@@ -329,13 +376,19 @@ class StoryParser {
         return {
           type: 'image',
           assetName: params.image || params.name,
-          duration: params.time ? parseFloat(params.time) : undefined,
+          duration: params.fadetime ? parseFloat(params.fadetime) : (params.time ? parseFloat(params.time) : undefined),
+          x: params.x ? parseFloat(params.x) : undefined,
+          y: params.y ? parseFloat(params.y) : undefined,
+          xScale: params.xscale ? parseFloat(params.xscale) : undefined,
+          yScale: params.yscale ? parseFloat(params.yscale) : undefined,
+          screenadapt: params.screenadapt === 'true',
           block: params.block === 'true',
           originalTag: original
         };
       case 'dialog':
         return {
           type: 'dialog',
+          duration: params.fadetime ? parseFloat(params.fadetime) : (params.time ? parseFloat(params.time) : undefined),
           originalTag: original
         };
       case 'playmusic':
@@ -344,6 +397,7 @@ class StoryParser {
           assetName: params.key || params.intro,
           introAssetName: params.key ? params.intro : undefined,
           volume: params.volume ? parseFloat(params.volume) : 1,
+          delay: params.delay ? parseFloat(params.delay) : undefined,
           originalTag: original
         };
       case 'playsound':
@@ -351,6 +405,9 @@ class StoryParser {
           type: 'sound',
           assetName: params.key,
           volume: params.volume ? parseFloat(params.volume) : 1,
+          delay: params.delay ? parseFloat(params.delay) : (params.Delay ? parseFloat(params.Delay) : undefined),
+          channel: params.channel,
+          loop: params.loop === 'true',
           originalTag: original
         };
       case 'playvoice':
@@ -361,12 +418,22 @@ class StoryParser {
           originalTag: original
         };
       case 'stopmusic':
+        return { 
+          type: 'stop_music', 
+          duration: params.fadetime ? parseFloat(params.fadetime) : undefined,
+          originalTag: original 
+        };
       case 'stopsound':
-        return { type: 'stop_music', originalTag: original };
+        return { 
+          type: 'stop_sound', 
+          channel: params.channel,
+          duration: params.fadetime ? parseFloat(params.fadetime) : undefined,
+          originalTag: original 
+        };
       case 'delay':
         return {
           type: 'delay',
-          duration: params.time ? parseFloat(params.time) : 0,
+          duration: params.time ? parseFloat(params.time) : (params._direct ? parseFloat(params._direct) : 0),
           originalTag: original
         };
       case 'shake':

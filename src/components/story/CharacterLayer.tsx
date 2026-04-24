@@ -121,7 +121,11 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       key={`${slot}-${data.name}`}
       initial={initial}
       animate={animate}
-      exit={{ opacity: 0, transition: { duration: data.animation?.duration !== undefined ? data.animation.duration : 0 } }}
+      custom={data.animation?.duration}
+      exit={(customDuration: number | undefined) => ({ 
+        opacity: 0, 
+        transition: { duration: customDuration !== undefined ? customDuration : 0 } 
+      })}
       transition={transition}
       style={{ 
         zIndex: data.focus ? 20 : 10,
@@ -131,7 +135,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       }}
       className={cn(
         "absolute flex flex-col items-center justify-end",
-        slot === 'left' ? "left-[-5%]" : slot === 'right' ? "right-[-5%]" : "left-1/2"
+        slot === 'left' ? "left-[1%]" : slot === 'right' ? "right-[1%]" : "left-1/2"
       )}
     >
       <div className="relative h-full w-fit">
@@ -191,7 +195,7 @@ export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ chara
   return (
     <div className="absolute inset-0 z-10 pointer-events-none flex justify-center items-end overflow-hidden">
       {slots.map(slot => (
-        <AnimatePresence key={slot}>
+        <AnimatePresence key={slot} custom={characterSlots[slot]?.animation?.duration}>
           {characterSlots[slot]?.url && characterSlots[slot]?.name && (
             <CharacterSlotItem 
               key={`${slot}-${characterSlots[slot].name}`} 

@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
 import { BackgroundLayer } from './story/BackgroundLayer';
 import { CharacterLayer } from './story/CharacterLayer';
+import { CharacterCutinLayer } from './story/CharacterCutinLayer';
 import { DialogueUI } from './story/DialogueUI';
 import { ControlsOverlay } from './story/ControlsOverlay';
 import { CinematicEffectsLayer } from './story/CinematicEffectsLayer';
@@ -347,12 +348,44 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_CINEMATIC', payload: false });
             }
             break;
+            
+          case 'charactercutin':
+            if (line.assetName) {
+              const { bodyUrl, faceUrl } = await getCharacterAssetInfo(line.assetName);
+              if (processToken.current !== token) return;
+              dispatch({ type: 'SET_CHARACTER_CUTIN', payload: { bodyUrl, faceUrl, line } });
+            } else {
+              dispatch({ type: 'SET_CHARACTER_CUTIN', payload: null });
+            }
+            if (line.block && line.duration !== undefined && !isSkipping) {
+              dispatch({ type: 'SET_BLOCKING', payload: true });
+              if (!await waitForCompletion(line.duration)) return;
+              dispatch({ type: 'SET_BLOCKING', payload: false });
+            }
+            break;
 
           case 'dialog':
             dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: '', line: null } });
             dispatch({ type: 'SET_TYPEWRITER_FINISHED', payload: true });
+            if (line.duration && !isSkipping) {
+              dispatch({ type: 'SET_BLOCKING', payload: true });
+              if (!await waitForCompletion(line.duration)) return;
+              dispatch({ type: 'SET_BLOCKING', payload: false });
+            } else if (!isSkipping) {
+              await new Promise(r => setTimeout(r, 40));
+              if (processToken.current !== token) return;
+            }
             break;
 
+          case 'backgroundtween':
+            dispatch({ type: 'SET_BG', payload: { bgUrl: state.bgUrl, assetName: state.currentBg, tween: line } });
+            if (line.block && line.duration && !isSkipping) {
+              dispatch({ type: 'SET_BLOCKING', payload: true });
+              if (!await waitForCompletion(line.duration)) return;
+              dispatch({ type: 'SET_BLOCKING', payload: false });
+            }
+            break;
+            
           case 'imagetween':
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
@@ -390,7 +423,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 introUrl = await getImageUrl('music', line.introAssetName);
                 if (processToken.current !== token) return;
               }
-              if (url) audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl, line.assetName, line.introAssetName);
+              if (url) {
+                if (line.delay && !isSkipping) {
+                  setTimeout(() => {
+                    if (processToken.current === token) {
+                      audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl, line.assetName, line.introAssetName);
+                    }
+                  }, line.delay * 1000);
+                } else {
+                  audioManager.playBGM(url, line.volume || 0.5, 1000, introUrl, line.assetName, line.introAssetName);
+                }
+              }
             }
             break;
             
@@ -398,7 +441,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.assetName) {
               const url = await getImageUrl('sound', line.assetName);
               if (processToken.current !== token) return;
-              if (url) audioManager.playSFX(url, line.volume || 1);
+              if (url) {
+                if (line.delay && !isSkipping) {
+                  setTimeout(() => {
+                    // Check if still on same play session
+                    if (processToken.current === token) {
+                      audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                    }
+                  }, line.delay * 1000);
+                } else {
+                  audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                }
+              }
             }
             break;
             
@@ -411,7 +465,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
             
           case 'stop_music':
-            audioManager.stopBGM();
+            audioManager.stopBGM(line.duration !== undefined ? line.duration * 1000 : 1000);
+            break;
+            
+          case 'stop_sound':
+            audioManager.stopSFX(line.channel, line.duration !== undefined ? line.duration * 1000 : 0);
             break;
             
           case 'delay':
@@ -467,6 +525,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                   amount: line.a || 1 
                 } 
               });
+              
+              if (!line.keep && line.duration && line.duration > 0 && !isSkipping) {
+                const currentToken = token;
+                setTimeout(() => {
+                  if (processToken.current === currentToken) {
+                    dispatch({ type: 'SET_CAMERA_EFFECT', payload: null });
+                  }
+                }, line.duration * 1000);
+              }
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
@@ -786,10 +853,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           bgUrl={bgUrl} 
           imageUrl={imageUrl} 
           imageTween={imageTween} 
+          bgTween={state.bgTween}
         />
 
         <CharacterLayer 
           characterSlots={characterSlots} 
+        />
+        
+        <CharacterCutinLayer 
+          characterCutin={state.characterCutin} 
         />
 
         <CinematicEffectsLayer 

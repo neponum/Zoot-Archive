@@ -26,6 +26,7 @@ export interface StoryState {
   currentIndex: number;
   currentBg: string | null;
   bgUrl: string | null;
+  bgTween: any | null;
   characterSlots: Record<string, CharacterSlotData>;
   currentSpeaker: string | null;
   currentText: string;
@@ -41,6 +42,7 @@ export interface StoryState {
   shakeConfig: { x: number; y: number; vibrato: number } | null;
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string; duration: number; amount: number } | null;
+  characterCutin: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null;
   blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null;
   isAuto: boolean;
   isSkipping: boolean;
@@ -69,7 +71,7 @@ export interface StoryState {
 export type StoryAction =
   | { type: 'SET_LINES'; payload: StoryLine[] }
   | { type: 'SET_INDEX'; payload: number }
-  | { type: 'SET_BG'; payload: { bgUrl: string | null; assetName: string | null } }
+  | { type: 'SET_BG'; payload: { bgUrl: string | null; assetName: string | null; tween?: any } }
   | { type: 'UPDATE_CHARACTER_SLOT'; payload: { slot: string; data: CharacterSlotData } }
   | { type: 'UPDATE_CHARACTER_SLOTS'; payload: Record<string, CharacterSlotData> }
   | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string | { slot?: string; duration?: number } } // Optional slot to clear
@@ -79,6 +81,7 @@ export type StoryAction =
   | { type: 'SET_SKIP_TYPEWRITER'; payload: boolean }
   | { type: 'SET_DECISION'; payload: StoryLine | null }
   | { type: 'SET_IMAGE'; payload: { url: string | null; tween?: any } }
+  | { type: 'SET_CHARACTER_CUTIN'; payload: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null }
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
   | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
@@ -129,6 +132,7 @@ export const initialState: StoryState = {
   currentIndex: 0,
   currentBg: null,
   bgUrl: 'BLACK_FALLBACK',
+  bgTween: null,
   characterSlots: {
     left: { url: null, focus: false, name: null },
     center: { url: null, focus: false, name: null },
@@ -148,6 +152,7 @@ export const initialState: StoryState = {
   shakeConfig: null,
   isFlashing: { active: false, duration: 0.5 },
   cameraEffect: null,
+  characterCutin: null,
   blocker: null,
   isAuto: false,
   isSkipping: false,
@@ -178,7 +183,12 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       const safeIndex = isNaN(action.payload) ? 0 : Math.max(0, action.payload);
       return { ...state, currentIndex: safeIndex };
     case 'SET_BG':
-      return { ...state, bgUrl: action.payload.bgUrl, currentBg: action.payload.assetName };
+      return { 
+        ...state, 
+        bgUrl: action.payload.bgUrl, 
+        currentBg: action.payload.assetName,
+        bgTween: action.payload.tween || null
+      };
     case 'UPDATE_CHARACTER_SLOT': {
       const { slot, data } = action.payload;
       const nextSlots = { ...state.characterSlots };
@@ -315,6 +325,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, currentDecision: action.payload };
     case 'SET_IMAGE':
       return { ...state, imageUrl: action.payload.url, imageTween: action.payload.tween || null };
+    case 'SET_CHARACTER_CUTIN':
+      return { ...state, characterCutin: action.payload };
     case 'SET_SHAKE':
       if (action.payload.config !== undefined) {
         return { ...state, shakeConfig: action.payload.config };

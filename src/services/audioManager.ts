@@ -221,12 +221,23 @@ class AudioManager {
     }
   }
 
+  private channelSfx: Map<string, HTMLAudioElement> = new Map();
+
   /**
    * Play sound effect
    */
-  public playSFX(url: string, volume: number = 1.0) {
+  public playSFX(url: string, volume: number = 1.0, loop: boolean = false, channel?: string) {
+    // If setting a specific channel, stop the previous one on this channel
+    if (channel && this.channelSfx.has(channel)) {
+      const prevSound = this.channelSfx.get(channel)!;
+      prevSound.pause();
+      prevSound.src = '';
+      this.sfx.delete(prevSound);
+    }
+
     const sound = new Audio(url);
     sound.volume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
+    sound.loop = loop;
     
     sound.onerror = (e: any) => {
       const target = e.target as HTMLAudioElement;
@@ -236,14 +247,53 @@ class AudioManager {
     
     sound.addEventListener('ended', () => {
       this.sfx.delete(sound);
+      if (channel && this.channelSfx.get(channel) === sound) {
+        this.channelSfx.delete(channel);
+      }
       sound.src = '';
     });
     
     this.sfx.add(sound);
+    if (channel) {
+      this.channelSfx.set(channel, sound);
+    }
+
     sound.play().catch(e => {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error(`Failed to play SFX: ${url}. Error: ${errorMsg}`);
     });
+  }
+
+  /**
+   * Stop specific sound effect channel or all
+   */
+  public stopSFX(channel?: string, fadeDuration: number = 0) {
+    if (channel) {
+      const sound = this.channelSfx.get(channel);
+      if (sound) {
+        if (fadeDuration > 0) {
+          this.fadeAudio(sound, sound.volume, 0, fadeDuration, () => {
+             sound.pause();
+             sound.src = '';
+             this.sfx.delete(sound);
+             this.channelSfx.delete(channel);
+          });
+        } else {
+          sound.pause();
+          sound.src = '';
+          this.sfx.delete(sound);
+          this.channelSfx.delete(channel);
+        }
+      }
+    } else {
+       // stop all sfx
+       this.sfx.forEach(sound => {
+         sound.pause();
+         sound.src = '';
+       });
+       this.sfx.clear();
+       this.channelSfx.clear();
+    }
   }
 
   /**

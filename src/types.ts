@@ -34,6 +34,7 @@ export type StoryLineType =
   | 'sound' 
   | 'voice' 
   | 'stop_music' 
+  | 'stop_sound'
   | 'delay' 
   | 'shake' 
   | 'camerashake' 
@@ -50,6 +51,8 @@ export type StoryLineType =
   | 'animtextclean' 
   | 'sticker'
   | 'stickerclear'
+  | 'backgroundtween'
+  | 'charactercutin'
   | 'unknown';
 
 export enum CharacterSlot {
@@ -79,10 +82,11 @@ export interface StoryLine {
   references?: string[];
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
   alignment?: string;
   size?: number;
   delay?: number;
-  width?: number;
   r?: number;
   g?: number;
   b?: number;
@@ -98,12 +102,26 @@ export interface StoryLine {
   initb?: number;
   inita?: number;
   // New fields for ImageTween and CameraEffect
+  xScale?: number;
+  yScale?: number;
   xScaleFrom?: number;
   yScaleFrom?: number;
   xScaleTo?: number;
   yScaleTo?: number;
+  xFrom?: number;
+  xTo?: number;
+  yFrom?: number;
+  yTo?: number;
   effect?: string;
   tiled?: boolean;
+  keep?: boolean;
+  screenadapt?: boolean;
+  channel?: string;
+  ease?: string;
+  loop?: boolean;
+  fadestyle?: string;
+  offsetx?: number;
+  widgetID?: string;
   // New fields for animtext
   id?: string;
   style?: string;
