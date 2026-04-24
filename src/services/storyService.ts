@@ -992,6 +992,7 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
           const translationRow = translations.find(row => row['ID'] === id);
           if (translationRow && translationRow['Translation']) {
             let finalPrefix = prefix;
+            const translatedText = translationRow['Translation'].replace(/\r?\n/g, '\\n');
             
             // Handle character name translation
             let characterName = undefined;
@@ -1000,7 +1001,8 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
               characterName = nameMatch[1];
               const charTranslationRow = translations.find(row => row['Original Text'] === characterName && row['ID']?.startsWith('char-'));
               if (charTranslationRow && charTranslationRow['Translation']) {
-                finalPrefix = finalPrefix.replace(`name="${characterName}"`, `name="${charTranslationRow['Translation']}"`);
+                const translatedName = charTranslationRow['Translation'].replace(/\r?\n/g, '');
+                finalPrefix = finalPrefix.replace(`name="${characterName}"`, `name="${translatedName}"`);
               }
             }
 
@@ -1009,13 +1011,14 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
               const options = optionsMatch[1];
               if (textToTranslate.trim() === '') {
                 // If there's no dialogue text, the translation row itself is for the options
-                finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${translationRow['Translation']}"`);
+                finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${translatedText}"`);
                 return finalPrefix;
               } else {
                 // If there is dialogue text, we need to find a separate translation for options if it exists
                 const optionsTranslationRow = translations.find(row => row['Original Text'] === options && row['ID']?.startsWith('line-'));
                 if (optionsTranslationRow && optionsTranslationRow['Translation']) {
-                  finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${optionsTranslationRow['Translation']}"`);
+                  const translatedOptions = optionsTranslationRow['Translation'].replace(/\r?\n/g, '\\n');
+                  finalPrefix = finalPrefix.replace(`options="${options}"`, `options="${translatedOptions}"`);
                 }
               }
             }
@@ -1024,12 +1027,13 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
             if (subtitleMatch) {
               const subtitleText = subtitleMatch[1];
               if (textToTranslate.trim() === '') {
-                finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${translationRow['Translation']}"`);
+                finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${translatedText}"`);
                 return finalPrefix;
               } else {
                 const subtitleTranslationRow = translations.find(row => row['Original Text'] === subtitleText && row['ID']?.startsWith('line-'));
                 if (subtitleTranslationRow && subtitleTranslationRow['Translation']) {
-                  finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${subtitleTranslationRow['Translation']}"`);
+                  const translatedSubtitle = subtitleTranslationRow['Translation'].replace(/\r?\n/g, '\\n');
+                  finalPrefix = finalPrefix.replace(`text="${subtitleText}"`, `text="${translatedSubtitle}"`);
                 }
               }
             }
@@ -1038,17 +1042,18 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
             if (stickerMatch) {
               const stickerText = stickerMatch[1];
               if (textToTranslate.trim() === '') {
-                finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${translationRow['Translation']}"`);
+                finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${translatedText}"`);
                 return finalPrefix;
               } else {
                 const stickerTranslationRow = translations.find(row => row['Original Text'] === stickerText && row['ID']?.startsWith('line-'));
                 if (stickerTranslationRow && stickerTranslationRow['Translation']) {
-                  finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${stickerTranslationRow['Translation']}"`);
+                  const translatedSticker = stickerTranslationRow['Translation'].replace(/\r?\n/g, '\\n');
+                  finalPrefix = finalPrefix.replace(`text="${stickerText}"`, `text="${translatedSticker}"`);
                 }
               }
             }
             
-            return `${finalPrefix}${translationRow['Translation']}`;
+            return `${finalPrefix}${translatedText}`;
           }
         }
         return line;

@@ -541,7 +541,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
               const line = lines[idx];
               const match = line.match(/^(\s*(?:\[[^\]]*\]\s*)*)(.*)$/);
               if (match) {
-                const nameMatch = match[1].match(/name="([^"]+)"/);
+                const nameMatch = match[1].match(/\[name="([^"]+)"\]/);
                 text = match[2];
                 name = nameMatch ? nameMatch[1] : undefined;
                 
