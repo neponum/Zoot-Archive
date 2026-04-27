@@ -135,10 +135,66 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
   const [isMobile, setIsMobile] = useState(false);
   const [showEpisodesOnMobile, setShowEpisodesOnMobile] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(undefined);
+  const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(() => {
+    return localStorage.getItem('ak-selected-translator') || undefined;
+  });
   const [isTranslatorMenuOpen, setIsTranslatorMenuOpen] = useState(false);
-  
+  const [translatorDiscovery, setTranslatorDiscovery] = useState<Record<string, string | null>>({});
+  const [isDiscovering, setIsDiscovering] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Dynamic discovery of who translated what
+  useEffect(() => {
+    const registry = TRANSLATION_REGISTRY[lang];
+    const isOfficial = LANGUAGES.find(l => l.id === lang)?.isOfficial;
+    
+    if (!registry || isOfficial || episodes.length === 0) {
+      setTranslatorDiscovery({});
+      return;
+    }
+
+    const discover = async () => {
+      setIsDiscovering(true);
+      const discovery: Record<string, string | null> = { ...translatorDiscovery };
+      const translators = registry.translators;
+      
+      if (translators.length === 0) return;
+
+      // Filter episodes that are currently relevant to current tab/filter to avoid massive requests
+      // But for better UX, we'll probe episodes as they appear or in background chunks
+      const episodesToProbe = episodes.filter(ep => discovery[ep.id] === undefined);
+      
+      // Probe in small batches
+      for (let i = 0; i < episodesToProbe.length; i++) {
+        const episode = episodesToProbe[i];
+        if (episode.chapters.length === 0) continue;
+        
+        const firstChapterTxt = episode.chapters[0].storyTxt;
+        let foundTranslator: string | null = null;
+        
+        for (const translator of translators) {
+          const exists = await checkScriptExists(firstChapterTxt, lang, translator);
+          if (exists) {
+            foundTranslator = translator;
+            break;
+          }
+        }
+        
+        discovery[episode.id] = foundTranslator;
+        
+        // Update partially every 5 episodes for responsiveness
+        if (i % 5 === 0) {
+          setTranslatorDiscovery({ ...discovery });
+        }
+      }
+      
+      setTranslatorDiscovery(discovery);
+      setIsDiscovering(false);
+    };
+
+    discover();
+  }, [episodes, lang]);
+  
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
 
   const t = UI_STRINGS[lang];
@@ -384,6 +440,18 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
       loadChapterData();
     }
   }, [selectedEpisode, lang, selectedTranslator]);
+
+  // Auto-select translator based on discovery
+  useEffect(() => {
+    if (selectedEpisode && !LANGUAGES.find(l => l.id === lang)?.isOfficial) {
+      const preferredTranslator = translatorDiscovery[selectedEpisode.id];
+      if (preferredTranslator && preferredTranslator !== selectedTranslator) {
+        setSelectedTranslator(preferredTranslator);
+        onTranslatorChange?.(preferredTranslator);
+        localStorage.setItem('ak-selected-translator', preferredTranslator);
+      }
+    }
+  }, [selectedEpisode, lang, translatorDiscovery]);
 
   if (loading) {
     return (
@@ -701,7 +769,14 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                                       </h4>
                                       <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
                                         <span className="text-[8px] font-black text-white/40 tracking-widest uppercase truncate">{episode.id}</span>
-                                        <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
+                                          {translatorDiscovery[episode.id] && (
+                                            <span className="text-[7px] font-black text-blue-400 tracking-tighter uppercase px-1 bg-blue-500/10 rounded-sm">
+                                              {translatorDiscovery[episode.id]}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -781,22 +856,34 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               
                               {isTranslatorMenuOpen && (
                                 <div className="absolute top-full left-0 mt-1 w-48 bg-zinc-900 border border-white/10 shadow-2xl z-50 py-1 rounded-sm">
-                                  {translators.map(t => (
-                                    <button
-                                      key={t}
-                                      onClick={() => {
-                                        setSelectedTranslator(t);
-                                        onTranslatorChange?.(t);
-                                        setIsTranslatorMenuOpen(false);
-                                      }}
-                                      className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center justify-between ${
-                                        (selectedTranslator === t || (!selectedTranslator && t === translators[0])) ? 'text-blue-400' : 'text-white/60'
-                                      }`}
-                                    >
-                                      {t}
-                                      {(selectedTranslator === t || (!selectedTranslator && t === translators[0])) && <Check className="w-3 h-3" />}
-                                    </button>
-                                  ))}
+                                  {translators.map(translatorName => {
+                                    const registry = TRANSLATION_REGISTRY[lang];
+                                    const isPreferred = registry?.episodeTranslatorMapping?.[selectedEpisode.id] === translatorName;
+                                    const isActive = selectedTranslator === translatorName || (!selectedTranslator && translatorName === translators[0]);
+                                    
+                                    return (
+                                      <button
+                                        key={translatorName}
+                                        onClick={() => {
+                                          setSelectedTranslator(translatorName);
+                                          onTranslatorChange?.(translatorName);
+                                          setIsTranslatorMenuOpen(false);
+                                          localStorage.setItem('ak-selected-translator', translatorName);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center justify-between ${
+                                          isActive ? 'text-blue-400' : 'text-white/60'
+                                        }`}
+                                      >
+                                        <div className="flex flex-col">
+                                          <span>{translatorName}</span>
+                                          {translatorDiscovery[selectedEpisode.id] === translatorName && (
+                                            <span className="text-[7px] text-blue-500/60 lowercase italic tracking-normal">{t.translation} found</span>
+                                          )}
+                                        </div>
+                                        {isActive && <Check className="w-3 h-3" />}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -859,7 +946,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                             <div className="flex items-center gap-0.5">
                               <div className={`w-1 h-1 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
                               <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
-                                {scriptExists ? (isOfficial ? 'RECORD' : t.translated) : t.missing}
+                                {scriptExists ? (isOfficial ? 'RECORD' : (
+                                  <>
+                                    {t.translated}
+                                    {selectedTranslator && <span className="opacity-50 ml-1 text-[5px]">({selectedTranslator})</span>}
+                                  </>
+                                )) : t.missing}
                               </span>
                             </div>
                           </div>

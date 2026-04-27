@@ -3,6 +3,8 @@ import { Language } from '../types';
 export interface TranslationInfo {
   translators: string[];
   translatedEpisodes: string[];
+  /** Mapping of episode IDs to their primary translator */
+  episodeTranslatorMapping?: Record<string, string>;
 }
 
 // Реестр пользовательских переводов.
@@ -11,7 +13,8 @@ export interface TranslationInfo {
 export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = {
   ru_RU: {
     translators: ['nep0num', 'frostymisery17', 'naoshka_v'],
-    translatedEpisodes: [],
+    translatedEpisodes: ['main_0', 'main_1'],
+    episodeTranslatorMapping: {}
   },
   es_ES: {
     translators: [],

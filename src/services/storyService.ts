@@ -159,6 +159,7 @@ class StoryParser {
   }
 
   private parseLine(): StoryLine[] {
+    this.currentCharacterName = undefined;
     const lineObjects: StoryLine[] = [];
     let lineText = '';
     let hasAnimText = false;
