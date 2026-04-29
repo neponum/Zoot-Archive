@@ -46,7 +46,6 @@ export interface StoryState {
   blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null;
   isAuto: boolean;
   isSkipping: boolean;
-  skipSpeed: number;
   showUI: boolean;
   isBlocking: boolean;
   isCinematic: boolean;
@@ -66,6 +65,7 @@ export interface StoryState {
     fontFamily: string;
     nickname: string;
     shakeIntensity: number;
+    skipSpeed: number;
   };
 }
 
@@ -93,7 +93,6 @@ export type StoryAction =
   | { type: 'TOGGLE_AUTO' }
   | { type: 'SET_AUTO'; payload: boolean }
   | { type: 'SET_SKIPPING'; payload: boolean }
-  | { type: 'SET_SKIP_SPEED'; payload: number }
   | { type: 'SET_SHOW_UI'; payload: boolean }
   | { type: 'SET_BLOCKING'; payload: boolean }
   | { type: 'SET_CINEMATIC'; payload: boolean }
@@ -117,6 +116,7 @@ const getInitialSettings = () => {
     fontFamily: 'sans-serif',
     nickname: '{@nickname}',
     shakeIntensity: 1.0,
+    skipSpeed: 4,
   };
 
   try {
@@ -159,7 +159,6 @@ export const initialState: StoryState = {
   blocker: null,
   isAuto: false,
   isSkipping: false,
-  skipSpeed: 2,
   showUI: true,
   isBlocking: false,
   isCinematic: false,
@@ -376,8 +375,6 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, isAuto: action.payload, isSkipping: action.payload ? false : state.isSkipping };
     case 'SET_SKIPPING':
       return { ...state, isSkipping: action.payload, isAuto: action.payload ? false : state.isAuto };
-    case 'SET_SKIP_SPEED':
-      return { ...state, skipSpeed: action.payload };
     case 'SET_SHOW_UI':
       return { ...state, showUI: action.payload };
     case 'SET_BLOCKING':
@@ -419,7 +416,6 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
         blocker: state.blocker,
         isAuto: state.isAuto,
         isSkipping: state.isSkipping,
-        skipSpeed: state.skipSpeed,
         showUI: state.showUI,
         isBlocking: state.isBlocking,
         isCinematic: state.isCinematic,

@@ -15,6 +15,7 @@ interface SettingsModalProps {
     fontFamily: string;
     nickname: string;
     shakeIntensity: number;
+    skipSpeed: number;
   };
   onUpdateSettings: (settings: any) => void;
   onClose: () => void;
@@ -204,6 +205,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <span>{t.long || 'Long'}</span>
                     </div>
                   </div>
+
+                  {/* Skip Speed */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-base md:text-lg">
+                      <span className="text-white/80">{t.skip_speed || 'Skip Speed'}</span>
+                      <span className="text-blue-400 font-mono">x{settings.skipSpeed || 4}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="2"
+                      max="32"
+                      step="2"
+                      value={settings.skipSpeed || 4}
+                      onChange={(e) => onUpdateSettings({ skipSpeed: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest font-bold">
+                      <span>{t.slow || 'Slow'}</span>
+                      <span>{t.fast || 'Fast'}</span>
+                    </div>
+                  </div>
+
                 </div>
               </section>
 

@@ -13,7 +13,6 @@ interface StoryControlsProps {
   showUI: boolean;
   isTypewriterFinished: boolean;
   advance: () => void;
-  setSkipSpeed: (speed: number) => void;
   setIsSkipping: (skipping: boolean) => void;
   setIsAuto: (auto: boolean) => void;
   setIsHoldingSkip: (holding: boolean) => void;
@@ -32,7 +31,6 @@ export const useStoryControls = ({
   showUI,
   isTypewriterFinished,
   advance,
-  setSkipSpeed,
   setIsSkipping,
   setIsAuto,
   setIsHoldingSkip,
@@ -85,11 +83,10 @@ export const useStoryControls = ({
         advance();
       }
 
-      if (e.code === 'ControlLeft') {
+      if (e.code === 'ControlLeft' && !isHoldingSkip) {
         setIsHoldingSkip(true);
         setIsSkipping(true);
         setIsAuto(false);
-        setSkipSpeed(SKIP_SPEEDS.LEVEL_5); // Fixed high speed for Ctrl skip
       }
     };
 
@@ -106,7 +103,7 @@ export const useStoryControls = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [advance, showBackConfirm, currentDecision, showSettings, showLog, showBugReport, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
+  }, [advance, showBackConfirm, currentDecision, showSettings, showLog, showBugReport, isHoldingSkip, setIsHoldingSkip, setIsSkipping, setIsAuto]);
 
   return {
     handlePointerDown,

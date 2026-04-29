@@ -57,7 +57,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     blocker,
     isAuto,
     isSkipping,
-    skipSpeed,
     showUI,
     isBlocking,
     isCinematic,
@@ -729,7 +728,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     showUI,
     isTypewriterFinished,
     advance,
-    setSkipSpeed: (speed) => dispatch({ type: 'SET_SKIP_SPEED', payload: speed }),
     setIsSkipping: (skipping) => dispatch({ type: 'SET_SKIPPING', payload: skipping }),
     setIsAuto: (auto) => dispatch({ type: 'SET_AUTO', payload: auto }),
     setIsHoldingSkip,
@@ -752,13 +750,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Skip logic
   useEffect(() => {
     if (isSkipping && !showSettings && !showLog && !showBugReport) {
-      const delay = 100 / skipSpeed;
+      const delay = 100 / (settings.skipSpeed || 4);
       const timer = setTimeout(() => {
         advance();
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isSkipping, currentIndex, advance, skipSpeed, showSettings, showLog, showBugReport]);
+  }, [isSkipping, currentIndex, advance, settings.skipSpeed, showSettings, showLog, showBugReport]);
 
   useEffect(() => {
     const loadStory = async () => {
@@ -860,6 +858,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                   )}
                 </div>
               )}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-8 bg-white/5 border border-white/10 px-4 py-3 rounded-xl max-w-sm"
+              >
+                <p className="text-sm text-white/60 text-center leading-relaxed">
+                  <span className="text-yellow-500/80 mr-2">💡</span>
+                  Для пропуска диалогов удерживайте <strong className="text-white/90 bg-white/10 px-1.5 py-0.5 rounded text-xs mx-1">Ctrl</strong>
+                </p>
+              </motion.div>
             </>
           ) : (
             <button 
@@ -969,7 +978,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         <StickerLayer 
           stickers={processedStickers} 
           isSkipping={isSkipping}
-          skipSpeed={skipSpeed}
+          skipSpeed={settings.skipSpeed || 4}
           fontFamily={settings.fontFamily}
         />
 
@@ -980,7 +989,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentText={processedCurrentText}
           dialogueKey={state.dialogueKey}
           isSkipping={isSkipping}
-          skipSpeed={skipSpeed}
+          skipSpeed={settings.skipSpeed || 4}
           shouldSkipTypewriter={shouldSkipTypewriter}
           currentDecision={processedDecision}
           currentSubtitle={processedSubtitle}
@@ -999,16 +1008,30 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           className="z-50"
         />
 
+        <AnimatePresence>
+          {isSkipping && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] bg-black/60 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full flex items-center gap-2 pointer-events-none drop-shadow-xl"
+            >
+              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+              <span className="text-white/80 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">Идёт пропуск</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <ControlsOverlay 
           showUI={showUI}
           isAuto={isAuto}
           isSkipping={isSkipping}
-          skipSpeed={skipSpeed}
+          skipSpeed={settings.skipSpeed || 4}
           isHoldingSkip={isHoldingSkip}
           forceHideUI={isCinematic || !!activeAnimText}
           isFullscreen={isFullscreen}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
-          onToggleSkip={() => {}}
+          onToggleSkip={() => dispatch({ type: 'SET_SKIPPING', payload: !isSkipping })}
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}
           onSettingsClick={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })}
           onLogClick={() => dispatch({ type: 'SET_SHOW_LOG', payload: true })}
