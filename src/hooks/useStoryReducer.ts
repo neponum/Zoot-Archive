@@ -55,7 +55,7 @@ export interface StoryState {
   showLog: boolean;
   predicateMismatch: boolean;
   dialogueKey: number;
-  history: { speaker: string | null; text: string }[];
+  history: { speaker: string | null; text: string; lineIndex: number; stateSnapshot: string; audioSnapshot?: any }[];
   settings: {
     fontSize: number;
     bgmVolume: number;
@@ -101,8 +101,9 @@ export type StoryAction =
   | { type: 'SET_SHOW_SETTINGS'; payload: boolean }
   | { type: 'SET_SHOW_LOG'; payload: boolean }
   | { type: 'SET_PREDICATE_MISMATCH'; payload: boolean }
-  | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string } }
+  | { type: 'ADD_TO_HISTORY'; payload: { speaker: string | null; text: string; lineIndex: number; stateSnapshot: string; audioSnapshot?: any } }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<StoryState['settings']> }
+  | { type: 'RESTORE_STATE'; payload: Omit<StoryState, 'history' | 'settings'> & { historyIndex?: number } }
   | { type: 'RESET_STATE' };
 
 const getInitialSettings = () => {
@@ -392,7 +393,64 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
     case 'SET_PREDICATE_MISMATCH':
       return { ...state, predicateMismatch: action.payload };
     case 'ADD_TO_HISTORY':
-      return { ...state, history: [...state.history, action.payload] };
+      const { speaker, text, lineIndex, audioSnapshot } = action.payload;
+      // Use structuredClone-like parsing via JSON stringify/parse to deeply copy without react refs
+      const snapshot = {
+        currentIndex: state.currentIndex,
+        currentBg: state.currentBg,
+        bgUrl: state.bgUrl,
+        bgTween: state.bgTween,
+        characterSlots: state.characterSlots,
+        currentSpeaker: state.currentSpeaker,
+        currentText: state.currentText,
+        isTypewriterFinished: state.isTypewriterFinished,
+        shouldSkipTypewriter: state.shouldSkipTypewriter,
+        currentDecision: state.currentDecision,
+        currentSubtitle: state.currentSubtitle,
+        activeAnimText: state.activeAnimText,
+        stickers: state.stickers,
+        imageUrl: state.imageUrl,
+        imageTween: state.imageTween,
+        isShaking: state.isShaking,
+        shakeConfig: state.shakeConfig,
+        isFlashing: state.isFlashing,
+        cameraEffect: state.cameraEffect,
+        characterCutin: state.characterCutin,
+        blocker: state.blocker,
+        isAuto: state.isAuto,
+        isSkipping: state.isSkipping,
+        skipSpeed: state.skipSpeed,
+        showUI: state.showUI,
+        isBlocking: state.isBlocking,
+        isCinematic: state.isCinematic,
+        showBackConfirm: state.showBackConfirm,
+        showSettings: state.showSettings,
+        showLog: state.showLog,
+        predicateMismatch: state.predicateMismatch,
+        dialogueKey: state.dialogueKey
+      };
+      
+      return { 
+        ...state, 
+        history: [...state.history, { 
+          speaker, 
+          text, 
+          lineIndex, 
+          audioSnapshot,
+          stateSnapshot: JSON.stringify(snapshot)
+        }] 
+      };
+    case 'RESTORE_STATE':
+      return { 
+        ...state, 
+        ...action.payload,
+        // Make sure we keep lines, history and settings from the current state!
+        lines: state.lines,
+        history: typeof action.payload.historyIndex === 'number' 
+          ? state.history.slice(0, action.payload.historyIndex) 
+          : state.history,
+        settings: state.settings
+      };
     case 'UPDATE_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.payload } };
     default:

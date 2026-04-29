@@ -77,6 +77,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const processToken = useRef({});
   const currentIndexRef = useRef(0);
+  const currentBgmRef = useRef<any>(null);
   const predicateMismatchRef = useRef(false);
   const isProcessing = useRef(false);
   const selectedChoicesRef = useRef<Set<string>>(new Set());
@@ -95,6 +96,16 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const processedCurrentText = useMemo(() => replaceNickname(currentText), [currentText, replaceNickname]);
   const processedHistory = useMemo(() => history.map(h => ({ ...h, text: replaceNickname(h.text) })), [history, replaceNickname]);
+  const fullScriptText = useMemo(() => {
+    return lines
+      .map((l, i) => ({ ...l, originalIndex: i }))
+      .filter(l => (l.type === 'subtitle' || l.type === 'dialogue') && l.text)
+      .map(l => ({
+        speaker: l.characterName || null,
+        text: replaceNickname(l.text) || '',
+        lineIndex: l.originalIndex
+      }));
+  }, [lines, replaceNickname]);
   const processedStickers = useMemo(() => state.stickers.map(s => ({ ...s, text: replaceNickname(s.text) })), [state.stickers, replaceNickname]);
   const processedAnimText = useMemo(() => activeAnimText ? { ...activeAnimText, text: replaceNickname(activeAnimText.text) } : null, [activeAnimText, replaceNickname]);
   const processedSubtitle = useMemo(() => currentSubtitle ? { ...currentSubtitle, text: replaceNickname(currentSubtitle.text) } : null, [currentSubtitle, replaceNickname]);
@@ -195,7 +206,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
           case 'subtitle':
             if (line.text) {
-              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: null, text: line.text } });
+              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: null, text: line.text, lineIndex: index, audioSnapshot: currentBgmRef.current } });
               dispatch({ type: 'SET_DIALOGUE', payload: { speaker: null, text: line.text, index, isSubtitle: true, line } });
               currentIndexRef.current = index;
               return;
@@ -208,7 +219,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
           case 'dialogue':
             if (line.text) {
-              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text } });
+              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.characterName || null, text: line.text, lineIndex: index, audioSnapshot: currentBgmRef.current } });
             }
             dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.characterName || null, text: line.text || '', index } });
             currentIndexRef.current = index;
@@ -425,6 +436,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 if (processToken.current !== token) return;
               }
               if (url) {
+                currentBgmRef.current = { url, volume: line.volume || 0.5, introUrl, assetName: line.assetName, introAssetName: line.introAssetName };
                 if (line.delay && !isSkipping) {
                   setTimeout(() => {
                     if (processToken.current === token) {
@@ -466,6 +478,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
             
           case 'stop_music':
+            currentBgmRef.current = null;
             audioManager.stopBGM(line.duration !== undefined ? line.duration * 1000 : 1000);
             break;
             
@@ -610,6 +623,62 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       dispatch({ type: 'SET_CINEMATIC', payload: false });
     }
   }, [lines, characterSlots, predicateMismatch, isSkipping]);
+
+  const jumpToLine = useCallback((lineIndex: number, snapshotStateRaw: string, audioSnapshot: any, historyIndex: number) => {
+    // 1. cancel current processing
+    const token = {};
+    processToken.current = token;
+    isProcessing.current = false;
+    skipBlockerRef.current = false;
+    if (autoAdvanceTimer.current) {
+      clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = null;
+    }
+    
+    // Parse the snapshot
+    let parsedState;
+    try {
+      parsedState = JSON.parse(snapshotStateRaw);
+    } catch (e) {
+      console.error('Failed to parse state snapshot', e);
+      return;
+    }
+
+    // 2. restore audio
+    audioManager.stopAll();
+    currentBgmRef.current = audioSnapshot || null;
+    if (audioSnapshot && audioSnapshot.url) {
+      audioManager.playBGM(
+        audioSnapshot.url, 
+        audioSnapshot.volume, 
+        1000, 
+        audioSnapshot.introUrl, 
+        audioSnapshot.assetName, 
+        audioSnapshot.introAssetName
+      );
+    }
+
+    // 3. update react state
+    dispatch({ 
+      type: 'RESTORE_STATE', 
+      payload: {
+        ...parsedState,
+        isSkipping: false,
+        isAuto: false,
+        shouldSkipTypewriter: false,
+        isTypewriterFinished: false,
+        historyIndex
+      } 
+    });
+    currentIndexRef.current = lineIndex;
+    
+    // 4. close log implicitly handled by restoring the state snapshot where showLog is usually false, 
+    // but just in case:
+    dispatch({ type: 'SET_SHOW_LOG', payload: false });
+
+    // 5. resume processLine
+    processLine(lineIndex);
+  }, [processLine]);
 
   const advance = useCallback(() => {
     if (currentDecision) return;
@@ -949,7 +1018,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         <LogModal 
           show={showLog}
           history={processedHistory}
+          fullScript={fullScriptText}
           onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
+          onJumpToLine={jumpToLine}
           t={t}
         />
 
