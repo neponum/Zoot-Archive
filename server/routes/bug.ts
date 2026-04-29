@@ -26,8 +26,24 @@ router.post('/', async (req, res) => {
     }
 
     // 2. Format message
+    // В Discord для пинга нужно использовать числовой ID пользователя: <@USER_ID> или роли: <@&ROLE_ID>
+    const DISCORD_USER_IDS: Record<string, string> = {
+      'nep0num': '328845926628065291', // Замените на числовой ID (например '123456789012345')
+      'frostymisery17': '696376643492511776',
+      'naoshka_v': '1211553016919097355'
+    };
+    
+    // Вставьте ID роли разработчиков, если нужно (<@&ROLE_ID>)
+    const DEV_ROLE_ID = 'ВСТАВЬТЕ_ID_РОЛИ_СЮДА'; 
+    const devRoleMention = DEV_ROLE_ID !== 'ВСТАВЬТЕ_ID_РОЛИ_СЮДА' ? `<@&${DEV_ROLE_ID}>` : '';
+
     const translatorName = context.translator || 'Переводчика';
-    const tag = type === 'player' ? '@nep0num' : `@${translatorName}`;
+    
+    // Пытаемся получить ID из словаря, если нет - просто пишем имя
+    const translatorMentionId = DISCORD_USER_IDS[translatorName] || DISCORD_USER_IDS['nep0num'];
+    const tag = translatorMentionId !== 'ВСТАВЬТЕ_ВАШ_DISCORD_ID_СЮДА' 
+      ? `<@${translatorMentionId}>` 
+      : `@${translatorName}`;
 
     // Discord message embeds
     let historyText = (context.history || []).map((h: any) => `**${h.speaker || 'Narrator'}**: ${h.text}`).join('\n');
@@ -47,7 +63,7 @@ router.post('/', async (req, res) => {
     };
 
     const playload = {
-      content: `Внимание: ${tag}`,
+      content: `Внимание: ${tag} ${devRoleMention}`.trim(),
       embeds: [embed]
     };
 
