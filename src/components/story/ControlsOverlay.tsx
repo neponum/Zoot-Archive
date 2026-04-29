@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Settings, History, Maximize, Minimize, Bookmark } from 'lucide-react';
+import { Settings, History, Maximize, Minimize, Bookmark, AlertTriangle } from 'lucide-react';
 
 interface ControlsOverlayProps {
   showUI: boolean;
@@ -15,6 +15,7 @@ interface ControlsOverlayProps {
   onBackClick: () => void;
   onSettingsClick: () => void;
   onLogClick: () => void;
+  onBugReportClick?: () => void;
   onToggleFullscreen: () => void;
   setShowUI: (show: boolean) => void;
   t: any;
@@ -34,6 +35,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   onBackClick,
   onSettingsClick,
   onLogClick,
+  onBugReportClick,
   onToggleFullscreen,
   setShowUI,
   t,
@@ -71,9 +73,23 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onLogClick(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+            title="History"
           >
             <History className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
           </button>
+          {onBugReportClick && (
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onBugReportClick(); }}
+              className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-2"
+              title="Report Bug"
+            >
+              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
+            </button>
+          )}
           {document.fullscreenEnabled && (
             <button 
               onPointerDown={(e) => e.stopPropagation()}

@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { config } from "./server/config.js";
 import authRoutes from "./server/routes/auth.js";
 import proxyRoutes from "./server/routes/proxy.js";
+import bugRoutes from "./server/routes/bug.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ app.use(express.json());
 app.use("/api/auth/discord", authRoutes);
 app.use("/auth/discord", authRoutes); // For the callback route
 app.use("/api/proxy", proxyRoutes);
+app.use("/api/bug-report", bugRoutes);
 
 // Vite middleware for development
 if (!config.isProduction) {

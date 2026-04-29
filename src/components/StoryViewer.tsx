@@ -15,6 +15,7 @@ import { StickerLayer } from './story/StickerLayer';
 import { BackConfirmation } from './story/BackConfirmation';
 import { SettingsModal } from './story/SettingsModal';
 import { LogModal } from './story/LogModal';
+import { BugReportModal } from './story/BugReportModal';
 import { storyReducer, initialState, CharacterSlotData } from '../hooks/useStoryReducer';
 import { useStoryControls } from '../hooks/useStoryControls';
 import { AUTO_ADVANCE_DELAY, SKIP_SPEEDS } from '../constants';
@@ -87,6 +88,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const skipBlockerRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [showBugReport, setShowBugReport] = React.useState(false);
 
   // Replacement logic for user nickname
   const replaceNickname = useCallback((text: string | null | undefined): string => {
@@ -723,6 +725,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     showBackConfirm,
     showSettings,
     showLog,
+    showBugReport,
     showUI,
     isTypewriterFinished,
     advance,
@@ -736,7 +739,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Auto advance logic
   useEffect(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    if (isAuto && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && isTypewriterFinished) {
+    if (isAuto && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && !showBugReport && isTypewriterFinished) {
       autoAdvanceTimer.current = setTimeout(() => {
         advance();
       }, settings.autoDelay);
@@ -744,18 +747,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     };
-  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog]);
+  }, [isAuto, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog, showBugReport, settings.autoDelay]);
 
   // Skip logic
   useEffect(() => {
-    if (isSkipping && !showSettings && !showLog) {
+    if (isSkipping && !showSettings && !showLog && !showBugReport) {
       const delay = 100 / skipSpeed;
       const timer = setTimeout(() => {
         advance();
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isSkipping, currentIndex, advance, skipSpeed, showSettings, showLog]);
+  }, [isSkipping, currentIndex, advance, skipSpeed, showSettings, showLog, showBugReport]);
 
   useEffect(() => {
     const loadStory = async () => {
@@ -1009,10 +1012,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}
           onSettingsClick={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })}
           onLogClick={() => dispatch({ type: 'SET_SHOW_LOG', payload: true })}
+          onBugReportClick={() => setShowBugReport(true)}
           onToggleFullscreen={toggleFullscreen}
           setShowUI={(val) => dispatch({ type: 'SET_SHOW_UI', payload: val })}
           t={t}
           className="z-[60]"
+        />
+
+        <BugReportModal
+          show={showBugReport}
+          onClose={() => setShowBugReport(false)}
+          context={{
+            chapter: storyTxt || 'Unknown',
+            line: currentIndexRef.current,
+            history: processedHistory
+          }}
         />
 
         <LogModal 

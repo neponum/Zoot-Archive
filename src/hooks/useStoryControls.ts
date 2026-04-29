@@ -9,6 +9,7 @@ interface StoryControlsProps {
   showBackConfirm: boolean;
   showSettings: boolean;
   showLog: boolean;
+  showBugReport?: boolean;
   showUI: boolean;
   isTypewriterFinished: boolean;
   advance: () => void;
@@ -27,6 +28,7 @@ export const useStoryControls = ({
   showBackConfirm,
   showSettings,
   showLog,
+  showBugReport,
   showUI,
   isTypewriterFinished,
   advance,
@@ -43,13 +45,13 @@ export const useStoryControls = ({
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (currentDecision || showBackConfirm || showSettings || showLog) return;
+    if (currentDecision || showBackConfirm || showSettings || showLog || showBugReport) return;
     
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
     pointerDownTime.current = Date.now();
     
     holdStartY.current = e.clientY;
-  }, [currentDecision, showBackConfirm, showSettings, showLog]);
+  }, [currentDecision, showBackConfirm, showSettings, showLog, showBugReport]);
 
   const handlePointerMove = useCallback((_e: React.PointerEvent) => {
     // Speed selection removed
@@ -77,7 +79,7 @@ export const useStoryControls = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showBackConfirm || currentDecision || showSettings || showLog) return;
+      if (showBackConfirm || currentDecision || showSettings || showLog || showBugReport) return;
       
       if (e.code === 'Space' || e.code === 'Enter') {
         advance();
@@ -104,7 +106,7 @@ export const useStoryControls = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [advance, showBackConfirm, currentDecision, showSettings, showLog, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
+  }, [advance, showBackConfirm, currentDecision, showSettings, showLog, showBugReport, setIsHoldingSkip, setIsSkipping, setIsAuto, setSkipSpeed]);
 
   return {
     handlePointerDown,
