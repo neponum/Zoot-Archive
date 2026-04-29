@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Settings, History, Maximize, Minimize } from 'lucide-react';
+import { Settings, History, Maximize, Minimize, Bookmark } from 'lucide-react';
 
 interface ControlsOverlayProps {
   showUI: boolean;
@@ -62,7 +62,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onClick={(e) => { e.stopPropagation(); onSettingsClick(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
-            <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+            <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
           </button>
           <button 
             onPointerDown={(e) => e.stopPropagation()}
@@ -72,7 +72,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onClick={(e) => { e.stopPropagation(); onLogClick(); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
-            <History className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+            <History className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
           </button>
           {document.fullscreenEnabled && (
             <button 
@@ -84,7 +84,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
-              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />}
+              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />}
             </button>
           )}
           <button 
@@ -95,7 +95,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onClick={(e) => { e.stopPropagation(); setShowUI(false); }}
             className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
               <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
               <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
@@ -112,7 +112,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onToggleAuto(); }}
             className={cn(
-              "font-bold text-sm sm:text-base md:text-[20px] tracking-[0.2em] transition-all drop-shadow-lg p-2",
+              "font-bold text-sm sm:text-base md:text-lg tracking-[0.2em] transition-all drop-shadow-lg p-2",
               isAuto ? "text-white" : "text-white/60 hover:text-white"
             )}
           >
@@ -125,7 +125,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onBackClick(); }}
             className={cn(
-              "font-bold text-sm sm:text-base md:text-[20px] tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+              "font-bold text-sm sm:text-base md:text-lg tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
             )}
           >
             SKIP

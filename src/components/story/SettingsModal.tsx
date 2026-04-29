@@ -14,6 +14,7 @@ interface SettingsModalProps {
     autoDelay: number;
     fontFamily: string;
     nickname: string;
+    shakeIntensity: number;
   };
   onUpdateSettings: (settings: any) => void;
   onClose: () => void;
@@ -58,7 +59,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       textSpeed: 30,
       autoDelay: 2000,
       fontFamily: 'sans-serif',
-      nickname: '{@nickname}'
+      nickname: '{@nickname}',
+      shakeIntensity: 1.0
     };
     onUpdateSettings(defaultSettings);
     audioManager.setVolumes(1.0, 1.0, 1.0);
@@ -84,9 +86,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={onClose}
               className="group flex items-center gap-2 text-white/60 hover:text-white transition-colors"
             >
-              <X className="w-10 h-10" />
+              <X className="w-8 h-8 md:w-10 md:h-10" />
             </button>
-            <h2 className="text-2xl font-bold text-white tracking-wider uppercase">
+            <h2 className="text-lg md:text-2xl font-bold text-white tracking-wider uppercase">
               {t.settings || 'Settings'}
             </h2>
             <div className="w-10" /> {/* Spacer for centering */}
@@ -97,8 +99,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="max-w-3xl mx-auto space-y-12 pt-8">
               {/* Sound Settings */}
               <section className="space-y-8">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
-                  <Volume2 className="w-5 h-5" />
+                <h3 className="text-xs md:text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
                   {t.sound_settings || 'Sound Settings'}
                 </h3>
                 
@@ -109,7 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     { id: 'voice', label: t.voice_volume || 'Voice Volume', value: settings.voiceVolume },
                   ].map((item) => (
                     <div key={item.id} className="space-y-4">
-                      <div className="flex justify-between text-lg">
+                      <div className="flex justify-between text-base md:text-lg">
                         <span className="text-white/80">{item.label}</span>
                         <span className="text-blue-400 font-mono">{Math.round(item.value * 100)}%</span>
                       </div>
@@ -129,13 +131,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Profile Settings */}
               <section className="space-y-8">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
-                  <User className="w-5 h-5" />
+                <h3 className="text-xs md:text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <User className="w-4 h-4 md:w-5 md:h-5" />
                   {t.profile_settings || 'Profile Settings'}
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between text-lg">
+                  <div className="flex justify-between text-base md:text-lg">
                     <span className="text-white/80">{t.nickname || 'Nickname'}</span>
                   </div>
                   <input
@@ -153,15 +155,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Auto Play Settings */}
               <section className="space-y-8">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
-                  <Play className="w-5 h-5" />
+                <h3 className="text-xs md:text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Play className="w-4 h-4 md:w-5 md:h-5" />
                   {t.auto_play_settings || 'Auto Play Settings'}
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                   {/* Text Speed */}
                   <div className="space-y-4">
-                    <div className="flex justify-between text-lg">
+                    <div className="flex justify-between text-base md:text-lg">
                       <span className="text-white/80">{t.text_speed || 'Text Appearance'}</span>
                       <span className="text-blue-400 font-mono">
                         {settings.textSpeed === 0 ? (t.instant || 'Instant') : `${settings.textSpeed}ms`}
@@ -184,7 +186,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Auto Delay */}
                   <div className="space-y-4">
-                    <div className="flex justify-between text-lg">
+                    <div className="flex justify-between text-base md:text-lg">
                       <span className="text-white/80">{t.auto_delay || 'Auto Pause'}</span>
                       <span className="text-blue-400 font-mono">{(settings.autoDelay / 1000).toFixed(1)}s</span>
                     </div>
@@ -207,13 +209,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Font Settings */}
               <section className="space-y-8">
-                <h3 className="text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
-                  <Type className="w-5 h-5" />
+                <h3 className="text-xs md:text-sm font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-4">
+                  <Type className="w-4 h-4 md:w-5 md:h-5" />
                   {t.display_settings || 'Display Settings'}
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between text-lg">
+                  <div className="flex justify-between text-base md:text-lg">
                     <span className="text-white/80">{t.font_size || 'Font Size'}</span>
                     <span className="text-blue-400 font-mono">{settings.fontSize}%</span>
                   </div>
@@ -228,7 +230,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                   
                   <div className="mt-8 space-y-4">
-                    <div className="flex justify-between text-lg">
+                    <div className="flex justify-between text-base md:text-lg">
+                      <span className="text-white/80">{t.shake_intensity || 'Screen Shake Intensity'}</span>
+                      <span className="text-blue-400 font-mono">{Math.round((settings.shakeIntensity ?? 1) * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={settings.shakeIntensity ?? 1}
+                      onChange={(e) => onUpdateSettings({ shakeIntensity: parseFloat(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest font-bold">
+                      <span>{t.off || 'Off'}</span>
+                      <span>{t.normal || 'Normal'}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 space-y-4">
+                    <div className="flex justify-between text-base md:text-lg">
                       <span className="text-white/80">{t.font_family || 'Font Family'}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">

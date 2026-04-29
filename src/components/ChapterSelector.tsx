@@ -3,7 +3,8 @@ import { fetchChapterList, getImageUrl, setLanguage, getLanguage, checkImageExis
 import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
 import { getChapterDisplayCode } from '../lib/utils';
-import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages } from 'lucide-react';
+import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages, Bookmark } from 'lucide-react';
+import { DiscordIcon, SkportIcon } from './ui/Icons';
 import { UI_STRINGS } from '../translations';
 import { OperationRecordsGraph } from './OperationRecordsGraph';
 import { STORY_LINES_DATA, STORY_LINE_FILTERS } from '../config/storylines';
@@ -15,6 +16,8 @@ interface ChapterSelectorProps {
   onOpenTranslation?: (chapter?: StoryChapter, episode?: StoryEpisode) => void;
   onTranslatorChange?: (translator: string | undefined) => void;
   readChapters?: Set<string>;
+  bookmarkedChapters?: Set<string>;
+  onToggleBookmark?: (chapterId: string) => void;
 }
 
 const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
@@ -70,7 +73,14 @@ const CHRONO_ORDER: Record<string, number> = {
 
 const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
 
-export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOpenTranslation, onTranslatorChange, readChapters }) => {
+export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ 
+  onSelect, 
+  onOpenTranslation, 
+  onTranslatorChange, 
+  readChapters, 
+  bookmarkedChapters,
+  onToggleBookmark
+}) => {
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -668,7 +678,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   )}
 
                   {/* Vertical Grid Area */}
-                  <div className={`${isMobile && !showEpisodesOnMobile && viewMode !== 'ALL' ? 'hidden' : 'flex'} flex-1 flex-col overflow-y-auto px-6 md:px-12 py-8 custom-scrollbar h-full bg-[#050505]/50`}>
+                  <div className={`${isMobile && !showEpisodesOnMobile && viewMode !== 'ALL' ? 'hidden' : 'flex'} flex-1 flex-col overflow-y-auto px-6 md:px-12 py-8 custom-scrollbar h-full bg-black/40`}>
                     {isMobile && showEpisodesOnMobile && viewMode !== 'ALL' && (
                       <button 
                         onClick={() => setShowEpisodesOnMobile(false)}
@@ -791,7 +801,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                               </div>
 
                               {/* Vinyl Effect Icon */}
-                              <div className="absolute top-1/2 -translate-y-1/2 -left-4 w-16 h-16 z-0 opacity-0 group-hover:opacity-100 group-hover:-left-8 transition-all duration-500 ease-out pointer-events-none">
+                              <div className="absolute bottom-8 -left-2 md:-left-4 w-12 h-12 md:w-16 md:h-16 z-0 opacity-0 group-hover:opacity-100 group-hover:-left-6 md:group-hover:-left-8 transition-all duration-500 ease-out pointer-events-none">
                                 <img 
                                   src={`${BANNERS_BASE_URL}/49px-图标_剧情.png`} 
                                   alt="" 
@@ -910,120 +920,169 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
                   const isMid = chapter.id.toLowerCase().includes('_mid');
                   const isEnd = chapter.id.toLowerCase().includes('_end');
                   const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : 'RECORD';
-                  const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/20';
+                  const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : 'text-white/40';
                   
                   let displayCode = getChapterDisplayCode(chapter);
 
                   return (
-                    <div
+                               <div
                       key={chapter.id}
-                      className="group relative flex items-center transition-all duration-300"
+                      className="group relative flex items-center transition-all duration-300 w-full"
                     >
                       {/* Vinyl Effect Icon for Chapters */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -left-5 w-14 h-14 z-30 pointer-events-none">
+                      <div className="absolute left-0 bottom-1/2 translate-y-1/2 -ml-6 w-14 h-14 z-30 pointer-events-none transition-all duration-500 ease-out group-hover:scale-110 opacity-0 group-hover:opacity-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
                         <img 
                           src={`${BANNERS_BASE_URL}/49px-图标_剧情.png`} 
                           alt="" 
-                          className="w-full h-full object-contain group-hover:animate-[spin_4s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="w-full h-full object-contain animate-[spin_4s_linear_infinite]"
                           referrerPolicy="no-referrer"
                         />
                       </div>
 
                       {/* Chapter Container */}
-                      <div className="ml-4 flex h-16 rounded-sm overflow-hidden shadow-xl border border-white/10 group-hover:border-white/40 transition-all hover:scale-105 z-10">
+                      <div className="ml-4 w-full flex h-[80px] rounded-sm overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl group-hover:border-white/30 transition-all duration-300 group-hover:-translate-y-0.5 shadow-lg relative z-10">
                         
-                        {/* Chapter Info (The Black Square) */}
+                        {/* Main Interaction Area */}
                         <button
-                          onClick={() => {
-                            onSelect(chapter);
-                          }}
+                          onClick={() => onSelect(chapter)}
                           disabled={!scriptExists}
-                          className="w-32 h-full bg-gradient-to-b from-zinc-600 to-zinc-900 flex flex-col items-center justify-center shrink-0 relative disabled:opacity-30 disabled:cursor-not-allowed group/info"
+                          className="w-[180px] h-[75px] flex flex-col justify-between pl-[18px] pr-[9px] pt-[10px] pb-[10px] relative disabled:opacity-50 disabled:cursor-not-allowed group/info min-w-0 text-left transition-colors hover:bg-white/[0.04]"
                           title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
                         >
-                          {/* Top Left REC / MISSING */}
-                          <div className="absolute top-1.5 left-1.5 flex flex-col items-start gap-0.5 z-20">
-                            <div className="flex items-center gap-0.5">
-                              <div className={`w-1 h-1 rounded-full ${scriptExists ? 'bg-red-500' : 'bg-red-500/50'}`} />
-                              <span className={`text-[6px] font-mono tracking-widest ${scriptExists ? 'text-white/80' : 'text-red-400 font-bold'}`}>
-                                {scriptExists ? (isOfficial ? 'RECORD' : (
-                                  <>
-                                    {t.translated}
-                                    {selectedTranslator && <span className="opacity-50 ml-1 text-[5px]">({selectedTranslator})</span>}
-                                  </>
-                                )) : t.missing}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Top Center READ Mark */}
-                          {readChapters?.has(chapter.id) && (
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-blue-500/20 text-blue-300 px-2 pt-0.5 pb-[2px] rounded-b-sm border-b border-x border-blue-500/30 z-20 backdrop-blur-sm mt-[40px] ml-[14px] mr-0">
-                              <div className="flex items-center gap-1">
-                                <Check className="w-2.5 h-2.5" />
-                                <span className="text-[7px] font-black tracking-[0.2em] uppercase">
-                                  {t.read || 'READ'}
-                                </span>
+                          {/* Background Image Effect */}
+                          {chapterImages[chapter.id] && (
+                            <>
+                              <div className="absolute inset-0 opacity-10 group-hover/info:opacity-20 transition-opacity duration-500 mix-blend-screen pointer-events-none">
+                                <img 
+                                  src={chapterImages[chapter.id]!} 
+                                  alt="" 
+                                  className="w-full h-full object-cover blur-[2px]"
+                                  referrerPolicy="no-referrer"
+                                />
                               </div>
-                            </div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+                            </>
                           )}
 
-                          {/* Top Right Type Label (BEG/MID/END) */}
-                          <span className={`text-[6px] font-black absolute top-1.5 right-1.5 tracking-widest ${typeColor} z-20`}>
-                            {typeLabel}
-                          </span>
-                          
-                          <div className="flex flex-col items-center justify-center w-full h-full pt-1 text-center relative overflow-hidden">
-                            {chapterImages[chapter.id] && (
-                              <img 
-                                src={chapterImages[chapter.id]!} 
-                                alt="" 
-                                className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover/info:opacity-40 transition-opacity"
-                                referrerPolicy="no-referrer"
-                              />
-                            )}
-                            <div className="relative z-10 flex flex-col items-center">
-                              <span className="text-[15px] font-bold text-white tracking-wide truncate w-full px-2">
-                                {displayCode}
-                              </span>
-                              <span className="text-[7px] font-light text-white/60 uppercase tracking-[0.2em] mt-0.5 mb-1">
-                                {t.story}
-                              </span>
-                              <h3 className="text-xs font-medium text-white truncate w-full px-2">
-                                {chapter.name}
-                              </h3>
+                          {/* Top Info Row */}
+                          <div className="flex items-center justify-between w-full relative z-10 mb-1">
+                             <div className="flex items-center gap-2 min-w-0">
+                               <div className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${scriptExists ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-red-500/40'}`} />
+                               <span className={`text-[8px] font-black tracking-[0.2em] uppercase truncate ${scriptExists ? 'text-white/80' : 'text-red-400'}`}>
+                                 {scriptExists ? (isOfficial ? 'RECORD' : (
+                                   <span className="flex items-center gap-1">
+                                      {t.translated} 
+                                      {selectedTranslator && <span className="opacity-50 font-medium tracking-normal text-[7px] bg-white/10 px-1 py-0.5 rounded-sm">({selectedTranslator})</span>}
+                                   </span>
+                                 )) : t.missing}
+                               </span>
+                             </div>
+                             
+                             <div className="flex items-center gap-1 shrink-0 ml-2">
+                               <span className={`text-[8px] font-black tracking-[0.2em] uppercase ${typeColor} opacity-80 backdrop-blur-sm bg-black/40 px-1.5 py-0.5 rounded-[2px] border border-current/20`}>
+                                 {typeLabel}
+                               </span>
+                             </div>
+                          </div>
+
+                          {/* Center Content: Title & Subtitle */}
+                          <div className="relative z-10 flex flex-col w-full my-auto">
+                            <div className="flex items-end gap-2.5 w-full">
+                               <span className="text-[17px] leading-tight font-black text-white truncate drop-shadow-md">
+                                 {displayCode}
+                               </span>
+                               <span className="text-[10px] pb-[1px] font-bold text-white/50 truncate flex-1 leading-none uppercase tracking-wide">
+                                 {chapter.name}
+                               </span>
                             </div>
                           </div>
 
-                          {/* Decorative line */}
-                          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white/0 group-hover/info:bg-white/50 transition-all" />
+                          {/* Bottom Row: Story Label & Read/Bookmark Status */}
+                          <div className="relative z-10 flex items-center justify-between mt-auto w-full">
+                             <span className="text-[7.5px] font-bold text-white/40 tracking-[0.25em] uppercase pb-0.5">
+                               {t.story}
+                             </span>
+
+                             <div className="flex items-center gap-1.5 shrink-0 w-[60px] justify-end">
+                               {readChapters?.has(chapter.id) ? (
+                                 <div className="flex items-center justify-center gap-1.5 pl-2 pr-2.5 py-0.5 h-5 w-[60px] ml-0 mr-0 bg-[#2b9d2b] text-[16px] border border-white/20 rounded-[2px] backdrop-blur-md">
+                                   <Check className="w-3 h-3 text-white/90" />
+                                   <span className="text-[6px] w-[50px] h-[10px] text-left pl-0 pt-0 pr-0 mt-[1px] font-black text-white/80 tracking-[0.2em] uppercase">
+                                     {t.read || 'READ'}
+                                   </span>
+                                 </div>
+                               ) : (
+                                 onToggleBookmark && (
+                                   <div
+                                     role="button"
+                                     tabIndex={0}
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       onToggleBookmark(chapter.id);
+                                     }}
+                                     onKeyDown={(e) => {
+                                       if (e.key === 'Enter' || e.key === ' ') {
+                                         e.stopPropagation();
+                                         onToggleBookmark(chapter.id);
+                                       }
+                                     }}
+                                     className={`flex items-center justify-center gap-1.5 pl-2 pr-2.5 py-0.5 h-5 w-[60px] ml-0 mr-0 rounded-[2px] backdrop-blur-md transition-all duration-300 border cursor-pointer ${
+                                       bookmarkedChapters?.has(chapter.id) 
+                                         ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' 
+                                         : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/80'
+                                     }`}
+                                     title="В закладки"
+                                   >
+                                     <Bookmark className={`w-3 h-3 ${bookmarkedChapters?.has(chapter.id) ? 'fill-amber-400' : ''}`} />
+                                     <span className="text-[7px] font-black tracking-[0.2em] uppercase mt-[1px]">
+                                       MARK
+                                     </span>
+                                   </div>
+                                 )
+                               )}
+                             </div>
+                          </div>
+
+                          {/* Left Accent line */}
+                          <div className={`absolute left-0 top-0 bottom-0 w-[4px] ${typeColor.replace('text-', 'bg-')} opacity-60 shadow-[0_0_10px_currentColor]`} />
                         </button>
 
-                        {/* Actions Extension */}
-                        <div className="flex flex-col w-12 bg-zinc-950 border-l border-white/10 shrink-0">
+                        {/* Actions Block */}
+                        <div className="flex flex-col w-[68px] shrink-0 bg-black/80 border-l border-white/10 divide-y divide-white/10">
+                          {/* Play Button */}
                           <button 
-                            onClick={() => {
-                              onSelect(chapter);
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               onSelect(chapter);
                             }}
                             disabled={!scriptExists}
-                            className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white disabled:opacity-30 disabled:cursor-not-allowed group/btn"
-                            title={scriptExists ? `Review ${chapter.name}` : "Script not available"}
+                            className="flex-1 min-h-0 flex flex-col items-center justify-center gap-1 hover:bg-white/[0.08] transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-white group/play relative overflow-hidden"
                           >
-                            <Play className="w-3.5 h-3.5 fill-current group-hover/btn:scale-110 transition-transform" />
-                            <span className="text-[6px] font-black uppercase tracking-widest">{t.play}</span>
+                            <Play className="w-3.5 h-3.5 fill-white group-hover/play:scale-110 group-hover/play:fill-red-500 group-hover/play:text-red-500 transition-all drop-shadow-md z-10" />
+                            <span className="text-[6.5px] font-black uppercase tracking-[0.2em] text-white/80 group-hover/play:text-red-400 z-10">
+                               {t.play}
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent opacity-0 group-hover/play:opacity-100 transition-opacity" />
                           </button>
                           
+                          {/* Translate / Interactive Toggle Button */}
                           {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
                             <button 
-                              onClick={() => onOpenTranslation?.(chapter, selectedEpisode)}
-                              className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors text-white border-t border-white/10 group/btn"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 onOpenTranslation?.(chapter, selectedEpisode);
+                              }}
+                              className="flex-1 min-h-0 flex flex-col items-center justify-center gap-1 hover:bg-blue-500/15 transition-colors text-white group/trans bg-white/[0.02] relative overflow-hidden"
                               title="Открыть инструмент перевода"
                             >
-                              <Languages className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
-                              <span className="text-[6px] font-black uppercase tracking-widest">{t.trans}</span>
+                              <Languages className="w-3.5 h-3.5 text-white/80 group-hover/trans:scale-110 group-hover/trans:text-blue-400 transition-all z-10" />
+                              <span className="text-[6.5px] font-black uppercase tracking-[0.2em] text-white/50 group-hover/trans:text-blue-400 z-10">
+                                {t.translate || 'TRANS'}
+                              </span>
                             </button>
                           )}
                         </div>
+
                       </div>
                     </div>
                   );
@@ -1091,43 +1150,61 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({ onSelect, onOp
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Language Toggle - Mobile Friendly */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border transition-all rounded-sm ${isLangMenuOpen ? 'bg-white border-white text-black' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
-              >
-                <Globe className="w-4 h-4" />
-              </button>
-              
-              {isLangMenuOpen && (
-                <div className="absolute bottom-12 md:bottom-14 right-0 w-48 bg-[#0a0a0a] border border-white/10 shadow-2xl p-2 z-50 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  {LANGUAGES.map((l) => (
-                    <button
-                      key={l.id}
-                      onClick={() => {
-                        handleLanguageChange(l.id);
-                        setIsLangMenuOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${lang === l.id ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
-                    >
-                      {l.label}
-                      {lang === l.id && <Check className="w-3 h-3" />}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end hidden sm:flex">
+              <span className="text-[9px] font-black text-white/50 tracking-[0.2em] uppercase">{t.social_networks}</span>
             </div>
 
-            {/* Report Button */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
-                className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border transition-all rounded-sm ${isReportMenuOpen ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
+            <div className="flex items-center gap-2">
+              {/* Discord Button */}
+              <a 
+                href="https://discord.gg/jYvWPeCjC3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border border-white/10 text-white/40 hover:text-[#5865F2] hover:bg-[#5865F2]/5 hover:border-[#5865F2]/30 transition-all rounded-sm group"
+                title="Discord"
               >
-                <Flag className="w-4 h-4" />
-              </button>
+                <DiscordIcon size={18} />
+              </a>
+
+              {/* SKPORT Button */}
+              <a 
+                href="https://www.skport.com/profile?id=9963327784768"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border border-white/10 hover:bg-[#BFFF00]/5 hover:border-[#BFFF00]/20 transition-all rounded-sm group"
+                title="SKPORT"
+              >
+                <SkportIcon size={18} className="opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-300" />
+              </a>
+
+              {/* Language Toggle - Mobile Friendly */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                  className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border transition-all rounded-sm ${isLangMenuOpen ? 'bg-white border-white text-black' : 'border-white/10 text-white/40 hover:text-white hover:bg-white/5'}`}
+                >
+                  <Globe className="w-4 h-4" />
+                </button>
+                
+                {isLangMenuOpen && (
+                  <div className="absolute bottom-12 md:bottom-14 right-0 w-48 bg-[#0a0a0a] border border-white/10 shadow-2xl p-2 z-50 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {LANGUAGES.map((l) => (
+                      <button
+                        key={l.id}
+                        onClick={() => {
+                          handleLanguageChange(l.id);
+                          setIsLangMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${lang === l.id ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        {l.label}
+                        {lang === l.id && <Check className="w-3 h-3" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

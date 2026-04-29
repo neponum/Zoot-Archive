@@ -35,7 +35,7 @@ export const LogModal: React.FC<LogModalProps> = ({
               onClick={onClose}
               className="group flex items-center gap-2 text-white/60 hover:text-white transition-colors"
             >
-              <ChevronLeft className="w-10 h-10" />
+              <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
             </button>
           </div>
 
@@ -48,17 +48,17 @@ export const LogModal: React.FC<LogModalProps> = ({
                 </div>
               ) : (
                 history.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-12 group">
+                  <div key={idx} className="flex items-start gap-4 md:gap-12 group">
                     {/* Speaker Name */}
                     <div className="w-1/3 text-right">
-                      <span className="text-white/50 text-[20px] leading-[1.6] font-medium tracking-wider group-hover:text-white/90 transition-colors">
+                      <span className="text-white/50 text-base md:text-[20px] leading-[1.6] font-medium tracking-wider group-hover:text-white/90 transition-colors">
                         {item.speaker || ''}
                       </span>
                     </div>
                     
                     {/* Dialogue Text */}
                     <div className="w-2/3 text-left">
-                      <p className="text-white text-[20px] leading-[1.6] font-normal tracking-wide drop-shadow-md">
+                      <p className="text-white text-base md:text-[20px] leading-[1.6] font-normal tracking-wide drop-shadow-md">
                         {item.text}
                       </p>
                     </div>

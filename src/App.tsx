@@ -13,6 +13,10 @@ function App() {
     const saved = localStorage.getItem('ak-read-chapters');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+  const [bookmarkedChapters, setBookmarkedChapters] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('ak-bookmarked-chapters');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
 
   const [selectedTranslator, setSelectedTranslator] = useState<string | undefined>(() => {
     return localStorage.getItem('ak-selected-translator') || undefined;
@@ -33,6 +37,7 @@ function App() {
   const handleSelectChapter = (chapter: StoryChapter) => {
     audioManager.unlock();
     setSelectedChapter(chapter);
+    window.history.pushState({ isViewer: true }, '', `/story/${chapter.storyTxt}`);
   };
 
   const handleChapterComplete = (chapterId: string) => {
@@ -40,6 +45,28 @@ function App() {
       const next = new Set(prev);
       next.add(chapterId);
       localStorage.setItem('ak-read-chapters', JSON.stringify(Array.from(next)));
+      return next;
+    });
+    setBookmarkedChapters(prev => {
+      if (prev.has(chapterId)) {
+        const next = new Set(prev);
+        next.delete(chapterId);
+        localStorage.setItem('ak-bookmarked-chapters', JSON.stringify(Array.from(next)));
+        return next;
+      }
+      return prev;
+    });
+  };
+
+  const handleToggleBookmark = (chapterId: string) => {
+    setBookmarkedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) {
+        next.delete(chapterId);
+      } else {
+        next.add(chapterId);
+      }
+      localStorage.setItem('ak-bookmarked-chapters', JSON.stringify(Array.from(next)));
       return next;
     });
   };
@@ -83,15 +110,61 @@ function App() {
     setTestScript(script);
     setSelectedChapter(chapter);
     setShowTranslationUI(false);
+    window.history.pushState({ isViewer: true }, '', `/story/${chapter.storyTxt}`);
   };
 
   const handleBackFromViewer = () => {
-    setSelectedChapter(null);
-    if (testScript) {
-      setShowTranslationUI(true);
-      setTestScript(undefined);
+    if (window.history.state?.isViewer) {
+      window.history.back();
+    } else {
+      setSelectedChapter(null);
+      if (testScript) {
+        setShowTranslationUI(true);
+        setTestScript(undefined);
+      }
     }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setSelectedChapter(null);
+      if (testScript) {
+        setShowTranslationUI(true);
+        setTestScript(undefined);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [testScript]);
+
+  useEffect(() => {
+    // Initial load handling
+    const path = window.location.pathname;
+    if (path.startsWith('/story/')) {
+      const storyTxt = path.replace('/story/', '');
+      if (storyTxt) {
+        import('./services/storyService').then(({ fetchChapterList }) => {
+          fetchChapterList().then((episodes: StoryEpisode[]) => {
+            for (const ep of episodes) {
+              const chapter = ep.chapters.find(c => c.storyTxt === storyTxt);
+              if (chapter) {
+                setSelectedChapter(chapter);
+                return;
+              }
+            }
+            // Fallback if not found
+            setSelectedChapter({
+              id: storyTxt,
+              code: '',
+              name: storyTxt,
+              storyTxt: storyTxt,
+              iconId: ''
+            });
+          }).catch(console.error);
+        });
+      }
+    }
+  }, []);
 
   return (
     <div className="w-screen h-[100dvh] bg-black overflow-hidden font-sans select-none relative">
@@ -109,6 +182,8 @@ function App() {
               onOpenTranslation={handleOpenTranslation}
               onTranslatorChange={setSelectedTranslator}
               readChapters={readChapters}
+              bookmarkedChapters={bookmarkedChapters}
+              onToggleBookmark={handleToggleBookmark}
             />
           </motion.div>
         ) : (

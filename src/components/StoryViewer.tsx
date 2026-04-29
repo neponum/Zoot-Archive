@@ -837,11 +837,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     >
       <motion.div 
         animate={shakeConfig ? {
-          x: [-shakeConfig.x, shakeConfig.x, -shakeConfig.x, shakeConfig.x, 0],
-          y: [-shakeConfig.y, shakeConfig.y, -shakeConfig.y, shakeConfig.y, 0],
+          x: [-shakeConfig.x * settings.shakeIntensity, shakeConfig.x * settings.shakeIntensity, -shakeConfig.x * settings.shakeIntensity, shakeConfig.x * settings.shakeIntensity, 0],
+          y: [-shakeConfig.y * settings.shakeIntensity, shakeConfig.y * settings.shakeIntensity, -shakeConfig.y * settings.shakeIntensity, shakeConfig.y * settings.shakeIntensity, 0],
         } : isShaking ? {
-          x: [-5, 5, -5, 5, 0],
-          y: [-2, 2, -2, 2, 0],
+          x: [-5 * settings.shakeIntensity, 5 * settings.shakeIntensity, -5 * settings.shakeIntensity, 5 * settings.shakeIntensity, 0],
+          y: [-2 * settings.shakeIntensity, 2 * settings.shakeIntensity, -2 * settings.shakeIntensity, 2 * settings.shakeIntensity, 0],
         } : { x: 0, y: 0 }}
         transition={(shakeConfig || isShaking) ? {
           duration: shakeConfig ? (1 / Math.max(shakeConfig.vibrato, 1)) * 5 : 0.1,

@@ -65,6 +65,7 @@ export interface StoryState {
     autoDelay: number;
     fontFamily: string;
     nickname: string;
+    shakeIntensity: number;
   };
 }
 
@@ -114,6 +115,7 @@ const getInitialSettings = () => {
     autoDelay: 2000, // ms delay after typing
     fontFamily: 'sans-serif',
     nickname: '{@nickname}',
+    shakeIntensity: 1.0,
   };
 
   try {
