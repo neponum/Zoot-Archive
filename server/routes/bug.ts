@@ -26,8 +26,8 @@ router.post('/', async (req, res) => {
     }
 
     // 2. Format message
-    // nep0num's Discord ID is unknown or maybe I can just tag them by name, e.g. <@nep0num.id>? Wait, they literally said "меня nep0num" so tagging `<@nep0num>` might not work unless we have their discord ID, but we can just say "Ping: @nep0num" or ping the translator. For now, text representation:
-    const tag = type === 'player' ? '<@nep0num> (nep0num)' : 'Переводчик';
+    const translatorName = context.translator || 'Переводчика';
+    const tag = type === 'player' ? '@nep0num' : `@${translatorName}`;
 
     // Discord message embeds
     let historyText = (context.history || []).map((h: any) => `**${h.speaker || 'Narrator'}**: ${h.text}`).join('\n');

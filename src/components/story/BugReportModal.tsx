@@ -9,6 +9,7 @@ interface BugReportModalProps {
     chapter: string;
     line: number;
     history: { speaker: string | null; text: string }[];
+    translator?: string | null;
   };
 }
 

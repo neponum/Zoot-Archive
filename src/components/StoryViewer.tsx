@@ -1025,7 +1025,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           context={{
             chapter: storyTxt || 'Unknown',
             line: currentIndexRef.current,
-            history: processedHistory
+            history: processedHistory,
+            translator: translator
           }}
         />
 
