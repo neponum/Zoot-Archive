@@ -1534,8 +1534,25 @@ export async function preloadAssets(lines: StoryLine[], onProgress?: (loaded: nu
       }
     } catch (err) {
       if (type === 'audio') {
-        // Audio preloading often fails due to CORS on assets/ folder, but html5:true bypasses this during playback.
-        console.info(`Audio preloading info: ${url} will be loaded on demand during playback.`);
+        console.info(`Audio preloading fetch failed for ${url}, falling back to HTMLMediaElement caching.`);
+        try {
+          await new Promise<void>((resolve) => {
+            const audio = new Audio();
+            audio.preload = 'auto';
+            audio.oncanplaythrough = () => {
+              resolve();
+              audio.src = '';
+            };
+            audio.onerror = () => {
+              resolve(); // Resolve anyway so we don't block the progress
+              audio.src = '';
+            };
+            audio.src = url;
+            audio.load();
+          });
+        } catch (e) {
+          // Ignore
+        }
       } else {
         console.warn(`Failed to preload/cache ${type}:`, url, err);
       }
