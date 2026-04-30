@@ -12,7 +12,7 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.svg', 'ZOOT.png'],
+        includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.svg'],
         manifest: {
           name: 'Zoot Archive',
           short_name: 'Zoot',
@@ -20,7 +20,7 @@ export default defineConfig(({mode}) => {
           theme_color: '#0e0e0e',
           background_color: '#0e0e0e',
           display: 'standalone',
-          orientation: 'portrait',
+          orientation: 'any',
           icons: [
             {
               src: 'ZOOT.svg',

@@ -35,10 +35,10 @@ export function PWAInstallPrompt() {
     // For iOS and some Android browsers
     let fallbackTimer: any;
     if (isMobile && !hasPrompted) {
-       // Wait slightly longer to ensure full load
+       // Wait 3 seconds
        fallbackTimer = setTimeout(() => {
          setShowPrompt(true);
-       }, 8000); 
+       }, 3000); 
     }
 
     return () => {
