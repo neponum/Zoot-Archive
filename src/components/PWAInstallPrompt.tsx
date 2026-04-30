@@ -13,17 +13,13 @@ export function PWAInstallPrompt() {
     }
 
     const hasPrompted = localStorage.getItem('ak-pwa-prompt-dismissed');
-    if (hasPrompted) return;
-
-    // Make sure we only show it on mobile/tablet devices
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isDebug = window.location.search.includes('debug_pwa');
     
-    // Better iPadOS detection (they report as MacIntel but have touch points)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (hasPrompted && !isDebug) return;
 
     // Listen for the beforeinstallprompt event (mostly Chrome/Android)
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('PWA: beforeinstallprompt triggered');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);
@@ -31,19 +27,21 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Fallback if beforeinstallprompt doesn't fire
-    // For iOS and some Android browsers
-    let fallbackTimer: any;
-    if (isMobile && !hasPrompted) {
-       // Wait 3 seconds
-       fallbackTimer = setTimeout(() => {
+    // Also show for iOS Safari after a short delay since they don't have beforeinstallprompt
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    let iosTimer: any;
+    
+    if ((isIOS && isMobile) || isDebug) {
+       iosTimer = setTimeout(() => {
+         console.log('PWA: iOS/Debug timer triggered');
          setShowPrompt(true);
-       }, 3000); 
+       }, 3000);
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (iosTimer) clearTimeout(iosTimer);
     };
   }, []);
 

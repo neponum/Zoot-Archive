@@ -18,47 +18,49 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
   return (
     <>
       {/* Background Layer */}
-      <AnimatePresence mode="wait">
-        {!imageUrl && (
-          <motion.div
-            key={bgUrl || 'black'}
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              x: bgTween ? (bgTween.xTo !== undefined ? [bgTween.xFrom ?? 0, bgTween.xTo] : (bgTween.x ?? 0)) : 0,
-              y: bgTween ? (bgTween.yTo !== undefined ? [bgTween.yFrom ?? 0, bgTween.yTo] : (bgTween.y ?? 0)) : 0,
-              scaleX: bgTween ? (bgTween.xScaleTo !== undefined ? [bgTween.xScaleFrom ?? 1, bgTween.xScaleTo] : (bgTween.xScale ?? 1)) : 1,
-              scaleY: bgTween ? (bgTween.yScaleTo !== undefined ? [bgTween.yScaleFrom ?? 1, bgTween.yScaleTo] : (bgTween.yScale ?? 1)) : 1,
-            }}
-            exit={{ opacity: 0 }}
-            transition={{ 
-              opacity: { duration: bgTween?.duration || 1 },
-              scaleX: { duration: bgTween?.duration || 1, ease: bgTween?.ease || "linear" },
-              scaleY: { duration: bgTween?.duration || 1, ease: bgTween?.ease || "linear" },
-              x: { duration: bgTween?.duration || 1, ease: bgTween?.ease || "linear" },
-              y: { duration: bgTween?.duration || 1, ease: bgTween?.ease || "linear" },
-            }}
-            className={cn("absolute inset-0 bg-black", bgTween?.tiled ? "bg-repeat" : "")}
-          >
-            {bgUrl && bgUrl !== 'BLACK_FALLBACK' && (
-              <img 
-                src={bgUrl} 
-                alt="Background" 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-                draggable="false"
-                loading="eager"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="absolute inset-0 bg-black">
+        <AnimatePresence>
+          {bgUrl && (
+            <motion.div
+              key={bgUrl === 'BLACK_FALLBACK' ? 'black' : bgUrl}
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 1,
+                x: bgTween ? (bgTween.xTo !== undefined ? [bgTween.xFrom ?? 0, bgTween.xTo] : (bgTween.x ?? 0)) : 0,
+                y: bgTween ? (bgTween.yTo !== undefined ? [bgTween.yFrom ?? 0, bgTween.yTo] : (bgTween.y ?? 0)) : 0,
+                scaleX: bgTween ? (bgTween.xScaleTo !== undefined ? [bgTween.xScaleFrom ?? 1, bgTween.xScaleTo] : (bgTween.xScale ?? 1)) : 1,
+                scaleY: bgTween ? (bgTween.yScaleTo !== undefined ? [bgTween.yScaleFrom ?? 1, bgTween.yScaleTo] : (bgTween.yScale ?? 1)) : 1,
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                opacity: { duration: bgTween?.duration || 0.5 },
+                scaleX: { duration: bgTween?.duration || 0.5, ease: bgTween?.ease || "linear" },
+                scaleY: { duration: bgTween?.duration || 0.5, ease: bgTween?.ease || "linear" },
+                x: { duration: bgTween?.duration || 0.5, ease: bgTween?.ease || "linear" },
+                y: { duration: bgTween?.duration || 0.5, ease: bgTween?.ease || "linear" },
+              }}
+              className={cn("absolute inset-0", bgTween?.tiled ? "bg-repeat" : "")}
+            >
+              {bgUrl !== 'BLACK_FALLBACK' && (
+                <img 
+                  src={bgUrl} 
+                  alt="Background" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  draggable="false"
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Image Layer (CGs) */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {imageUrl && (
           <motion.div
             key={imageUrl}
@@ -72,7 +74,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
             }}
             exit={{ opacity: 0 }}
             transition={{ 
-              opacity: { duration: imageTween?.duration ?? 0.5 },
+              opacity: { duration: 0.5 }, // Always use a sensible default for fade in/out
               scaleX: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
               scaleY: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
               x: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
