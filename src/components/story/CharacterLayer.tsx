@@ -100,12 +100,12 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   
   // Base height in % of the parent container (which maintains a 16:9 aspect ratio)
   // This completely removes the need for JS-based responsive scaling because % scales perfectly with the container.
-  const baseHeight = 125; 
+  const baseHeight = 145; 
   const normalizedHeight = baseHeight * scaleFactor;
   
   // Dynamic bottom offset based on scale factor
   // Base offset is -55%. We adjust it so small characters are pushed up and large characters are pushed down.
-  const baseBottom = -55;
+  const baseBottom = -80;
   let bottomOffset = baseBottom - (scaleFactor - 1) * 60;
 
   // Apply pos.y from character.json if available, otherwise apply a default.
@@ -135,7 +135,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       }}
       className={cn(
         "absolute flex flex-col items-center justify-end",
-        slot === 'left' ? "left-[1%]" : slot === 'right' ? "right-[1%]" : "left-1/2"
+        slot === 'left' ? "left-[-10%]" : slot === 'right' ? "right-[-10%]" : "left-1/2"
       )}
     >
       <div className="relative h-full w-fit">

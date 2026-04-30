@@ -12,30 +12,27 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.png'],
+        includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.svg', 'ZOOT.png'],
         manifest: {
           name: 'Zoot Archive',
           short_name: 'Zoot',
-          description: 'Zoot Archive App',
+          description: 'Zoot Archive App - Story Viewer and Translation Tool',
           theme_color: '#0e0e0e',
           background_color: '#0e0e0e',
           display: 'standalone',
+          orientation: 'portrait',
           icons: [
             {
-              src: 'ZOOT.png',
-              sizes: '192x192',
-              type: 'image/png'
+              src: 'ZOOT.svg',
+              sizes: '512x512',
+              type: 'image/svg+xml',
+              purpose: 'any'
             },
             {
-              src: 'ZOOT.png',
+              src: 'ZOOT.svg',
               sizes: '512x512',
-              type: 'image/png'
-            },
-            {
-              src: 'ZOOT.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
+              type: 'image/svg+xml',
+              purpose: 'maskable'
             }
           ]
         },

@@ -15,6 +15,13 @@ export function PWAInstallPrompt() {
     const hasPrompted = localStorage.getItem('ak-pwa-prompt-dismissed');
     if (hasPrompted) return;
 
+    // Make sure we only show it on mobile/tablet devices
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Better iPadOS detection (they report as MacIntel but have touch points)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     // Listen for the beforeinstallprompt event (mostly Chrome/Android)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -24,21 +31,19 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Make sure we only show it on mobile/tablet devices
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // Also show for iOS Safari after a short delay since they don't have beforeinstallprompt
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    let iosTimer: any;
-    if (isIOS && isMobile) {
-       iosTimer = setTimeout(() => {
+    // Fallback if beforeinstallprompt doesn't fire
+    // For iOS and some Android browsers
+    let fallbackTimer: any;
+    if (isMobile && !hasPrompted) {
+       // Wait slightly longer to ensure full load
+       fallbackTimer = setTimeout(() => {
          setShowPrompt(true);
-       }, 3000);
+       }, 8000); 
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      if (iosTimer) clearTimeout(iosTimer);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
   }, []);
 
