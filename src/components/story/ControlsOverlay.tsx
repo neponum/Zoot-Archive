@@ -44,7 +44,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   return (
     <div className={className}>
       <div className={cn(
-        "absolute top-0 left-0 right-0 p-2 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
+        "absolute top-0 left-0 right-0 p-1.5 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
         (showUI && !forceHideUI) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}
       onMouseDown={(e) => e.stopPropagation()}
@@ -55,7 +55,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
       onPointerUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex gap-2 sm:gap-4 md:gap-8 items-center">
+        <div className="flex gap-1.5 sm:gap-4 md:gap-8 items-center">
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
@@ -120,7 +120,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           </button>
         </div>
 
-        <div className="flex gap-2 sm:gap-6 md:gap-10 items-center">
+        <div className="flex gap-1.5 sm:gap-6 md:gap-10 items-center">
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}

@@ -17,9 +17,9 @@ export default defineConfig(({mode}) => {
         },
         includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.png'],
         manifest: {
-          name: 'Zoot Archive',
-          short_name: 'Zoot',
-          description: 'Zoot Archive App',
+          name: 'ZOOT Archive',
+          short_name: 'ZOOT',
+          description: 'ZOOT Archive App',
           theme_color: '#0e0e0e',
           background_color: '#0e0e0e',
           display: 'standalone',

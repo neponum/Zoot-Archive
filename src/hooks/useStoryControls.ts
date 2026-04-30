@@ -45,6 +45,12 @@ export const useStoryControls = ({
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (currentDecision || showBackConfirm || showSettings || showLog || showBugReport) return;
     
+    // Ignore clicks on UI elements (buttons, overlays with high z-index)
+    const target = e.target as HTMLElement;
+    if (target.closest('button, [role="button"], .z-50, .z-max, .z-\[60\], .z-\[70\], .z-\[80\]')) {
+      return;
+    }
+
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
     pointerDownTime.current = Date.now();
     
@@ -61,11 +67,22 @@ export const useStoryControls = ({
       longPressTimer.current = null;
     }
     
+    if (pointerDownTime.current === 0) return;
+
+    // Ignore if target is UI
+    const target = e.target as HTMLElement;
+    if (target.closest('button, [role="button"], .z-50, .z-max, .z-\[60\], .z-\[70\], .z-\[80\]')) {
+      pointerDownTime.current = 0;
+      return;
+    }
+
     const deltaX = e.clientX - pointerDownPos.current.x;
     const deltaY = e.clientY - pointerDownPos.current.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const duration = Date.now() - pointerDownTime.current;
     
+    pointerDownTime.current = 0;
+
     const isSwipe = distance > SWIPE_THRESHOLD && duration < SWIPE_DURATION;
 
     if (!showBackConfirm && !currentDecision && !showSettings && !showLog && showUI) {

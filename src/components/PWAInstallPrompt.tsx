@@ -27,21 +27,20 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Also show for iOS Safari after a short delay since they don't have beforeinstallprompt
+    // Also show for mobile devices after a short delay since some browsers (like Firefox or iOS Safari) don't have beforeinstallprompt
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    let iosTimer: any;
+    let mobileTimer: any;
     
-    if ((isIOS && isMobile) || isDebug) {
-       iosTimer = setTimeout(() => {
-         console.log('PWA: iOS/Debug timer triggered');
+    if (isMobile || isDebug) {
+       mobileTimer = setTimeout(() => {
+         console.log('PWA: Mobile/Debug timer triggered');
          setShowPrompt(true);
-       }, 3000);
+       }, 4000);
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      if (iosTimer) clearTimeout(iosTimer);
+      if (mobileTimer) clearTimeout(mobileTimer);
     };
   }, []);
 
