@@ -6,6 +6,7 @@ import { StoryChapter, StoryEpisode } from './types';
 import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
 import { audioManager } from './services/audioManager';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 function App() {
   const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
@@ -218,6 +219,8 @@ function App() {
           initialEpisode={translationEpisode}
         />
       </div>
+
+      <PWAInstallPrompt />
     </div>
   );
 }
