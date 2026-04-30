@@ -104,21 +104,21 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   const normalizedHeight = baseHeight * scaleFactor;
   
   // Dynamic bottom offset based on scale factor
-  // Base offset is -35%. We adjust it so small characters are pushed up and large characters are pushed down.
+  // Base offset is -55%. We adjust it so small characters are pushed up and large characters are pushed down.
   const baseBottom = -55;
   let bottomOffset = baseBottom - (scaleFactor - 1) * 60;
 
-  // Apply pos.y from character.json if available
-  if (data.pos && data.pos.y) {
-    // The pos.y value in character.json is an absolute offset.
-    // We convert it to a percentage of the container height.
-    // Positive pos.y means the character should be pushed up.
-    bottomOffset += (data.pos.y / coordinateBase) * baseHeight;
-  }
+  // Apply pos.y from character.json if available, otherwise apply a default.
+  // Characters from fallback logic lack 'pos' and would appear "dropped down" without this.
+  const posY = data.pos && data.pos.y !== undefined ? data.pos.y : 150;
+  bottomOffset += (posY / coordinateBase) * baseHeight;
+
+  const baseName = data.name?.split(/[#$]/)[0] || data.name;
+  const itemKey = `${slot}-${baseName}`;
 
   return (
     <motion.div
-      key={`${slot}-${data.name}`}
+      key={itemKey}
       initial={initial}
       animate={animate}
       custom={data.animation?.duration}
@@ -198,7 +198,7 @@ export const CharacterLayer: React.FC<CharacterLayerProps> = React.memo(({ chara
         <AnimatePresence key={slot} custom={characterSlots[slot]?.animation?.duration}>
           {characterSlots[slot]?.url && characterSlots[slot]?.name && (
             <CharacterSlotItem 
-              key={`${slot}-${characterSlots[slot].name}`} 
+              key={`${slot}-${characterSlots[slot].name.split(/[#$]/)[0]}`} 
               slot={slot} 
               data={characterSlots[slot]} 
               characterSlots={characterSlots} 

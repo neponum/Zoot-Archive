@@ -670,7 +670,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                          )}
                        </div>
                        <div className="mt-auto p-6 shrink-0 border-t border-white/5 bg-white/[0.02]">
-                          <p className="text-[7px] font-medium text-white/20 leading-relaxed uppercase tracking-wider text-justify">
+                          <p className="text-[7px] font-bold text-white leading-[12px] uppercase tracking-wider text-justify bg-[#0e0e0e]">
                             {t.disclaimer}
                           </p>
                        </div>

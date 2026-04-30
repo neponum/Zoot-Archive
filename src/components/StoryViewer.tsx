@@ -77,7 +77,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const processToken = useRef({});
   const currentIndexRef = useRef(0);
+  const characterSlotsRef = useRef(characterSlots);
   const currentBgmRef = useRef<any>(null);
+  
+  // Update characterSlotsRef whenever characterSlots changes
+  useEffect(() => {
+    characterSlotsRef.current = characterSlots;
+  }, [characterSlots]);
+
   const predicateMismatchRef = useRef(false);
   const isProcessing = useRef(false);
   const selectedChoicesRef = useRef<Set<string>>(new Set());
@@ -272,6 +279,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 const assetInfo = await getCharacterAssetInfo(char.name);
                 if (processToken.current !== token) return;
 
+                const existingSlot = characterSlotsRef.current[char.slot];
+                const hasNewAnim = line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined;
+                
                 slotUpdates[char.slot] = { 
                   url: assetInfo.bodyUrl,
                   faceUrl: assetInfo.faceUrl,
@@ -280,13 +290,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                   pos: assetInfo.pos,
                   focus: char.focus, 
                   name: char.name,
-                  animation: line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined ? {
+                  animation: hasNewAnim ? {
                     posFrom: line.posFrom,
                     posTo: line.posTo,
                     aFrom: line.aFrom,
                     aTo: line.aTo,
                     duration: line.duration
-                  } : undefined
+                  } : existingSlot?.animation
                 };
               }
               dispatch({ type: 'UPDATE_CHARACTER_SLOTS', payload: slotUpdates });
@@ -299,7 +309,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 return ['left', 'center', 'right'].includes(s) ? s : 'center';
               };
               const targetSlot = getSlotName(line.slot);
-              const currentSlot = characterSlots[targetSlot];
+              const currentSlot = characterSlotsRef.current[targetSlot];
               if (currentSlot?.url) {
                 dispatch({ 
                   type: 'UPDATE_CHARACTER_SLOT', 
