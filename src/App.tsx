@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { OrientationOverlay } from './components/story/OrientationOverlay';
 import { audioManager } from './services/audioManager';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { Analytics } from '@vercel/analytics/react';
 
 function App() {
   const [selectedChapter, setSelectedChapter] = useState<StoryChapter | null>(null);
@@ -221,6 +222,7 @@ function App() {
       </div>
 
       <PWAInstallPrompt />
+      <Analytics />
     </div>
   );
 }
