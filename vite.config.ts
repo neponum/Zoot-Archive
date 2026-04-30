@@ -10,46 +10,49 @@ export default defineConfig(({mode}) => {
     plugins: [
       react(), 
       tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        devOptions: {
-          enabled: true
-        },
-        includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.png'],
-        manifest: {
-          name: 'ZOOT Archive',
-          short_name: 'ZOOT',
-          description: 'ZOOT Archive App',
-          theme_color: '#0e0e0e',
-          background_color: '#0e0e0e',
-          display: 'standalone',
-          scope: '/',
-          start_url: '/',
-          icons: [
-            {
-              src: 'ZOOT.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'any'
-            },
-            {
-              src: 'ZOOT.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'ZOOT.png',
-              sizes: '512x512',
-              type: 'image/png'
-            },
-            {
-              src: 'ZOOT.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
-            }
-          ]
-        },
+        VitePWA({
+          registerType: 'autoUpdate',
+          injectRegister: 'auto',
+          devOptions: {
+            enabled: true
+          },
+          includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'ZOOT.svg', 'ZOOT.png'],
+          manifest: {
+            id: '/',
+            name: 'ZOOT Archive',
+            short_name: 'ZOOT',
+            description: 'ZOOT Archive App',
+            theme_color: '#0e0e0e',
+            background_color: '#0e0e0e',
+            display: 'standalone',
+            orientation: 'any',
+            scope: '/',
+            start_url: '/',
+            icons: [
+              {
+                src: 'ZOOT.svg',
+                sizes: 'any',
+                type: 'image/svg+xml',
+                purpose: 'any'
+              },
+              {
+                src: 'ZOOT.svg',
+                sizes: '512x512',
+                type: 'image/svg+xml',
+                purpose: 'maskable'
+              },
+              {
+                src: 'ZOOT.png',
+                sizes: '192x192',
+                type: 'image/png'
+              },
+              {
+                src: 'ZOOT.png',
+                sizes: '512x512',
+                type: 'image/png'
+              }
+            ]
+          },
         workbox: {
           maximumFileSizeToCacheInBytes: 5000000 // 5MB
         }
