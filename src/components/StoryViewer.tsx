@@ -237,11 +237,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.assetName) {
               const isBlack = line.assetName.toLowerCase().includes('black') || line.assetName.toLowerCase() === 'bg_black';
               if (isBlack) {
-                dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName } });
+                dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName, tween: line } });
               } else {
                 const url = await getImageUrl('background', line.assetName);
                 if (processToken.current !== token) return;
-                dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName } });
+                dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName, tween: line } });
               }
             }
             break;
@@ -359,7 +359,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
               if (processToken.current !== token) return;
-              dispatch({ type: 'SET_IMAGE', payload: { url } });
+              dispatch({ type: 'SET_IMAGE', payload: { url, tween: line } });
             } else {
               dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             }
@@ -467,14 +467,28 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               if (processToken.current !== token) return;
               if (url) {
                 if (line.delay && !isSkipping) {
-                  setTimeout(() => {
-                    // Check if still on same play session
-                    if (processToken.current === token) {
-                      audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
-                    }
-                  }, line.delay * 1000);
+                  // If blocking and have delay, we should wait for delay
+                  if (line.block) {
+                     dispatch({ type: 'SET_BLOCKING', payload: true });
+                     await new Promise(r => setTimeout(r, line.delay! * 1000));
+                     if (processToken.current === token) {
+                       await audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                     }
+                     dispatch({ type: 'SET_BLOCKING', payload: false });
+                  } else {
+                    setTimeout(() => {
+                      if (processToken.current === token) {
+                        audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                      }
+                    }, line.delay * 1000);
+                  }
                 } else {
-                  audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                  const playPromise = audioManager.playSFX(url, line.volume || 1, line.loop || false, line.channel);
+                  if (line.block && !isSkipping) {
+                    dispatch({ type: 'SET_BLOCKING', payload: true });
+                    await playPromise;
+                    dispatch({ type: 'SET_BLOCKING', payload: false });
+                  }
                 }
               }
             }
@@ -580,7 +594,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 initg: line.initg,
                 initb: line.initb,
                 inita: line.inita,
-                duration: line.duration ?? 0
+                duration: line.duration ?? 0,
+                ease: line.ease
               } 
             });
             if (index !== currentIndexRef.current) {

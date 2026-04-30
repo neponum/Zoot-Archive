@@ -25,10 +25,10 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: 1,
-              x: bgTween ? [bgTween.xFrom ?? 0, bgTween.xTo ?? 0] : 0,
-              y: bgTween ? [bgTween.yFrom ?? 0, bgTween.yTo ?? 0] : 0,
-              scaleX: bgTween ? [bgTween.xScaleFrom ?? 1, bgTween.xScaleTo ?? 1] : 1,
-              scaleY: bgTween ? [bgTween.yScaleFrom ?? 1, bgTween.yScaleTo ?? 1] : 1,
+              x: bgTween ? (bgTween.xTo !== undefined ? [bgTween.xFrom ?? 0, bgTween.xTo] : (bgTween.x ?? 0)) : 0,
+              y: bgTween ? (bgTween.yTo !== undefined ? [bgTween.yFrom ?? 0, bgTween.yTo] : (bgTween.y ?? 0)) : 0,
+              scaleX: bgTween ? (bgTween.xScaleTo !== undefined ? [bgTween.xScaleFrom ?? 1, bgTween.xScaleTo] : (bgTween.xScale ?? 1)) : 1,
+              scaleY: bgTween ? (bgTween.yScaleTo !== undefined ? [bgTween.yScaleFrom ?? 1, bgTween.yScaleTo] : (bgTween.yScale ?? 1)) : 1,
             }}
             exit={{ opacity: 0 }}
             transition={{ 
@@ -65,18 +65,18 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: 1,
-              x: imageTween ? [imageTween.xFrom ?? 0, imageTween.xTo ?? 0] : 0,
-              y: imageTween ? [imageTween.yFrom ?? 0, imageTween.yTo ?? 0] : 0,
-              scaleX: imageTween ? [imageTween.xScaleFrom ?? 1, imageTween.xScaleTo ?? 1] : 1,
-              scaleY: imageTween ? [imageTween.yScaleFrom ?? 1, imageTween.yScaleTo ?? 1] : 1,
+              x: imageTween ? (imageTween.xTo !== undefined ? [imageTween.xFrom ?? 0, imageTween.xTo] : (imageTween.x ?? 0)) : 0,
+              y: imageTween ? (imageTween.yTo !== undefined ? [imageTween.yFrom ?? 0, imageTween.yTo] : (imageTween.y ?? 0)) : 0,
+              scaleX: imageTween ? (imageTween.xScaleTo !== undefined ? [imageTween.xScaleFrom ?? 1, imageTween.xScaleTo] : (imageTween.xScale ?? 1)) : 1,
+              scaleY: imageTween ? (imageTween.yScaleTo !== undefined ? [imageTween.yScaleFrom ?? 1, imageTween.yScaleTo] : (imageTween.yScale ?? 1)) : 1,
             }}
             exit={{ opacity: 0 }}
             transition={{ 
-              opacity: { duration: 0.5 },
-              scaleX: { duration: imageTween?.duration || 0.5, ease: imageTween?.ease || "linear" },
-              scaleY: { duration: imageTween?.duration || 0.5, ease: imageTween?.ease || "linear" },
-              x: { duration: imageTween?.duration || 0.5, ease: imageTween?.ease || "linear" },
-              y: { duration: imageTween?.duration || 0.5, ease: imageTween?.ease || "linear" }
+              opacity: { duration: imageTween?.duration ?? 0.5 },
+              scaleX: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
+              scaleY: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
+              x: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" },
+              y: { duration: imageTween?.duration ?? 0.5, ease: imageTween?.ease || "linear" }
             }}
             className="absolute inset-0 z-[24]"
             style={{ originX: 0.5, originY: 0.5 }}

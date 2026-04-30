@@ -226,7 +226,7 @@ class AudioManager {
   /**
    * Play sound effect
    */
-  public playSFX(url: string, volume: number = 1.0, loop: boolean = false, channel?: string) {
+  public playSFX(url: string, volume: number = 1.0, loop: boolean = false, channel?: string): Promise<void> {
     // If setting a specific channel, stop the previous one on this channel
     if (channel && this.channelSfx.has(channel)) {
       const prevSound = this.channelSfx.get(channel)!;
@@ -235,32 +235,43 @@ class AudioManager {
       this.sfx.delete(prevSound);
     }
 
-    const sound = new Audio(url);
-    sound.volume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
-    sound.loop = loop;
-    
-    sound.onerror = (e: any) => {
-      const target = e.target as HTMLAudioElement;
-      const errorMsg = target.error ? target.error.message : 'Unknown error';
-      console.error(`Failed to load SFX audio resource: ${url}. Error: ${errorMsg}`);
-    };
-    
-    sound.addEventListener('ended', () => {
-      this.sfx.delete(sound);
-      if (channel && this.channelSfx.get(channel) === sound) {
-        this.channelSfx.delete(channel);
+    return new Promise<void>((resolve) => {
+      const sound = new Audio(url);
+      sound.volume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
+      sound.loop = loop;
+      
+      const finish = () => {
+        resolve();
+      };
+      
+      sound.onerror = (e: any) => {
+        const target = e.target as HTMLAudioElement;
+        const errorMsg = target.error ? target.error.message : 'Unknown error';
+        console.error(`Failed to load SFX audio resource: ${url}. Error: ${errorMsg}`);
+        finish();
+      };
+      
+      sound.addEventListener('ended', () => {
+        this.sfx.delete(sound);
+        if (channel && this.channelSfx.get(channel) === sound) {
+          this.channelSfx.delete(channel);
+        }
+        sound.src = '';
+        finish();
+      });
+      
+      this.sfx.add(sound);
+      if (channel) {
+        this.channelSfx.set(channel, sound);
       }
-      sound.src = '';
-    });
-    
-    this.sfx.add(sound);
-    if (channel) {
-      this.channelSfx.set(channel, sound);
-    }
 
-    sound.play().catch(e => {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error(`Failed to play SFX: ${url}. Error: ${errorMsg}`);
+      sound.play().catch(e => {
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        console.error(`Failed to play SFX: ${url}. Error: ${errorMsg}`);
+        finish();
+      });
+      
+      if (loop) resolve(); // Don't block indefinitely on loops
     });
   }
 

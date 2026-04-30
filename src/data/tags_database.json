@@ -48,6 +48,7 @@
         "b",
         "bfrom",
         "block",
+        "ease",
         "fadetime",
         "g",
         "gfrom",
@@ -56,6 +57,8 @@
         "rfrom"
     ],
     "Image": [
+        "block",
+        "ease",
         "fadetime",
         "image",
         "screenadapt",
@@ -68,6 +71,7 @@
         "block",
         "duration",
         "ease",
+        "image",
         "xFrom",
         "xScaleFrom",
         "xScaleTo",
@@ -89,6 +93,7 @@
     ],
     "PlaySound": [
         "Delay",
+        "block",
         "channel",
         "delay",
         "key",
@@ -130,6 +135,7 @@
         "fadetime"
     ],
     "playsound": [
+        "delay",
         "key",
         "volume"
     ],
@@ -171,6 +177,10 @@
         "yTo"
     ],
     "stopSound": [
+        "channel",
+        "fadetime"
+    ],
+    "stopsound": [
         "channel",
         "fadetime"
     ]

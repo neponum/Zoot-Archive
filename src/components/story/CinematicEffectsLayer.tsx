@@ -7,7 +7,7 @@ import { parseTags } from '../../lib/textUtils';
 interface CinematicEffectsLayerProps {
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string, duration: number, amount: number } | null;
-  blocker: { a: number, r: number, g: number, b: number, duration: number, initr?: number; initg?: number; initb?: number; inita?: number } | null;
+  blocker: { a: number, r: number, g: number, b: number, duration: number, initr?: number; initg?: number; initb?: number; inita?: number, ease?: string } | null;
   activeAnimText: StoryLine | null;
 }
 
@@ -32,7 +32,7 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
       ? getRgba(blocker.initr, blocker.initg || 0, blocker.initb || 0, blocker.inita || 0)
       : undefined;
     
-    return { target, initial, duration: Math.max(blocker.duration, 0) };
+    return { target, initial, duration: Math.max(blocker.duration, 0), ease: blocker.ease };
   }, [blocker]);
 
   return (
@@ -46,7 +46,7 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
           animate={{ backgroundColor: blockerProps.target }}
           transition={{ 
             duration: blockerProps.duration,
-            ease: "easeInOut"
+            ease: blockerProps.ease || "easeInOut"
           }}
           className="absolute inset-0 z-[25] pointer-events-none"
         />

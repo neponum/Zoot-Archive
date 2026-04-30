@@ -43,7 +43,7 @@ export interface StoryState {
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string; duration: number; amount: number } | null;
   characterCutin: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null;
-  blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null;
+  blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; } | null;
   isAuto: boolean;
   isSkipping: boolean;
   showUI: boolean;
@@ -86,7 +86,7 @@ export type StoryAction =
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
   | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
-  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number } | null }
+  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
   | { type: 'ADD_STICKER'; payload: StoryLine }
   | { type: 'CLEAR_STICKERS' }

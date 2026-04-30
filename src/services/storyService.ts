@@ -384,6 +384,7 @@ class StoryParser {
           yScale: params.yscale ? parseFloat(params.yscale) : undefined,
           screenadapt: params.screenadapt === 'true',
           block: params.block === 'true',
+          ease: params.ease,
           originalTag: original
         };
       case 'dialog':
@@ -409,6 +410,7 @@ class StoryParser {
           delay: params.delay ? parseFloat(params.delay) : (params.Delay ? parseFloat(params.Delay) : undefined),
           channel: params.channel,
           loop: params.loop === 'true',
+          block: params.block === 'true',
           originalTag: original
         };
       case 'playvoice':
@@ -499,6 +501,7 @@ class StoryParser {
           inita: params.inita ? parseFloat(params.inita) : undefined,
           duration: params.fadetime ? parseFloat(params.fadetime) : (params.duration ? parseFloat(params.duration) : 0),
           block: params.block === 'true',
+          ease: params.ease,
           originalTag: original
         };
       case 'animtext':
