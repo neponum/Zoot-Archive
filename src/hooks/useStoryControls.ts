@@ -12,6 +12,7 @@ interface StoryControlsProps {
   showBugReport?: boolean;
   showUI: boolean;
   isTypewriterFinished: boolean;
+  setShowUI: (show: boolean) => void;
   advance: () => void;
   setIsSkipping: (skipping: boolean) => void;
   setIsAuto: (auto: boolean) => void;
@@ -30,6 +31,7 @@ export const useStoryControls = ({
   showBugReport,
   showUI,
   isTypewriterFinished,
+  setShowUI,
   advance,
   setIsSkipping,
   setIsAuto,
@@ -45,9 +47,9 @@ export const useStoryControls = ({
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (currentDecision || showBackConfirm || showSettings || showLog || showBugReport) return;
     
-    // Ignore clicks on UI elements (buttons, overlays with high z-index)
+    // Ignore clicks on UI elements
     const target = e.target as HTMLElement;
-    if (target.closest('button, [role="button"], .z-50, .z-max, .z-\[60\], .z-\[70\], .z-\[80\]')) {
+    if (target.closest('button, [role="button"], .pwa-ui-element, .z-50, .z-max')) {
       return;
     }
 
@@ -71,7 +73,7 @@ export const useStoryControls = ({
 
     // Ignore if target is UI
     const target = e.target as HTMLElement;
-    if (target.closest('button, [role="button"], .z-50, .z-max, .z-\[60\], .z-\[70\], .z-\[80\]')) {
+    if (target.closest('button, [role="button"], .pwa-ui-element, .z-50, .z-max')) {
       pointerDownTime.current = 0;
       return;
     }
@@ -85,12 +87,16 @@ export const useStoryControls = ({
 
     const isSwipe = distance > SWIPE_THRESHOLD && duration < SWIPE_DURATION;
 
-    if (!showBackConfirm && !currentDecision && !showSettings && !showLog && showUI) {
+    if (!showBackConfirm && !currentDecision && !showSettings && !showLog) {
       if (e.pointerType !== 'mouse' || e.button === 0) {
+        if (!showUI) {
+          // If UI was hidden, show it and advance
+          setShowUI(true);
+        }
         advance();
       }
     }
-  }, [showBackConfirm, currentDecision, showSettings, showLog, showUI, advance]);
+  }, [showBackConfirm, currentDecision, showSettings, showLog, showUI, advance, setShowUI]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

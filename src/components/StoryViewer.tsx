@@ -752,6 +752,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     showBugReport,
     showUI,
     isTypewriterFinished,
+    setShowUI: (val) => dispatch({ type: 'SET_SHOW_UI', payload: val }),
     advance,
     setIsSkipping: (skipping) => dispatch({ type: 'SET_SKIPPING', payload: skipping }),
     setIsAuto: (auto) => dispatch({ type: 'SET_AUTO', payload: auto }),

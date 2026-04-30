@@ -42,9 +42,9 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   className
 }) => {
   return (
-    <div className={className}>
+    <div className={cn(className, "pwa-ui-element")}>
       <div className={cn(
-        "absolute top-0 left-0 right-0 p-1.5 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
+        "absolute top-0 left-0 right-0 p-1 sm:p-4 md:p-8 flex justify-between items-start z-40 transition-opacity duration-300",
         (showUI && !forceHideUI) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}
       onMouseDown={(e) => e.stopPropagation()}
@@ -55,14 +55,14 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
       onPointerUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex gap-1.5 sm:gap-4 md:gap-8 items-center">
+        <div className="flex gap-0.5 sm:gap-4 md:gap-8 items-center">
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onSettingsClick(); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1.5 sm:p-2"
           >
             <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
           </button>
@@ -72,7 +72,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onLogClick(); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1.5 sm:p-2"
             title="History"
           >
             <History className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
@@ -84,7 +84,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onBugReportClick(); }}
-              className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-2"
+              className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-1.5 sm:p-2"
               title="Report Bug"
             >
               <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />
@@ -97,7 +97,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
-              className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+              className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1.5 sm:p-2"
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6" />}
@@ -109,7 +109,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); setShowUI(false); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1.5 sm:p-2"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
@@ -120,7 +120,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           </button>
         </div>
 
-        <div className="flex gap-1.5 sm:gap-6 md:gap-10 items-center">
+        <div className="flex gap-0.5 sm:gap-6 md:gap-10 items-center">
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
@@ -128,7 +128,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onToggleAuto(); }}
             className={cn(
-              "font-bold text-sm sm:text-base md:text-lg tracking-[0.2em] transition-all drop-shadow-lg p-2",
+              "font-bold text-xs sm:text-base md:text-lg tracking-[0.1em] sm:tracking-[0.2em] transition-all drop-shadow-lg p-1.5 sm:p-2",
               isAuto ? "text-white" : "text-white/60 hover:text-white"
             )}
           >
@@ -141,21 +141,13 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onBackClick(); }}
             className={cn(
-              "font-bold text-sm sm:text-base md:text-lg tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg p-2"
+              "font-bold text-xs sm:text-base md:text-lg tracking-[0.1em] sm:tracking-[0.2em] text-white/60 hover:text-white transition-all drop-shadow-lg p-1.5 sm:p-2"
             )}
           >
             SKIP
           </button>
         </div>
       </div>
-
-      {/* Hidden UI Overlay (to bring back UI) */}
-      {!showUI && (
-        <div 
-          className="absolute inset-0 z-50 cursor-pointer"
-          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowUI(true); }}
-        />
-      )}
     </div>
   );
 };
