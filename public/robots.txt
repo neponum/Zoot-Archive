@@ -1,0 +1,16 @@
+# Robots.txt for ZOOT Archive
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Yandex Specific Rules
+User-agent: Yandex
+Allow: /
+Disallow: /api/
+Clean-param: ref
+
+# Googlebot Specific Rules
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://ais-pre-75ywmlyovzisk3gngkmozf-306937923026.europe-west2.run.app/sitemap.xml

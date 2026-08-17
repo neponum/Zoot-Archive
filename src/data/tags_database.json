@@ -1,0 +1,187 @@
+{
+    "HEADER": [
+        "fit_mode",
+        "is_skippable",
+        "key"
+    ],
+    "Dialog": [
+        "fadetime",
+        "time"
+    ],
+    "Character": [
+        "block",
+        "fadetime",
+        "focus",
+        "name",
+        "name2"
+    ],
+    "PlayMusic": [
+        "crossfade",
+        "delay",
+        "intro",
+        "key",
+        "volume"
+    ],
+    "Background": [
+        "block",
+        "fadetime",
+        "height",
+        "image",
+        "screenadapt",
+        "time",
+        "width",
+        "x",
+        "xScale",
+        "y",
+        "yScale"
+    ],
+    "Delay": [
+        "<прямое_значение>",
+        "time"
+    ],
+    "name": [
+        "<прямое_значение>"
+    ],
+    "Blocker": [
+        "a",
+        "afrom",
+        "b",
+        "bfrom",
+        "block",
+        "ease",
+        "fadetime",
+        "g",
+        "gfrom",
+        "initr",
+        "r",
+        "rfrom"
+    ],
+    "Image": [
+        "block",
+        "ease",
+        "fadetime",
+        "image",
+        "screenadapt",
+        "x",
+        "xScale",
+        "y",
+        "yScale"
+    ],
+    "ImageTween": [
+        "block",
+        "duration",
+        "ease",
+        "image",
+        "xFrom",
+        "xScaleFrom",
+        "xScaleTo",
+        "xTo",
+        "yFrom",
+        "yScaleFrom",
+        "yScaleTo",
+        "yTo"
+    ],
+    "StopMusic": [
+        "fadetime"
+    ],
+    "Decision": [
+        "options",
+        "values"
+    ],
+    "Predicate": [
+        "references"
+    ],
+    "PlaySound": [
+        "Delay",
+        "block",
+        "channel",
+        "delay",
+        "key",
+        "loop",
+        "volume"
+    ],
+    "dialog": [],
+    "delay": [
+        "<прямое_значение>",
+        "time"
+    ],
+    "CameraShake": [
+        "block",
+        "duration",
+        "fadeout",
+        "randomness",
+        "stop",
+        "vibrato",
+        "xstrength",
+        "ystrength"
+    ],
+    "character": [
+        "fadetime",
+        "name"
+    ],
+    "BackgroundTween": [
+        "block",
+        "duration",
+        "xFrom",
+        "xScaleFrom",
+        "xScaleTo",
+        "xTo",
+        "yFrom",
+        "yScaleFrom",
+        "yScaleTo",
+        "yTo"
+    ],
+    "stopmusic": [
+        "fadetime"
+    ],
+    "playsound": [
+        "delay",
+        "key",
+        "volume"
+    ],
+    "image": [
+        "fadetime",
+        "image"
+    ],
+    "cameraEffect": [
+        "amount",
+        "effect",
+        "fadetime",
+        "keep"
+    ],
+    "CharacterCutin": [
+        "block",
+        "fadestyle",
+        "fadetime",
+        "name",
+        "offsetx",
+        "style",
+        "widgetID",
+        "width"
+    ],
+    "blocker": [
+        "a",
+        "block",
+        "fadetime"
+    ],
+    "backgroundTween": [
+        "block",
+        "duration",
+        "xFrom",
+        "xScaleFrom",
+        "xScaleTo",
+        "xTo",
+        "yFrom",
+        "yScaleFrom",
+        "yScaleTo",
+        "yTo"
+    ],
+    "stopSound": [
+        "channel",
+        "fadetime"
+    ],
+    "stopsound": [
+        "channel",
+        "fadetime"
+    ]
+}
