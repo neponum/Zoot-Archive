@@ -1,7 +1,5 @@
 import { StoryLine } from '../../types';
 import { CacheService } from '../cacheService';
-import audioMusic from '../../data/audio_music.json';
-import audioSound from '../../data/audio_sound.json';
 import { 
   CharacterAssetInfo, 
   CharacterDataMap, 
@@ -10,13 +8,11 @@ import {
 } from './storyTypes';
 
 export let activeAudioMusic: Record<string, string> = { 
-  ...audioMusic,
   'tense_intro': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_intro.mp3',
   'tense_loop': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_loop.mp3'
 };
 
 export let activeAudioSound: Record<string, string> = { 
-  ...audioSound,
   'd_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
   's_d_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
   'stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3'
@@ -28,6 +24,9 @@ export async function fetchLatestAudioMaps(): Promise<void> {
   if (audioMapsPromise) return audioMapsPromise;
 
   audioMapsPromise = (async () => {
+    let musicLoadedSuccessfully = false;
+    let soundLoadedSuccessfully = false;
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
@@ -57,9 +56,10 @@ export async function fetchLatestAudioMaps(): Promise<void> {
           const musicData = (await musicRes.json()) as Record<string, string>;
           if (musicData && typeof musicData === 'object') {
             activeAudioMusic = { ...activeAudioMusic, ...musicData };
+            musicLoadedSuccessfully = true;
           }
         } catch {
-          // Fall back to bundled music
+          // fallback to dynamic import below
         }
       }
       
@@ -68,13 +68,33 @@ export async function fetchLatestAudioMaps(): Promise<void> {
           const soundData = (await soundRes.json()) as Record<string, string>;
           if (soundData && typeof soundData === 'object') {
             activeAudioSound = { ...activeAudioSound, ...soundData };
+            soundLoadedSuccessfully = true;
           }
         } catch {
-          // Fall back to bundled sounds
+          // fallback to dynamic import below
         }
       }
     } catch {
-      // Use bundled audio maps on network failure
+      // Use dynamic imports below
+    }
+
+    // Lazy load the local JSONs ONLY if GitHub CDN and proxy failed to load them
+    if (!musicLoadedSuccessfully) {
+      try {
+        const localMusic = await import('../../data/audio_music.json').then(m => m.default || m);
+        activeAudioMusic = { ...localMusic, ...activeAudioMusic };
+      } catch (err) {
+        console.warn('Failed to dynamically load local audio_music.json:', err);
+      }
+    }
+
+    if (!soundLoadedSuccessfully) {
+      try {
+        const localSound = await import('../../data/audio_sound.json').then(m => m.default || m);
+        activeAudioSound = { ...localSound, ...activeAudioSound };
+      } catch (err) {
+        console.warn('Failed to dynamically load local audio_sound.json:', err);
+      }
     }
   })();
 
@@ -164,21 +184,35 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (characterDataPromise) return characterDataPromise;
 
   characterDataPromise = (async (): Promise<CharacterDataMap> => {
-    // 1. First check local bundled /character.json (ultra fast and always intact)
-    try {
-      const localResponse = await fetch('/character.json');
-      if (localResponse.ok) {
-        const localData = (await localResponse.json()) as CharacterDataMap;
-        if (localData && typeof localData === 'object' && Object.keys(localData).length > 0) {
-          cachedCharacterData = localData;
-          return localData;
+    // 1. First check free GitHub Raw CDN (0 Vercel Bandwidth cost, cached, ultra-fast)
+    const githubUrls = [
+      'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json',
+      'https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/character.json'
+    ];
+
+    for (const githubUrl of githubUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const response = await fetch(githubUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          const text = await response.text();
+          const trimmed = text.trim();
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            const parsed = JSON.parse(trimmed) as CharacterDataMap;
+            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+              cachedCharacterData = parsed;
+              return parsed;
+            }
+          }
         }
+      } catch {
+        // Continue to next URL
       }
-    } catch {
-      // Continue to proxy fetch if local fails
     }
 
-    // 2. Secondary: fetch from wiki proxy with size & termination validation
+    // 2. Secondary: fetch from wiki proxy with size & termination validation (0 Vercel static asset cost)
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -197,6 +231,20 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
             cachedCharacterData = parsed;
             return parsed;
           }
+        }
+      }
+    } catch {
+      // Continue to local fallback if all else fails
+    }
+
+    // 3. Ultimate Fallback: check local bundled /character.json (reliable fallback, but costs Vercel bandwidth)
+    try {
+      const localResponse = await fetch('/character.json');
+      if (localResponse.ok) {
+        const localData = (await localResponse.json()) as CharacterDataMap;
+        if (localData && typeof localData === 'object' && Object.keys(localData).length > 0) {
+          cachedCharacterData = localData;
+          return localData;
         }
       }
     } catch {
