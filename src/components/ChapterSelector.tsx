@@ -636,7 +636,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
     { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen, disabled: false },
     { id: 'OPERATORS', label: uiLang === 'ru_RU' ? 'ОПЕРАТИВНИКИ' : (uiLang === 'zh_CN' ? '干员密录' : (uiLang === 'ja_JP' ? '回想秘録' : 'OPERATOR STORIES')), subLabel: 'OPERATOR STORIES', icon: Users, disabled: false },
     { id: 'VOTE', label: uiLang === 'ru_RU' ? 'МУЗЫКА' : (uiLang === 'zh_CN' ? '音乐' : (uiLang === 'ja_JP' ? '音楽' : 'MUSIC')), subLabel: 'MUSIC', icon: Music, disabled: false },
-    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: Archive, disabled: false },
+    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: Archive, disabled: true },
   ];
 
   const filteredEpisodes = React.useMemo(() => {

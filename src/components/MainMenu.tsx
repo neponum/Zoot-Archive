@@ -939,15 +939,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onOpenTerminal, onOpenArchiv
 
                   {/* ARCHIVES (OBSIDIAN / RECORDS) */}
                   <button
-                    onClick={onOpenArchive}
-                    className="flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 hover:border-white/40 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-pointer group transition-all duration-300"
+                    disabled={true}
+                    className="flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/40 border border-white/5 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed opacity-50 group transition-all duration-300"
                   >
-                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     <div className="flex-1 px-2.5 md:px-3 flex flex-col justify-center relative z-10 h-full">
-                      <span className="text-[11px] md:text-[13px] font-black text-white group-hover:text-white transition-colors uppercase tracking-wider font-mono">
-                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVES'}
-                      </span>
-                      <span className="text-[9px] md:text-[10px] font-black text-white/40 group-hover:text-white/70 uppercase tracking-widest font-mono mt-0.5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] md:text-[13px] font-black text-white/50 uppercase tracking-wider font-mono">
+                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVES'}
+                        </span>
+                        <span className="text-[8px] md:text-[9px] font-mono px-1.5 py-0.5 bg-amber-950/40 border border-amber-500/20 text-amber-400 font-bold tracking-widest uppercase rounded-sm">
+                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'СКОРО' : 'SOON'}
+                        </span>
+                      </div>
+                      <span className="text-[9px] md:text-[10px] font-black text-white/20 uppercase tracking-widest font-mono mt-0.5">
                         {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// БАЗА ДАННЫХ' : '// STORY ARCHIVE'}
                       </span>
                     </div>
