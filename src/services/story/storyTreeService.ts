@@ -70,6 +70,15 @@ let zhReferenceData: Record<string, RawReviewTableEntry> | null = null;
 let characterMappingCache: Record<string, string> | null = null;
 const parsedJsonCache: Record<string, unknown> = {};
 
+function convertToJsDelivr(url: string): string | null {
+  const match = url.match(/^https:\/\/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)$/);
+  if (match) {
+    const [, user, repo, branch, path] = match;
+    return `https://fastly.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
+  }
+  return null;
+}
+
 export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 30000): Promise<Response> {
   const proxyPrefixes = [
     'https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/',
@@ -83,6 +92,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   ];
   const isEligibleForProxy = proxyPrefixes.some(prefix => url.startsWith(prefix));
 
+  // Try direct fetch first
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   
@@ -109,6 +119,27 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
       useProxy = true;
     } else {
       throw error;
+    }
+  }
+
+  // If direct fetch fails and it's a raw.githubusercontent.com URL, try jsDelivr mirror (fast, unblocked in RF/RB)
+  if (useProxy && url.startsWith('https://raw.githubusercontent.com/')) {
+    const jsDelivrUrl = convertToJsDelivr(url);
+    if (jsDelivrUrl) {
+      try {
+        const jsDelivrController = new AbortController();
+        const jsDelivrId = setTimeout(() => jsDelivrController.abort(), Math.min(timeout, 10000));
+        const jsDelivrResponse = await fetch(jsDelivrUrl, {
+          ...options,
+          signal: jsDelivrController.signal
+        });
+        clearTimeout(jsDelivrId);
+        if (jsDelivrResponse.ok) {
+          return jsDelivrResponse;
+        }
+      } catch (e) {
+        // ignore and continue to fallback proxy
+      }
     }
   }
 

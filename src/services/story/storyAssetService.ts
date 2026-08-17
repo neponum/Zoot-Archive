@@ -135,6 +135,53 @@ export function cleanAndUnwrapUrl(rawUrl: string): string {
   return url;
 }
 
+export function shouldAvoidWeserv(): boolean {
+  try {
+    if (typeof navigator === 'undefined') return false;
+    const browserLang = (navigator.language || '').toLowerCase();
+    
+    // CIS/RF/RB languages
+    const cisLanguages = ['ru', 'be', 'by', 'kk', 'uz', 'ky', 'uk'];
+    if (cisLanguages.some(lang => browserLang.startsWith(lang) || browserLang.includes(lang))) {
+      return true;
+    }
+
+    // Check timezone
+    if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        const lowerTz = tz.toLowerCase();
+        if (
+          lowerTz.includes('moscow') ||
+          lowerTz.includes('minsk') ||
+          lowerTz.includes('russia') ||
+          lowerTz.includes('belarus') ||
+          lowerTz.includes('novosibirsk') ||
+          lowerTz.includes('yekaterinburg') ||
+          lowerTz.includes('krasnoyarsk') ||
+          lowerTz.includes('vladivostok') ||
+          lowerTz.includes('omsk') ||
+          lowerTz.includes('irkutsk') ||
+          lowerTz.includes('yakutsk') ||
+          lowerTz.includes('magadan') ||
+          lowerTz.includes('kamchatka') ||
+          lowerTz.includes('samara') ||
+          lowerTz.includes('saratov') ||
+          lowerTz.includes('volgograd') ||
+          lowerTz.includes('tashkent') ||
+          lowerTz.includes('almaty') ||
+          lowerTz.includes('bishkek')
+        ) {
+          return true;
+        }
+      }
+    }
+  } catch (e) {
+    // Fail-safe
+  }
+  return false;
+}
+
 export function wrapUrlWithProxy(rawUrl: string): string {
   if (!rawUrl) return rawUrl;
   if (rawUrl.startsWith('blob:') || rawUrl.startsWith('data:')) return rawUrl;
@@ -153,7 +200,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
     url.includes('prts.wiki') ||
     url.includes('banyat.com')
   ) {
-    // For images, route through images.weserv.nl (free Cloudflare CDN image proxy - zero Vercel bandwidth)
+    // For images, route through images.weserv.nl or our server proxy for RF/RB
     if (
       /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(url) || 
       url.includes('/assets/avg/characters/') ||
@@ -161,6 +208,10 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/avg/images/') ||
       url.includes('/assets/char_arts/')
     ) {
+      if (shouldAvoidWeserv()) {
+        // Bypassing weserv.nl for RF/RB users to prevent timeout delays
+        return `/api/proxy?url=${encodeURIComponent(url)}`;
+      }
       return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
     }
     // For audio files or other media, return direct URL (browsers play cross-origin audio natively)
