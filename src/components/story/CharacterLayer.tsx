@@ -52,20 +52,38 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   // Dimming logic
   const isDimmed = !data.focus && !Object.values(characterSlots).every((s: any) => !s.focus);
 
-  // Arknights characters are designed on a specific coordinate system (usually 1024 or 2048).
+  // Arknights characters coordinate system base (standard 1024 viewport unit)
   const coordinateBase = 1024;
+  const baseHeightPercent = 120; // 120% height for standard 1024-unit operator
 
-  // Animation logic: Center anchor (-50%) for all slots
-  let slotBaseX = '-50%';
+  // 1. Scale factor based purely on character.json size.y (e.g. 1024 -> 1.0, 460 -> 0.45, 1200 -> 1.17)
+  let scaleFactor = 1;
+  if (data.size && data.size.y && data.size.y > 0) {
+    scaleFactor = data.size.y / coordinateBase;
+  }
+  const normalizedHeight = baseHeightPercent * scaleFactor;
+
+  // 2. Vertical position adjustment based on Arknights Unity Center Pivot
+  // In Unity AVG, character sprites are anchored from their geometric center.
+  // Standard 1024 character has center at -28% + 60% = 32% viewport height.
+  // Using center-anchoring ensures tall characters expand downwards as well as upwards
+  // (lowering their head properly into the frame instead of shooting through the ceiling).
+  const defaultPosY = 150;
+  const posY = data.pos && data.pos.y !== undefined ? data.pos.y : defaultPosY;
   
-  // Apply pos.x from character.json if available
+  const baseCenterYPercent = -28 + (baseHeightPercent / 2); // 32%
+  const posDelta = ((posY - defaultPosY) / coordinateBase) * 100;
+  const centerYPercent = baseCenterYPercent + posDelta;
+
+  const bottomOffset = centerYPercent - (normalizedHeight / 2);
+
+  // 3. Horizontal offset from character.json pos.x
+  let slotBaseX = '-50%';
   if (data.pos && data.pos.x) {
-    // Convert pos.x to percentage of container width (assuming 16:9 aspect ratio)
-    // coordinateBase is 1024, which corresponds to the height.
-    // Width is 1024 * (16/9) = 1820.44
+    // Container has 16:9 aspect ratio relative to 1024 base height -> virtual width is 1820.44
     const coordinateWidth = coordinateBase * (16 / 9);
     const xOffsetPercent = (data.pos.x / coordinateWidth) * 100;
-    slotBaseX = `calc(${slotBaseX} + ${xOffsetPercent}%)`;
+    slotBaseX = `calc(-50% + ${xOffsetPercent.toFixed(2)}%)`;
   }
 
   const initial: any = { opacity: 0, x: slotBaseX, y: 0 };
@@ -113,30 +131,11 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     }
   }
 
-  // Mathematically precise alignment based on Arknights coordinate system (1024 height base):
-  // Because all character assets are full-body, their scale on screen depends purely on data.size.y relative to coordinateBase (1024).
-  // Image pixel resolution (naturalSize) is only used for face overlay positioning, not for altering CSS display height.
-  let scaleFactor = 1;
-  if (data.size && data.size.y) {
-    // If size.y is explicitly provided in character data (e.g. 1024 = 1.0, 1150 = 1.12)
-    scaleFactor = data.size.y / coordinateBase;
-  }
-  
-  // Base height in % of the parent container (which maintains a 16:9 aspect ratio)
-  const baseHeight = 130; 
-  const normalizedHeight = baseHeight * scaleFactor;
-  
-  // Apply pos.y from character.json if available, otherwise apply default
-  const posY = data.pos && data.pos.y !== undefined ? data.pos.y : 150;
-
-  // Floor anchor (-36% into dialogue box area)
-  const bottomOffset = -42 + ((posY - 150) / coordinateBase) * baseHeight;
-
   const baseName = data.name?.split(/[#$]/)[0] || data.name;
   const itemKey = `${slot}-${baseName}`;
 
-  // Slot horizontal anchoring: Left at 36%, Center at 50%, Right at 64%
-  const slotLeft = slot === 'left' ? '36%' : slot === 'right' ? '64%' : '50%';
+  // Slot horizontal anchoring: Left at 30%, Center at 50%, Right at 70%
+  const slotLeft = slot === 'left' ? '35%' : slot === 'right' ? '65%' : '50%';
 
   return (
     <motion.div

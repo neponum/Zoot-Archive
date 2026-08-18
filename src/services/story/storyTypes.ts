@@ -5,6 +5,7 @@ export interface CharacterFaceItem {
   alias?: string;
   group?: number;
   image?: string;
+  face?: string;
   rect?: [number, number, number, number];
 }
 

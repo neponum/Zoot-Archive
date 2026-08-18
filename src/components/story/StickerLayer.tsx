@@ -45,11 +45,11 @@ export const StickerLayer: React.FC<StickerLayerProps> = ({
               }}
             >
               <div 
-                className="text-white font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,1)] tracking-[0.1em] whitespace-pre-wrap flex flex-col gap-1"
+                className="text-white font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,1)] tracking-[0.04em] whitespace-pre-wrap"
                 style={{
-                  fontSize: sticker.size ? `${(sticker.size / 720) * 100}cqh` : '3.5cqh',
+                  fontSize: sticker.size ? `${(sticker.size / 1080) * 100}cqh` : '2.3cqh',
                   fontFamily: fontFamily,
-                  lineHeight: '1.6',
+                  lineHeight: '1.3',
                 }}
               >
                 <MemoizedTypewriter 

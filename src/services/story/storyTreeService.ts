@@ -92,7 +92,28 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   ];
   const isEligibleForProxy = proxyPrefixes.some(prefix => url.startsWith(prefix));
 
-  // Try direct fetch first
+  // If it's a raw.githubusercontent.com URL, prefer jsDelivr CDN first (prevents 429 rate limits & fast delivery)
+  if (url.startsWith('https://raw.githubusercontent.com/')) {
+    const jsDelivrUrl = convertToJsDelivr(url);
+    if (jsDelivrUrl) {
+      try {
+        const jsDelivrController = new AbortController();
+        const jsDelivrId = setTimeout(() => jsDelivrController.abort(), Math.min(timeout, 10000));
+        const jsDelivrResponse = await fetch(jsDelivrUrl, {
+          ...options,
+          signal: jsDelivrController.signal
+        });
+        clearTimeout(jsDelivrId);
+        if (jsDelivrResponse.ok) {
+          return jsDelivrResponse;
+        }
+      } catch (e) {
+        // Continue to direct fetch / proxy fallback if jsDelivr fails
+      }
+    }
+  }
+
+  // Direct fetch fallback
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   

@@ -296,7 +296,7 @@ export class StoryParser {
       if (val !== undefined && val !== null && val !== '') {
         const num = parseFloat(val);
         if (!isNaN(num)) {
-          return num > 10 ? num / 1000 : num;
+          return num >= 100 ? num / 1000 : num;
         }
       }
     }
@@ -401,23 +401,23 @@ export class StoryParser {
       case 'background':
         return {
           type: 'background',
-          assetName: params.image || params.name,
+          assetName: params.image || params.name || params.file || params.src || params.texture || params.picture || params.bg || params._direct,
           block: params.block === 'true',
-          duration: this.parseTimeParam(params.fadetime, params.time),
+          duration: this.parseTimeParam(params.fadetime, params.time, params.duration),
           height: params.height ? parseFloat(params.height) : undefined,
           width: params.width ? parseFloat(params.width) : undefined,
           x: params.x ? parseFloat(params.x) : undefined,
           y: params.y ? parseFloat(params.y) : undefined,
           xScale: params.xscale ? parseFloat(params.xscale) : undefined,
           yScale: params.yscale ? parseFloat(params.yscale) : undefined,
-          screenadapt: params.screenadapt === 'true',
+          screenadapt: params.screenadapt !== undefined && params.screenadapt !== 'false',
           originalTag: original
         };
 
       case 'backgroundtween':
         return {
           type: 'backgroundtween',
-          assetName: params.image || params.name,
+          assetName: params.image || params.name || params.file || params.src || params.texture || params.picture || params.bg || params._direct,
           xScale: params.xscale ? parseFloat(params.xscale) : undefined,
           yScale: params.yscale ? parseFloat(params.yscale) : undefined,
           xScaleFrom: params.xscalefrom !== undefined ? parseFloat(params.xscalefrom) : undefined,
@@ -437,16 +437,15 @@ export class StoryParser {
         };
 
       case 'image':
-      case 'showimage':
         return {
           type: 'image',
-          assetName: params.image || params.name,
-          duration: this.parseTimeParam(params.fadetime, params.time),
+          assetName: params.image || params.name || params.file || params.src || params.texture || params.picture || params.cg || params.bg || params._direct,
+          duration: this.parseTimeParam(params.fadetime, params.time, params.duration),
           x: params.x ? parseFloat(params.x) : undefined,
           y: params.y ? parseFloat(params.y) : undefined,
           xScale: params.xscale ? parseFloat(params.xscale) : undefined,
           yScale: params.yscale ? parseFloat(params.yscale) : undefined,
-          screenadapt: params.screenadapt === 'true',
+          screenadapt: params.screenadapt !== undefined && params.screenadapt !== 'false',
           block: params.block === 'true',
           ease: params.ease,
           originalTag: original
@@ -455,7 +454,7 @@ export class StoryParser {
       case 'imagetween':
         return {
           type: 'imagetween',
-          assetName: params.image || params.name,
+          assetName: params.image || params.name || params.file || params.src || params.texture || params.picture || params.cg || params.bg || params._direct,
           xScale: params.xscale ? parseFloat(params.xscale) : undefined,
           yScale: params.yscale ? parseFloat(params.yscale) : undefined,
           xScaleFrom: params.xscalefrom !== undefined ? parseFloat(params.xscalefrom) : undefined,

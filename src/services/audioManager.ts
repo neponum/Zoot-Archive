@@ -296,7 +296,11 @@ class AudioManager {
 
       sound.play().catch(e => {
         const errorMsg = e instanceof Error ? e.message : String(e);
-        console.error(`Failed to play SFX: ${url}. Error: ${errorMsg}`);
+        if (e?.name === 'AbortError' || errorMsg.includes('aborted') || errorMsg.includes('interrupted')) {
+          finish();
+          return;
+        }
+        console.warn(`SFX playback skipped: ${url} (${errorMsg})`);
         finish();
       });
       

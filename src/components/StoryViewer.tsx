@@ -290,10 +290,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.assetName) {
               const isBlack = line.assetName.toLowerCase().includes('black') || line.assetName.toLowerCase() === 'bg_black';
               if (isBlack) {
+                bgUrlRef.current = 'BLACK_FALLBACK';
+                currentBgRef.current = line.assetName;
                 dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName, tween: line } });
               } else {
                 const url = await getImageUrl('background', line.assetName);
                 if (processToken.current !== token) return;
+                bgUrlRef.current = url;
+                currentBgRef.current = line.assetName;
                 dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName, tween: line } });
               }
             }
@@ -479,8 +483,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
               if (processToken.current !== token) return;
+              imageUrlRef.current = url;
               dispatch({ type: 'SET_IMAGE', payload: { url, tween: line } });
             } else {
+              imageUrlRef.current = null;
               dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
@@ -534,6 +540,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               const url = line.assetName ? await getImageUrl('image', line.assetName) : imageUrlRef.current;
               if (processToken.current !== token) return;
               if (url) {
+                imageUrlRef.current = url;
                 dispatch({ 
                   type: 'SET_IMAGE', 
                   payload: { 
@@ -658,6 +665,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
           case 'hideimage':
           case 'clearimage':
+            imageUrlRef.current = null;
             dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             break;
 

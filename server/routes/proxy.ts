@@ -40,10 +40,25 @@ router.get('/', proxyLimiter, async (req, res) => {
   }
 
   // Parse and validate the target url
+  // Unwrap nested weserv URLs if present
+  let unwrappedTarget = targetUrl;
+  while (unwrappedTarget.includes('images.weserv.nl/?url=')) {
+    const match = unwrappedTarget.match(/images\.weserv\.nl\/\?url=([^&]+)/);
+    if (match) {
+      try {
+        unwrappedTarget = decodeURIComponent(match[1]);
+      } catch {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
   let parsedUrl: URL;
   try {
-    parsedUrl = new URL(targetUrl);
-  } catch (e) {
+    parsedUrl = new URL(unwrappedTarget);
+  } catch {
     return res.status(400).json({ error: "Invalid target URL" });
   }
 
@@ -56,7 +71,7 @@ router.get('/', proxyLimiter, async (req, res) => {
   const normalizedPathname = path.posix.normalize(parsedUrl.pathname);
 
   // Anti-traversal check
-  if (normalizedPathname.includes('..') || parsedUrl.pathname.includes('..') || targetUrl.includes('..')) {
+  if (normalizedPathname.includes('..') || parsedUrl.pathname.includes('..') || unwrappedTarget.includes('..')) {
     return res.status(403).json({ error: "Forbidden: Path traversal detected" });
   }
 
@@ -67,11 +82,16 @@ router.get('/', proxyLimiter, async (req, res) => {
     parsedUrl.hostname.endsWith('.banyat.com') ||
     parsedUrl.hostname.endsWith('.prts.wiki') ||
     parsedUrl.hostname.endsWith('.githubusercontent.com') ||
+    parsedUrl.hostname.endsWith('.jsdelivr.net') ||
+    parsedUrl.hostname.endsWith('.weserv.nl') ||
     parsedUrl.hostname === 'hycdn.cn' ||
     parsedUrl.hostname === 'hypergryph.com' ||
     parsedUrl.hostname === 'banyat.com' ||
     parsedUrl.hostname === 'prts.wiki' ||
     parsedUrl.hostname === 'raw.githubusercontent.com' ||
+    parsedUrl.hostname === 'fastly.jsdelivr.net' ||
+    parsedUrl.hostname === 'cdn.jsdelivr.net' ||
+    parsedUrl.hostname === 'images.weserv.nl' ||
     PARSED_ALLOWED_PREFIXES.some(prefix => {
       if (parsedUrl.hostname !== prefix.hostname) return false;
       return normalizedPathname.startsWith(prefix.pathname);
@@ -85,7 +105,7 @@ router.get('/', proxyLimiter, async (req, res) => {
   const safeUrl = parsedUrl.toString();
 
   // Helper for robust fetching with retries and timeout
-  async function fetchWithRetry(url: string, fetchOptions: any, retries = 3, delay = 500): Promise<Response> {
+  async function fetchWithRetry(url: string, fetchOptions: any, retries = 2, timeoutMs = 8000, delay = 300): Promise<Response> {
     let lastError: any;
     for (let i = 0; i < retries; i++) {
       let timeoutId: NodeJS.Timeout | null = null;
@@ -93,7 +113,7 @@ router.get('/', proxyLimiter, async (req, res) => {
         const controller = new AbortController();
         timeoutId = setTimeout(() => {
           controller.abort();
-        }, 8000); // 8 seconds timeout per attempt
+        }, timeoutMs);
 
         const response = await fetch(url, {
           ...fetchOptions,
@@ -102,8 +122,8 @@ router.get('/', proxyLimiter, async (req, res) => {
 
         if (timeoutId) clearTimeout(timeoutId);
 
-        // If ok or 404 (file doesn't exist, no need to retry), return the response
-        if (response.ok || response.status === 404) {
+        // If ok, 206 Partial Content, or 404 (file doesn't exist, no need to retry), return the response
+        if (response.ok || response.status === 404 || response.status === 206) {
           return response;
         }
 
@@ -111,7 +131,6 @@ router.get('/', proxyLimiter, async (req, res) => {
       } catch (err: any) {
         if (timeoutId) clearTimeout(timeoutId);
         lastError = err;
-        console.warn(`[Proxy Attempt ${i + 1}/${retries}] failed for ${url}: ${err.message || err}`);
         if (i < retries - 1) {
           await new Promise(resolve => setTimeout(resolve, delay));
           delay *= 2; // Exponential backoff
@@ -136,15 +155,37 @@ router.get('/', proxyLimiter, async (req, res) => {
       headers["Referer"] = "https://prts.wiki/";
     }
 
-    const isImage = safeUrl.endsWith('.png') || safeUrl.endsWith('.jpg') || safeUrl.endsWith('.jpeg') || safeUrl.endsWith('.webp') || safeUrl.includes('/background/') || safeUrl.includes('/images/');
+    const isImage = safeUrl.endsWith('.png') || safeUrl.endsWith('.jpg') || safeUrl.endsWith('.jpeg') || safeUrl.endsWith('.webp') || safeUrl.includes('/background/') || safeUrl.includes('/images/') || safeUrl.includes('/characters/');
+    const isGithubRaw = safeUrl.includes('raw.githubusercontent.com');
+    const isTorappu = safeUrl.includes('torappu.prts.wiki');
+
+    const convertToJsDelivr = (rawUrl: string): string | null => {
+      const match = rawUrl.match(/^https:\/\/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)$/);
+      if (match) {
+        const [, user, repo, branch, pathStr] = match;
+        return `https://fastly.jsdelivr.net/gh/${user}/${repo}@${branch}/${pathStr}`;
+      }
+      return null;
+    };
 
     let response: Response;
     try {
-      response = await fetchWithRetry(safeUrl, { method: req.method, headers });
+      if (isGithubRaw) {
+        const fastUrl = convertToJsDelivr(safeUrl);
+        if (fastUrl) {
+          try {
+            response = await fetchWithRetry(fastUrl, { method: req.method, headers }, 2, 8000, 200);
+          } catch {
+            response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 2, 8000);
+          }
+        } else {
+          response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 2, 8000);
+        }
+      } else {
+        response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 3, 10000, 300);
+      }
     } catch (fetchErr: any) {
-      if (isImage) {
-        console.warn(`Direct proxy fetch failed for image ${safeUrl}. Trying fallback via images.weserv.nl proxy...`);
-        // Weserv is a free, robust open source image proxy powered by Cloudflare
+      if (isImage || isTorappu) {
         const fallbackUrl = `https://images.weserv.nl/?url=${encodeURIComponent(safeUrl)}`;
         try {
           response = await fetchWithRetry(fallbackUrl, {
@@ -152,14 +193,12 @@ router.get('/', proxyLimiter, async (req, res) => {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }
-          }, 2, 500);
-          console.log(`Successfully fetched image via weserv fallback for ${safeUrl}`);
-        } catch (weservErr: any) {
-          console.error(`Fallback weserv proxy also failed for ${safeUrl}:`, weservErr.message);
-          throw fetchErr; // Throw original error if fallback also fails
+          }, 1, 6000);
+        } catch {
+          return res.status(404).json({ error: "Asset not found" });
         }
       } else {
-        throw fetchErr;
+        return res.status(404).json({ error: "Resource not found" });
       }
     }
     
@@ -191,7 +230,7 @@ router.get('/', proxyLimiter, async (req, res) => {
 
     res.status(response.status);
     
-    if (response.body) {
+    if (req.method !== 'HEAD' && response.body) {
       // @ts-ignore
       const { Readable } = await import('stream');
       Readable.fromWeb(response.body as any).pipe(res);

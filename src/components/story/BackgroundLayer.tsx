@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { CssTransformBox } from './CssTransformBox';
+import { cleanAndUnwrapUrl } from '../../services/storyService';
 
 interface BackgroundLayerProps {
   bgUrl: string | null;
@@ -28,7 +29,6 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
   const bgEase = bgTween?.ease || "easeInOut";
 
   const isImageTween = imageTween?.type === 'imagetween' || (imageTween?.xScaleTo !== undefined || imageTween?.xTo !== undefined || imageTween?.xScaleFrom !== undefined);
-  const isScreenAdapt = imageTween?.screenadapt === true || imageTween?.screenadapt === 'true';
 
   // Determine if the CG is undergoing panning / position displacement
   const hasPan = Boolean(
@@ -42,7 +42,6 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
 
   // In Arknights, 0.4 is the base 1.0 (100% screen cover) scale for high-res 2.5x CG textures.
   // We normalize scale <= 0.65 by multiplying by 2.5 so that 0.4 becomes 1.0 full screen.
-  // If the CG is panning across screen coordinates, ensure sufficient scale (min 1.25) to prevent border gaps.
   const normalizeScale = (scale: number | undefined): number => {
     if (scale === undefined) return hasPan ? 1.25 : 1;
     let s = scale;
@@ -58,17 +57,17 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
   const rawScaleX = imageTween ? (imageTween.xScaleTo !== undefined ? imageTween.xScaleTo : (imageTween.xScale ?? 1)) : 1;
   const rawScaleY = imageTween ? (imageTween.yScaleTo !== undefined ? imageTween.yScaleTo : (imageTween.yScale ?? 1)) : 1;
 
-  const imgScaleX = isScreenAdapt ? 1 : normalizeScale(rawScaleX);
-  const imgScaleY = isScreenAdapt ? 1 : normalizeScale(rawScaleY);
-  const imgX = isScreenAdapt ? 0 : (imageTween ? (imageTween.xTo !== undefined ? imageTween.xTo : (imageTween.x ?? 0)) : 0);
-  const imgY = isScreenAdapt ? 0 : (imageTween ? (imageTween.yTo !== undefined ? imageTween.yTo : (imageTween.y ?? 0)) : 0);
-  const imgScaleXFrom = isScreenAdapt ? undefined : (imageTween?.xScaleFrom !== undefined ? normalizeScale(imageTween.xScaleFrom) : undefined);
-  const imgScaleYFrom = isScreenAdapt ? undefined : (imageTween?.yScaleFrom !== undefined ? normalizeScale(imageTween.yScaleFrom) : undefined);
-  const imgXFrom = isScreenAdapt ? undefined : imageTween?.xFrom;
-  const imgYFrom = isScreenAdapt ? undefined : imageTween?.yFrom;
+  const imgScaleX = normalizeScale(rawScaleX);
+  const imgScaleY = normalizeScale(rawScaleY);
+  const imgX = imageTween ? (imageTween.xTo !== undefined ? imageTween.xTo : (imageTween.x ?? 0)) : 0;
+  const imgY = imageTween ? (imageTween.yTo !== undefined ? imageTween.yTo : (imageTween.y ?? 0)) : 0;
+  const imgScaleXFrom = imageTween?.xScaleFrom !== undefined ? normalizeScale(imageTween.xScaleFrom) : undefined;
+  const imgScaleYFrom = imageTween?.yScaleFrom !== undefined ? normalizeScale(imageTween.yScaleFrom) : undefined;
+  const imgXFrom = imageTween?.xFrom;
+  const imgYFrom = imageTween?.yFrom;
   const imgDuration = isImageTween ? (imageTween?.duration !== undefined ? imageTween.duration : 1.0) : 0;
   const imgEase = imageTween?.ease || "easeInOut";
-  const imageFadeDuration = imageTween?.duration !== undefined ? Math.min(imageTween.duration, 1.0) : 0.4;
+  const imageFadeDuration = !isImageTween && imageTween?.duration !== undefined ? imageTween.duration : 0.4;
 
   return (
     <>
@@ -99,13 +98,23 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
               >
                 {bgUrl !== 'BLACK_FALLBACK' && (
                   <img 
+                    key={bgUrl}
                     src={bgUrl} 
                     alt="Background" 
                     className="w-full h-full object-cover pointer-events-none select-none"
                     referrerPolicy="no-referrer"
                     draggable="false"
                     loading="eager"
+                    onLoad={(e) => {
+                      e.currentTarget.style.display = 'block';
+                    }}
                     onError={(e) => {
+                      const currentSrc = e.currentTarget.src;
+                      const cleanUrl = cleanAndUnwrapUrl(bgUrl || '');
+                      if (!currentSrc.includes('/api/proxy') && cleanUrl) {
+                        e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
+                        return;
+                      }
                       e.currentTarget.style.display = 'none';
                     }}
                   />
@@ -117,15 +126,15 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
       </div>
 
       {/* Image Layer (CGs / Unique illustrations that overlay the background) */}
-      <AnimatePresence>
+      <AnimatePresence mode="sync">
         {imageUrl && (
           <motion.div
             key={imageUrl}
-            initial={{ opacity: 0 }}
+            initial={{ opacity: imageFadeDuration === 0 ? 1 : 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: imageFadeDuration } }}
-            className="absolute inset-0 z-[24] pointer-events-none overflow-hidden bg-black flex items-center justify-center"
+            className="absolute inset-0 z-[24] pointer-events-none overflow-hidden flex items-center justify-center"
           >
             <CssTransformBox
               x={imgX}
@@ -141,12 +150,25 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
               className="w-full h-full origin-center flex items-center justify-center"
             >
               <img 
+                key={imageUrl}
                 src={imageUrl} 
                 alt="Image" 
                 className="w-full h-full object-cover pointer-events-none select-none"
                 referrerPolicy="no-referrer"
                 draggable="false"
                 loading="eager"
+                onLoad={(e) => {
+                  e.currentTarget.style.display = 'block';
+                }}
+                onError={(e) => {
+                  const currentSrc = e.currentTarget.src;
+                  const cleanUrl = cleanAndUnwrapUrl(imageUrl || '');
+                  if (!currentSrc.includes('/api/proxy') && cleanUrl) {
+                    e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
+                    return;
+                  }
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </CssTransformBox>
           </motion.div>

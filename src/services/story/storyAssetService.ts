@@ -31,22 +31,38 @@ export async function fetchLatestAudioMaps(): Promise<void> {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
 
-      const musicUrl = 'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_music.json';
-      const soundUrl = 'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_sound.json';
+      const musicUrls = [
+        'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/audio_music.json',
+        'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_music.json'
+      ];
+      const soundUrls = [
+        'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/audio_sound.json',
+        'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_sound.json'
+      ];
 
-      const fetchWithFallback = async (rawUrl: string) => {
-        try {
-          const directRes = await fetch(rawUrl, { signal: controller.signal });
-          if (directRes.ok) return directRes;
-        } catch {
-          // fallback
+      const fetchWithFallback = async (urls: string[]) => {
+        for (const url of urls) {
+          try {
+            const directRes = await fetch(url, { signal: controller.signal });
+            if (directRes.ok) return directRes;
+          } catch {
+            // fallback
+          }
         }
-        return fetch(`/api/proxy?url=${encodeURIComponent(rawUrl)}`, { signal: controller.signal }).catch(() => null);
+        for (const url of urls) {
+          try {
+            const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, { signal: controller.signal });
+            if (proxyRes && proxyRes.ok) return proxyRes;
+          } catch {
+            // fallback
+          }
+        }
+        return null;
       };
 
       const [musicRes, soundRes] = await Promise.all([
-        fetchWithFallback(musicUrl),
-        fetchWithFallback(soundUrl)
+        fetchWithFallback(musicUrls),
+        fetchWithFallback(soundUrls)
       ]);
 
       clearTimeout(timeoutId);
@@ -200,7 +216,6 @@ export function wrapUrlWithProxy(rawUrl: string): string {
     url.includes('prts.wiki') ||
     url.includes('banyat.com')
   ) {
-    // For images, route through images.weserv.nl or our server proxy for RF/RB
     if (
       /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(url) || 
       url.includes('/assets/avg/characters/') ||
@@ -208,11 +223,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/avg/images/') ||
       url.includes('/assets/char_arts/')
     ) {
-      if (shouldAvoidWeserv()) {
-        // Bypassing weserv.nl for RF/RB users to prevent timeout delays
-        return `/api/proxy?url=${encodeURIComponent(url)}`;
-      }
-      return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+      return `/api/proxy?url=${encodeURIComponent(url)}`;
     }
     // For audio files or other media, return direct URL (browsers play cross-origin audio natively)
     return url;
@@ -235,8 +246,10 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (characterDataPromise) return characterDataPromise;
 
   characterDataPromise = (async (): Promise<CharacterDataMap> => {
-    // 1. First check free GitHub Raw CDN (0 Vercel Bandwidth cost, cached, ultra-fast)
+    // 1. First check free jsDelivr & GitHub Raw CDN (0 Vercel Bandwidth cost, cached, ultra-fast)
     const githubUrls = [
+      'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/character.json',
+      'https://fastly.jsdelivr.net/gh/neponum/Zoot-Archive@main/public/character.json',
       'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json',
       'https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/character.json'
     ];
@@ -327,12 +340,14 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       item.name === expression || 
       item.name === `${baseName}#${expression}` ||
       item.name.endsWith(`_${expression}`) ||
+      item.name === `${expression}$1` ||
       item.alias === expression
     );
     
     if (faceItem) {
-      if (faceItem.group === -1 && faceItem.image) {
-        const imagePath = faceItem.image.split('/').map(encodeURIComponent).join('/');
+      const faceOrImg = faceItem.face || faceItem.image;
+      if (faceItem.group === -1 && faceOrImg) {
+        const imagePath = faceOrImg.split('/').map(encodeURIComponent).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
         return {
@@ -342,9 +357,9 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         };
       }
       const group = (data as { groups?: Array<{ base: string; faceRect?: { x: number; y: number; w: number; h: number } }> }).groups?.[faceItem.group ?? 0];
-      if (group && faceItem.image) {
+      if (group && faceOrImg) {
         const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
-        const facePath = faceItem.image.split('/').map(encodeURIComponent).join('/');
+        const facePath = faceOrImg.split('/').map(encodeURIComponent).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
         const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
         const cachedBody = await CacheService.getCachedBlobUrl(rawBodyUrl);
@@ -387,28 +402,50 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     }
   }
 
-  // Fallback: use baseName instead of full name to avoid # in URL
+  // Fallback: character is not indexed in character.json or has unmapped expression
   if (expression && (!data || !faceItem)) {
-    if (baseName.endsWith('_1') && /^\d+$/.test(expression)) {
-      const guessedName = baseName.replace(/_1$/, `_${expression}`);
-      
-      const guessedPath = `${baseName}/${guessedName}`;
-      const guessedUrl1 = await getImageUrl('character_body', guessedPath);
-      if (await checkImageExists(guessedUrl1)) {
-        return { bodyUrl: wrapUrlWithProxy(guessedUrl1), size: data?.size, pos: data?.pos };
-      }
-      
-      const guessedUrl2 = await getImageUrl('character_body', guessedName);
-      if (await checkImageExists(guessedUrl2)) {
-        return { bodyUrl: wrapUrlWithProxy(guessedUrl2), size: data?.size, pos: data?.pos };
-      }
-    }
+    const bodyVar = expression.includes('$') ? expression.split('$')[1] : '1';
     
-    const suffixGuessedName = `${baseName}_${expression}`;
-    const suffixGuessedUrl = await getImageUrl('character_body', suffixGuessedName);
-    if (await checkImageExists(suffixGuessedUrl)) {
-      return { bodyUrl: wrapUrlWithProxy(suffixGuessedUrl), size: data?.size };
+    // Canonical candidate 1: specific body variation (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1$2.png)
+    const bodyUrlCandidate1 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$' + bodyVar)}.png`;
+    // Canonical candidate 2: default body variation (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1$1.png)
+    const bodyUrlCandidate2 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$1')}.png`;
+    // Canonical candidate 3: base name directly (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1.png)
+    const bodyUrlCandidate3 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName)}.png`;
+
+    let resolvedBodyUrl = '';
+    if (await checkImageExists(bodyUrlCandidate1)) {
+      resolvedBodyUrl = bodyUrlCandidate1;
+    } else if (await checkImageExists(bodyUrlCandidate2)) {
+      resolvedBodyUrl = bodyUrlCandidate2;
+    } else if (await checkImageExists(bodyUrlCandidate3)) {
+      resolvedBodyUrl = bodyUrlCandidate3;
+    } else {
+      resolvedBodyUrl = bodyUrlCandidate2;
     }
+
+    // Face is located at avg/characters/{baseName}/{expression}.png
+    const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
+    let resolvedFaceUrl: string | undefined = undefined;
+    if (await checkImageExists(rawFaceUrl)) {
+      resolvedFaceUrl = rawFaceUrl;
+    } else if (!expression.includes('$') && /^\d+$/.test(expression)) {
+      // If expression was simply '1' instead of '1$1'
+      const rawFaceWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression + '$1')}.png`;
+      if (await checkImageExists(rawFaceWithDollar)) {
+        resolvedFaceUrl = rawFaceWithDollar;
+      }
+    }
+
+    const cachedBody = await CacheService.getCachedBlobUrl(resolvedBodyUrl);
+    const cachedFace = resolvedFaceUrl ? await CacheService.getCachedBlobUrl(resolvedFaceUrl) : undefined;
+
+    return {
+      bodyUrl: cachedBody || wrapUrlWithProxy(resolvedBodyUrl),
+      faceUrl: cachedFace || (resolvedFaceUrl ? wrapUrlWithProxy(resolvedFaceUrl) : undefined),
+      size: data?.size,
+      pos: data?.pos
+    };
   }
 
   const fallbackBodyUrl = await getImageUrl('character_body', baseName);
@@ -455,53 +492,14 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
   }
 }
 
-export async function checkImageExists(url: string): Promise<boolean> {
-  try {
-    const targetUrl = wrapUrlWithProxy(url);
-    const response = await fetchWithTimeout(targetUrl, { method: 'GET' }, 3000);
-    if (response.ok) {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/html')) {
-        return false;
-      }
-      return true;
-    }
-
-    if (targetUrl !== url) {
-      const directResponse = await fetchWithTimeout(url, { method: 'GET' }, 2000);
-      if (directResponse.ok) {
-        const contentType = directResponse.headers.get('content-type');
-        return !(contentType && contentType.includes('text/html'));
-      }
-    }
-    return false;
-  } catch {
-    try {
-      if (!url.startsWith('/api/proxy')) {
-        const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-        const res = await fetchWithTimeout(proxiedUrl, { method: 'GET' }, 2500);
-        if (res.ok) {
-          const contentType = res.headers.get('content-type');
-          return !(contentType && contentType.includes('text/html'));
-        }
-      }
-    } catch {
-      return false;
-    }
-    return false;
-  }
-}
-
 export type AssetType = 'background' | 'character' | 'image' | 'music' | 'sound' | 'voice' | 'character_body' | 'character_face';
 
 export async function getImageUrl(type: AssetType, name: string): Promise<string> {
+  if (!name) return '';
   const cacheKey = `${type}-${name}`;
   
   if (urlCache.has(cacheKey)) {
-    const cachedUrl = urlCache.get(cacheKey)!;
-    if (cachedUrl.startsWith('blob:')) {
-      return cachedUrl;
-    }
+    return urlCache.get(cacheKey)!;
   }
   
   if (pendingUrlPromises.has(cacheKey)) {
@@ -509,15 +507,12 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
   }
   
   const promise = (async () => {
-    let url = urlCache.get(cacheKey);
-    if (!url) {
-      url = await resolveAssetUrl(type, name);
-    }
+    const rawUrl = await resolveAssetUrl(type, name);
     
-    const cachedBlobUrl = await CacheService.getCachedBlobUrl(url);
+    const cachedBlobUrl = await CacheService.getCachedBlobUrl(rawUrl);
     if (cachedBlobUrl) return cachedBlobUrl;
     
-    return wrapUrlWithProxy(url);
+    return wrapUrlWithProxy(rawUrl);
   })();
   
   pendingUrlPromises.set(cacheKey, promise);
@@ -528,6 +523,135 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
 }
 
 const resolvedAudioCache: Record<string, string> = {};
+const existenceCheckCache = new Map<string, boolean>();
+
+export async function checkImageExists(url: string): Promise<boolean> {
+  if (!url) return false;
+  if (existenceCheckCache.has(url)) {
+    return existenceCheckCache.get(url)!;
+  }
+  
+  try {
+    const targetUrl = wrapUrlWithProxy(url);
+    // Use GET with Range: bytes=0-0 for fast, universal single-byte existence check
+    const response = await fetchWithTimeout(targetUrl, { 
+      method: 'GET',
+      headers: { 'Range': 'bytes=0-0' }
+    }, 2500);
+
+    if (response.ok || response.status === 206) {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        existenceCheckCache.set(url, false);
+        return false;
+      }
+      existenceCheckCache.set(url, true);
+      return true;
+    }
+
+    if (targetUrl !== url) {
+      const directResponse = await fetchWithTimeout(url, { 
+        method: 'GET',
+        headers: { 'Range': 'bytes=0-0' }
+      }, 2000);
+      if (directResponse.ok || directResponse.status === 206) {
+        const contentType = directResponse.headers.get('content-type');
+        const ok = !(contentType && contentType.includes('text/html'));
+        existenceCheckCache.set(url, ok);
+        return ok;
+      }
+    }
+    existenceCheckCache.set(url, false);
+    return false;
+  } catch {
+    try {
+      if (!url.startsWith('/api/proxy')) {
+        const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+        const res = await fetchWithTimeout(proxiedUrl, { 
+          method: 'GET',
+          headers: { 'Range': 'bytes=0-0' }
+        }, 2500);
+        if (res.ok || res.status === 206) {
+          const contentType = res.headers.get('content-type');
+          const ok = !(contentType && contentType.includes('text/html'));
+          existenceCheckCache.set(url, ok);
+          return ok;
+        }
+      }
+    } catch {
+      existenceCheckCache.set(url, false);
+      return false;
+    }
+    existenceCheckCache.set(url, false);
+    return false;
+  }
+}
+
+async function resolveVisualAssetUrl(name: string, preferredType: 'background' | 'image'): Promise<string> {
+  const cleanName = name.trim().replace(/\.png$/i, '');
+  const lowerName = cleanName.toLowerCase();
+  const noAvgName = cleanName.replace(/^avg_/i, '');
+  const withAvgName = lowerName.startsWith('avg_') ? cleanName : `avg_${cleanName}`;
+  const noBgName = cleanName.replace(/^bg_/i, '');
+  const withBgName = lowerName.startsWith('bg_') ? cleanName : `bg_${cleanName}`;
+
+  // PRTS wiki only has: background/, characters/, images/
+  const rawCandidates: string[] = [];
+
+  if (preferredType === 'image') {
+    rawCandidates.push(
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(withBgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(withAvgName)}.png`
+    );
+  } else {
+    rawCandidates.push(
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(withBgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(withAvgName)}.png`
+    );
+  }
+
+  // Also append lowercase variants if different
+  if (lowerName !== cleanName) {
+    const lowerNoAvg = lowerName.replace(/^avg_/i, '');
+    const lowerNoBg = lowerName.replace(/^bg_/i, '');
+    const lowerWithBg = lowerName.startsWith('bg_') ? lowerName : `bg_${lowerName}`;
+    rawCandidates.push(
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoAvg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerWithBg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerNoBg)}.png`
+    );
+  }
+
+  const uniqueCandidates = Array.from(new Set(rawCandidates));
+
+  // Check the first candidate directly if cached
+  for (const c of uniqueCandidates) {
+    if (existenceCheckCache.get(c) === true) {
+      return c;
+    }
+  }
+
+  // Check all candidates simultaneously in parallel for instant resolution
+  const checks = await Promise.all(
+    uniqueCandidates.map(async url => ({ url, exists: await checkImageExists(url) }))
+  );
+  const match = checks.find(res => res.exists);
+  if (match) return match.url;
+
+  return uniqueCandidates[0];
+}
 
 async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
   const cacheKey = `${type}:${name}`;
@@ -535,53 +659,14 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
 
   switch (type) {
     case 'background': {
-      const cleanName = name.trim();
-      const urlBase = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`;
-      if (await checkImageExists(urlBase)) return urlBase;
-
-      const lowerName = cleanName.toLowerCase();
-      if (lowerName !== cleanName) {
-        const urlLower = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`;
-        if (await checkImageExists(urlLower)) return urlLower;
-      }
-
-      if (!cleanName.toLowerCase().startsWith('bg_')) {
-        const urlWithBg = `https://torappu.prts.wiki/assets/avg/background/bg_${encodeURIComponent(cleanName)}.png`;
-        if (await checkImageExists(urlWithBg)) return urlWithBg;
-        const urlWithBgLower = `https://torappu.prts.wiki/assets/avg/background/bg_${encodeURIComponent(lowerName)}.png`;
-        if (await checkImageExists(urlWithBgLower)) return urlWithBgLower;
-      } else {
-        const noBgName = cleanName.replace(/^bg_/i, '');
-        const urlNoBg = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`;
-        if (await checkImageExists(urlNoBg)) return urlNoBg;
-        const urlNoBgLower = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName.toLowerCase())}.png`;
-        if (await checkImageExists(urlNoBgLower)) return urlNoBgLower;
-      }
-
-      const urlImages = `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`;
-      if (await checkImageExists(urlImages)) return urlImages;
-      const urlImagesLower = `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`;
-      if (await checkImageExists(urlImagesLower)) return urlImagesLower;
-
-      return lowerName !== cleanName ? `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png` : urlBase;
+      const res = await resolveVisualAssetUrl(name, 'background');
+      resolvedAudioCache[cacheKey] = res;
+      return res;
     }
     case 'image': {
-      const cleanName = name.trim();
-      const urlBase = `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`;
-      if (await checkImageExists(urlBase)) return urlBase;
-
-      const lowerName = cleanName.toLowerCase();
-      if (lowerName !== cleanName) {
-        const urlLower = `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`;
-        if (await checkImageExists(urlLower)) return urlLower;
-      }
-
-      const urlBg = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`;
-      if (await checkImageExists(urlBg)) return urlBg;
-      const urlBgLower = `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`;
-      if (await checkImageExists(urlBgLower)) return urlBgLower;
-
-      return urlBase;
+      const res = await resolveVisualAssetUrl(name, 'image');
+      resolvedAudioCache[cacheKey] = res;
+      return res;
     }
     case 'character': {
       const parts = name.split('/');
@@ -609,12 +694,12 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       
       if (name.includes('$') || parts.length > 1) return urlBase;
       
-      if (await checkImageExists(urlBase)) return urlBase;
-      
       const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name + '$1')}.png`;
       if (await checkImageExists(urlWithDollar)) return urlWithDollar;
+
+      if (await checkImageExists(urlBase)) return urlBase;
       
-      return urlBase;
+      return urlWithDollar;
     }
     case 'character_face': {
       const [baseName, expression] = name.split('/');
@@ -899,7 +984,7 @@ export async function preloadAssets(
     ...audioUrls.map(url => ({ url, type: 'audio' as const }))
   ];
   
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 12;
   const executing = new Set<Promise<void>>();
   
   for (const item of allUrls) {
@@ -910,5 +995,5 @@ export async function preloadAssets(
     }
   }
   await Promise.all(executing);
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 200));
 }
