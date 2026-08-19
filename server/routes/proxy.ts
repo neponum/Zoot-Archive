@@ -233,7 +233,25 @@ router.get('/', proxyLimiter, async (req, res) => {
     if (req.method !== 'HEAD' && response.body) {
       // @ts-ignore
       const { Readable } = await import('stream');
-      Readable.fromWeb(response.body as any).pipe(res);
+      const stream = Readable.fromWeb(response.body as any);
+
+      stream.on('error', (err: any) => {
+        if (!res.headersSent) {
+          res.status(500).end();
+        } else {
+          res.destroy();
+        }
+      });
+
+      req.on('close', () => {
+        try {
+          stream.destroy();
+        } catch {
+          // ignore stream destroy error on client disconnect
+        }
+      });
+
+      stream.pipe(res);
     } else {
       res.end();
     }

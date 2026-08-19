@@ -3,12 +3,10 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { fetchChapterList, fetchCharacterMapping, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists, fetchStoryScript } from '../services/storyService';
 import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
-import { getChapterDisplayCode } from '../lib/utils';
-import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, Users, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages, Bookmark, Archive, Github, SlidersHorizontal, Award } from 'lucide-react';
+import { getChapterDisplayCode, cn } from '../lib/utils';
+import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, Users, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages, Bookmark, Archive, Github, SlidersHorizontal, Award, Compass, Sparkles, Layers } from 'lucide-react';
 import { DiscordIcon, SkportIcon } from './ui/Icons';
 import { UI_STRINGS } from '../translations';
-import { OperationRecordsGraph } from './OperationRecordsGraph';
-import { ObsidianArchiveViewer } from './ObsidianArchiveViewer';
 import { VotingInterface } from './VotingInterface';
 import { OperatorStoriesViewer } from './OperatorStoriesViewer';
 import { STORY_LINES_DATA, STORY_LINE_FILTERS } from '../config/storylines';
@@ -70,7 +68,7 @@ const CHRONO_ORDER: Record<string, number> = {
   'main_15': 500, 'main_16': 501, 'main_17': 502,
 };
 
-const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
+const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
 
 const EpisodeGrid = React.memo(({ 
   filteredEpisodes, 
@@ -79,21 +77,26 @@ const EpisodeGrid = React.memo(({
   translatorDiscovery, 
   setSelectedEpisode, 
   setHoveredEpisodeId, 
-  setFailedImages 
+  setFailedImages,
+  readChapters
 }: any) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 md:gap-6 pb-32">
       {filteredEpisodes.map((episode: any, index: number) => {
         const isMainline = episode.id.toLowerCase().startsWith('main_') || episode.entryType === 'MAINLINE';
+        const isBanner1560x500 = episode.id.toLowerCase().startsWith('is_') || episode.id.toLowerCase().startsWith('ra_');
+        const chs = episode.chapters || [];
+        const readChs = chs.filter((c: any) => readChapters?.has(c.id)).length;
+        const isFullyRead = chs.length > 0 && readChs === chs.length;
         return (
           <button
             key={episode.id}
             onClick={() => setSelectedEpisode(episode)}
             onMouseEnter={() => setHoveredEpisodeId(episode.id)}
             onMouseLeave={() => setHoveredEpisodeId(null)}
-            className="relative group transition-all duration-500 w-full text-left"
+            className={`relative group transition-all duration-500 w-full text-left ${isBanner1560x500 ? 'col-span-1 sm:col-span-2' : ''}`}
           >
-            <div className={`w-full ${isMainline ? 'aspect-square bg-black shadow-2xl rounded-sm overflow-hidden' : 'aspect-[4/5]'} transition-all duration-500 relative z-10`}>
+            <div className={`w-full ${isMainline ? 'aspect-square bg-black shadow-2xl rounded-sm overflow-hidden' : isBanner1560x500 ? 'aspect-[1560/500] bg-zinc-950/80 shadow-2xl rounded-sm overflow-hidden border border-white/10 group-hover:border-amber-500/50 transition-colors' : 'aspect-[4/5]'} transition-all duration-500 relative z-10`}>
               {/* Background Image */}
               {episodeImages[episode.id] && !failedImages[episode.id] ? (
                 <img 
@@ -102,7 +105,7 @@ const EpisodeGrid = React.memo(({
                   loading={index < 10 ? "eager" : "lazy"}
                   decoding="async"
                   fetchPriority={index < 10 ? "high" : "auto"}
-                  className={`w-full h-full ${isMainline ? 'object-cover' : 'object-contain drop-shadow-2xl'} opacity-90 group-hover:opacity-100 transition-opacity duration-300`}
+                  className={`w-full h-full ${isMainline || isBanner1560x500 ? 'object-cover' : 'object-contain drop-shadow-2xl'} opacity-90 group-hover:opacity-100 transition-opacity duration-300`}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     const img = e.currentTarget;
@@ -116,7 +119,27 @@ const EpisodeGrid = React.memo(({
                     
                     // Fallback chain logic
                     let nextSrc = '';
-                    if (decodedSrc.includes(`${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`)) {
+                    if (episode.id.startsWith('is_')) {
+                      const num = episode.id.replace('is_', '');
+                      if (!decodedSrc.includes(`IS_${num}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/IS_${num}.png`;
+                      } else if (!decodedSrc.includes(`${safeImageId}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
+                      } else {
+                        setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                        return;
+                      }
+                    } else if (episode.id.startsWith('ra_')) {
+                      const num = episode.id.replace('ra_', '');
+                      if (!decodedSrc.includes(`RA_${num}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/RA_${num}.png`;
+                      } else if (!decodedSrc.includes(`${safeImageId}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
+                      } else {
+                        setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                        return;
+                      }
+                    } else if (decodedSrc.includes(`${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`)) {
                       // If 情报处理室_ failed, try just the ID
                       nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
                     } else if (decodedSrc.includes(`${BANNERS_BASE_URL}/main_`) && episode.id.startsWith('main_')) {
@@ -159,6 +182,18 @@ const EpisodeGrid = React.memo(({
               <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
                 <span>{episode.id}</span>
               </div>
+
+              {/* Read Status Badge */}
+              {isFullyRead ? (
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/50 rounded-sm text-[8px] font-mono text-emerald-300 uppercase z-20 pointer-events-none shadow-lg flex items-center gap-1 font-bold">
+                  <Check className="w-2.5 h-2.5 text-emerald-400 stroke-[3]" />
+                  <span>READ</span>
+                </div>
+              ) : readChs > 0 ? (
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-cyan-950/90 backdrop-blur-md border border-cyan-500/40 rounded-sm text-[8px] font-mono text-cyan-300 uppercase z-20 pointer-events-none shadow-lg font-bold">
+                  <span>{readChs}/{chs.length}</span>
+                </div>
+              ) : null}
               
               {/* Content Overlay - Only visible on hover */}
               {(isMainline || failedImages[episode.id] || !episodeImages[episode.id]) && (
@@ -224,7 +259,8 @@ const EpisodeHorizontalList = React.memo(({
   setFailedImages,
   horizontalScrollRef,
   selectedStoryLine,
-  translatorDiscovery
+  translatorDiscovery,
+  readChapters
 }: any) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -298,6 +334,10 @@ const EpisodeHorizontalList = React.memo(({
     >
       {filteredEpisodes.map((episode: any, index: number) => {
         const isMainline = episode.id.toLowerCase().startsWith('main_') || episode.entryType === 'MAINLINE';
+        const isBanner1560x500 = episode.id.toLowerCase().startsWith('is_') || episode.id.toLowerCase().startsWith('ra_');
+        const chs = episode.chapters || [];
+        const readChs = chs.filter((c: any) => readChapters?.has(c.id)).length;
+        const isFullyRead = chs.length > 0 && readChs === chs.length;
         
         return (
           <button
@@ -308,9 +348,9 @@ const EpisodeHorizontalList = React.memo(({
             }}
             onMouseEnter={() => setHoveredEpisodeId(episode.id)}
             onMouseLeave={() => setHoveredEpisodeId(null)}
-            className="relative group transition-all duration-500 w-[180px] md:w-[240px] text-left shrink-0 select-none cursor-pointer"
+            className={`relative group transition-all duration-500 ${isBanner1560x500 ? 'w-[320px] sm:w-[420px] md:w-[500px]' : 'w-[180px] md:w-[240px]'} text-left shrink-0 select-none cursor-pointer`}
           >
-            <div className={`w-full ${isMainline ? 'aspect-square bg-black shadow-2xl rounded-sm overflow-hidden' : 'aspect-[4/5]'} transition-all duration-500 relative z-10`}>
+            <div className={`w-full ${isMainline ? 'aspect-square bg-black shadow-2xl rounded-sm overflow-hidden' : isBanner1560x500 ? 'aspect-[1560/500] bg-zinc-950/80 shadow-2xl rounded-sm overflow-hidden border border-white/10 group-hover:border-amber-500/50 transition-colors' : 'aspect-[4/5]'} transition-all duration-500 relative z-10`}>
               {/* Background Image */}
               {episodeImages[episode.id] && !failedImages[episode.id] ? (
                 <img 
@@ -318,7 +358,7 @@ const EpisodeHorizontalList = React.memo(({
                   alt={episode.name} 
                   loading={index < 10 ? "eager" : "lazy"}
                   decoding="async"
-                  className={`w-full h-full ${isMainline ? 'object-cover' : 'object-contain drop-shadow-2xl'} opacity-90 group-hover:opacity-100 transition-opacity duration-300`}
+                  className={`w-full h-full ${isMainline || isBanner1560x500 ? 'object-cover' : 'object-contain drop-shadow-2xl'} opacity-90 group-hover:opacity-100 transition-opacity duration-300`}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     const img = e.currentTarget;
@@ -332,7 +372,27 @@ const EpisodeHorizontalList = React.memo(({
                     
                     // Fallback chain logic
                     let nextSrc = '';
-                    if (decodedSrc.includes(`${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`)) {
+                    if (episode.id.startsWith('is_')) {
+                      const num = episode.id.replace('is_', '');
+                      if (!decodedSrc.includes(`IS_${num}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/IS_${num}.png`;
+                      } else if (!decodedSrc.includes(`${safeImageId}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
+                      } else {
+                        setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                        return;
+                      }
+                    } else if (episode.id.startsWith('ra_')) {
+                      const num = episode.id.replace('ra_', '');
+                      if (!decodedSrc.includes(`RA_${num}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/RA_${num}.png`;
+                      } else if (!decodedSrc.includes(`${safeImageId}.png`)) {
+                        nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
+                      } else {
+                        setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                        return;
+                      }
+                    } else if (decodedSrc.includes(`${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`)) {
                       nextSrc = `${BANNERS_BASE_URL}/${safeImageId}.png`;
                     } else if (decodedSrc.includes(`${BANNERS_BASE_URL}/main_`) && episode.id.startsWith('main_')) {
                       const num = episode.id.replace('main_', '');
@@ -372,6 +432,18 @@ const EpisodeHorizontalList = React.memo(({
               <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
                 <span>{episode.id}</span>
               </div>
+
+              {/* Read Status Badge */}
+              {isFullyRead ? (
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/50 rounded-sm text-[8px] font-mono text-emerald-300 uppercase z-20 pointer-events-none shadow-lg flex items-center gap-1 font-bold">
+                  <Check className="w-2.5 h-2.5 text-emerald-400 stroke-[3]" />
+                  <span>READ</span>
+                </div>
+              ) : readChs > 0 ? (
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-cyan-950/90 backdrop-blur-md border border-cyan-500/40 rounded-sm text-[8px] font-mono text-cyan-300 uppercase z-20 pointer-events-none shadow-lg font-bold">
+                  <span>{readChs}/{chs.length}</span>
+                </div>
+              ) : null}
               
               {/* Content Overlay - Only visible on hover */}
               {(isMainline || failedImages[episode.id] || !episodeImages[episode.id]) && (
@@ -559,10 +631,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
   }, [activeTab]);
 
   useEffect(() => {
-    if (location.pathname === '/' || location.pathname === '') {
+    if (location.pathname === '/' || location.pathname === '' || location.pathname.startsWith('/records')) {
       setActiveTab('HOME');
-    } else if (location.pathname.startsWith('/records')) {
-      setActiveTab('NONE');
     } else if (location.pathname.startsWith('/music') || location.pathname.startsWith('/vote')) {
       setActiveTab('VOTE');
     } else if (location.pathname.startsWith('/operators') || location.pathname.startsWith('/operator')) {
@@ -636,7 +706,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
     { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen, disabled: false },
     { id: 'OPERATORS', label: uiLang === 'ru_RU' ? 'ОПЕРАТИВНИКИ' : (uiLang === 'zh_CN' ? '干员密录' : (uiLang === 'ja_JP' ? '回想秘録' : 'OPERATOR STORIES')), subLabel: 'OPERATOR STORIES', icon: Users, disabled: false },
     { id: 'VOTE', label: uiLang === 'ru_RU' ? 'МУЗЫКА' : (uiLang === 'zh_CN' ? '音乐' : (uiLang === 'ja_JP' ? '音楽' : 'MUSIC')), subLabel: 'MUSIC', icon: Music, disabled: false },
-    { id: 'NONE', label: t.records, subLabel: 'RECORDS', icon: Archive, disabled: true },
   ];
 
   const filteredEpisodes = React.useMemo(() => {
@@ -886,6 +955,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
               const num = ep.id.replace('main_', '');
               const paddedNum = num.length === 1 ? `0${num}` : num;
               url = `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
+            } else if (ep.id.startsWith('is_')) {
+              const num = ep.id.replace('is_', '');
+              url = `${BANNERS_BASE_URL}/IS_${num}.png`;
+            } else if (ep.id.startsWith('ra_')) {
+              const num = ep.id.replace('ra_', '');
+              url = `${BANNERS_BASE_URL}/RA_${num}.png`;
             } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
               // If we have a Chinese name and the ID is just a code, try the Chinese name format first
               url = `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
@@ -1265,6 +1340,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                       lang={uiLang}
                       setLang={handleUiLanguageChange}
                       readChaptersCount={readChapters ? readChapters.size : 0}
+                      readChapters={readChapters}
+                      episodes={episodes}
                     />
                   </ErrorBoundary>
                 </div>
@@ -1302,20 +1379,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         navigate('/');
                       }}
                     />
-                  </ErrorBoundary>
-                </div>
-              ) : activeTab === 'NONE' ? (
-                <div className="flex-1 overflow-hidden h-full">
-                  <ErrorBoundary
-                    sectionName="Архив записей Obsidian"
-                    fallbackTitle="Сбой архива данных"
-                    fallbackMessage="Не удалось загрузить визуализатор архива записей операций."
-                    onReset={() => {
-                      setActiveTab('HOME');
-                      navigate('/');
-                    }}
-                  >
-                    <ObsidianArchiveViewer />
                   </ErrorBoundary>
                 </div>
               ) : activeTab === 'VOTE' ? (
@@ -1479,6 +1542,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                             setSelectedEpisode={setSelectedEpisode}
                             setHoveredEpisodeId={setHoveredEpisodeId}
                             setFailedImages={setFailedImages}
+                            readChapters={readChapters}
                           />
                         </div>
                       ) : (
@@ -1494,6 +1558,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                             horizontalScrollRef={horizontalScrollRef}
                             selectedStoryLine={selectedStoryLine}
                             translatorDiscovery={translatorDiscovery}
+                            readChapters={readChapters}
                           />
                         </div>
                       )
@@ -1505,6 +1570,90 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         </span>
                       </div>
                     )}
+
+                    {/* Dedicated Bottom-Right Category Shortcuts (Integrated Strategies, Reclamation, Side Content) */}
+                    <div className="absolute bottom-3 right-3 md:bottom-4 md:right-8 z-30 flex items-center gap-1.5 md:gap-2 pointer-events-auto bg-black/85 backdrop-blur-xl border border-white/15 p-1 md:p-1.5 rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.8)] max-w-[calc(100vw-1.5rem)] overflow-x-auto no-scrollbar">
+                      {/* Integrated Strategies */}
+                      <button
+                        onClick={() => {
+                          setViewMode('STORYLINE');
+                          setSelectedStoryLine('is');
+                          setSelectedEpisode(null);
+                          if (isMobile) setShowEpisodesOnMobile(true);
+                        }}
+                        className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${
+                          selectedStoryLine === 'is' && viewMode === 'STORYLINE'
+                            ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                            : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/25'
+                        }`}
+                        title={uiLang === 'ru_RU' ? 'Интегрированные стратегии (Рогалик)' : 'Integrated Strategies (Roguelike)'}
+                      >
+                        <Compass className={`w-3 h-3 md:w-3.5 md:h-3.5 shrink-0 transition-colors ${selectedStoryLine === 'is' && viewMode === 'STORYLINE' ? 'text-amber-400' : 'text-white/40 group-hover:text-amber-300'}`} />
+                        <div className="flex flex-col text-left">
+                          <span className="text-[8px] md:text-[9px] font-black tracking-wider uppercase font-mono leading-none">
+                            <span className="hidden sm:inline">{uiLang === 'ru_RU' ? 'ИНТЕГРИРОВАННЫЕ СТРАТЕГИИ' : 'INTEGRATED STRATEGIES'}</span>
+                            <span className="sm:hidden">IS</span>
+                          </span>
+                          <span className="text-[6px] md:text-[7px] font-bold text-white/40 group-hover:text-white/70 uppercase tracking-widest leading-none mt-0.5 hidden xs:inline">
+                            {uiLang === 'ru_RU' ? 'IS • Рогалик' : 'IS • Roguelike'}
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Reclamation Algorithm */}
+                      <button
+                        onClick={() => {
+                          setViewMode('STORYLINE');
+                          setSelectedStoryLine('ra');
+                          setSelectedEpisode(null);
+                          if (isMobile) setShowEpisodesOnMobile(true);
+                        }}
+                        className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${
+                          selectedStoryLine === 'ra' && viewMode === 'STORYLINE'
+                            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                            : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/25'
+                        }`}
+                        title={uiLang === 'ru_RU' ? 'Рекультивация (Сказки песков)' : 'Reclamation Algorithm (Tales of the Sand)'}
+                      >
+                        <Layers className={`w-3 h-3 md:w-3.5 md:h-3.5 shrink-0 transition-colors ${selectedStoryLine === 'ra' && viewMode === 'STORYLINE' ? 'text-emerald-400' : 'text-white/40 group-hover:text-emerald-300'}`} />
+                        <div className="flex flex-col text-left">
+                          <span className="text-[8px] md:text-[9px] font-black tracking-wider uppercase font-mono leading-none">
+                            <span className="hidden sm:inline">{uiLang === 'ru_RU' ? 'РЕКУЛЬТИВАЦИЯ' : 'RECLAMATION'}</span>
+                            <span className="sm:hidden">RA</span>
+                          </span>
+                          <span className="text-[6px] md:text-[7px] font-bold text-white/40 group-hover:text-white/70 uppercase tracking-widest leading-none mt-0.5 hidden xs:inline">
+                            {uiLang === 'ru_RU' ? 'RA • Сказки' : 'RA • Sand'}
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Side Content / April Fool's */}
+                      <button
+                        onClick={() => {
+                          setViewMode('STORYLINE');
+                          setSelectedStoryLine('side_content');
+                          setSelectedEpisode(null);
+                          if (isMobile) setShowEpisodesOnMobile(true);
+                        }}
+                        className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${
+                          selectedStoryLine === 'side_content' && viewMode === 'STORYLINE'
+                            ? 'bg-purple-500/20 border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                            : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/25'
+                        }`}
+                        title={uiLang === 'ru_RU' ? 'Дополнительный контент и 1 Апреля' : "Side Content & April Fool's Day"}
+                      >
+                        <Sparkles className={`w-3 h-3 md:w-3.5 md:h-3.5 shrink-0 transition-colors ${selectedStoryLine === 'side_content' && viewMode === 'STORYLINE' ? 'text-purple-400' : 'text-white/40 group-hover:text-purple-300'}`} />
+                        <div className="flex flex-col text-left">
+                          <span className="text-[8px] md:text-[9px] font-black tracking-wider uppercase font-mono leading-none">
+                            <span className="hidden sm:inline">{uiLang === 'ru_RU' ? 'ДОП. КОНТЕНТ' : 'SIDE CONTENT'}</span>
+                            <span className="sm:hidden">EXTRA</span>
+                          </span>
+                          <span className="text-[6px] md:text-[7px] font-bold text-white/40 group-hover:text-white/70 uppercase tracking-widest leading-none mt-0.5 hidden xs:inline">
+                            {uiLang === 'ru_RU' ? '1 Апреля' : "April Fool"}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Floating Mobile Search & Sort Bar for ALL mode on vertical mobile */}

@@ -14,6 +14,19 @@ import voteRoutes from "./server/routes/vote.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
+process.on('uncaughtException', (err: any) => {
+  // Suppress undici / stream termination disconnect errors
+  if (err?.message?.includes('terminated') || err?.name === 'TypeError') {
+    console.warn('Caught network stream termination:', err.message);
+  } else {
+    console.error('Uncaught Exception:', err);
+  }
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  console.warn('Unhandled Promise Rejection:', reason?.message || reason);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

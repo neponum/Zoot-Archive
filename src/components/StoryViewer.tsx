@@ -30,11 +30,13 @@ interface StoryViewerProps {
   storyTxt: string;
   customScript?: string;
   translator?: string;
+  isRead?: boolean;
+  onToggleRead?: () => void;
   onBack: () => void;
   onComplete?: () => void;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, onBack, onComplete }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, isRead, onToggleRead, onBack, onComplete }) => {
   const lang = getLanguage();
   const t = UI_STRINGS[lang];
   
@@ -1481,6 +1483,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           currentIndex={currentIndex}
           totalLines={lines.length}
           lang={lang}
+          isRead={isRead}
+          onToggleRead={onToggleRead}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
           onToggleSkip={() => dispatch({ type: 'SET_SKIPPING', payload: !isSkipping })}
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}

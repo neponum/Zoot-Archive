@@ -6,16 +6,22 @@ import {
   CharacterFaceItem, 
   CharacterEntry 
 } from './storyTypes';
+import localAudioMusic from '../../data/audio_music.json';
+import localAudioSound from '../../data/audio_sound.json';
 
+const rawMusicMap = (localAudioMusic as any).default || localAudioMusic;
 export let activeAudioMusic: Record<string, string> = { 
   'tense_intro': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_intro.mp3',
-  'tense_loop': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_loop.mp3'
+  'tense_loop': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_loop.mp3',
+  ...rawMusicMap
 };
 
+const rawSoundMap = (localAudioSound as any).default || localAudioSound;
 export let activeAudioSound: Record<string, string> = { 
   'd_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
   's_d_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
-  'stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3'
+  'stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
+  ...rawSoundMap
 };
 
 let audioMapsPromise: Promise<void> | null = null;
@@ -124,11 +130,11 @@ if (typeof window !== 'undefined') {
 export function cleanAndUnwrapUrl(rawUrl: string): string {
   if (!rawUrl) return rawUrl;
   let url = rawUrl;
-  // If url contains nested weserv.nl proxies or /api/proxy, unwrap recursively to original raw URL
+  // If url contains nested proxies, unwrap recursively to original raw URL
   let depth = 0;
-  while (depth < 10 && (url.includes('images.weserv.nl') || url.includes('/api/proxy?url='))) {
+  while (depth < 10) {
     depth++;
-    const weservMatch = url.match(/images\.weserv\.nl\/\?url=([^&]+)/i);
+    const weservMatch = url.match(/(?:images\.weserv\.nl|wsrv\.nl)\/\?url=([^&]+)/i);
     if (weservMatch && weservMatch[1]) {
       try {
         url = decodeURIComponent(weservMatch[1]);
@@ -136,6 +142,16 @@ export function cleanAndUnwrapUrl(rawUrl: string): string {
       } catch {
         break;
       }
+    }
+    const wpMatch = url.match(/i[0-3]\.wp\.com\/(.+)/i);
+    if (wpMatch && wpMatch[1]) {
+      url = 'https://' + wpMatch[1];
+      continue;
+    }
+    const staticallyMatch = url.match(/cdn\.statically\.io\/img\/(.+)/i);
+    if (staticallyMatch && staticallyMatch[1]) {
+      url = 'https://' + staticallyMatch[1];
+      continue;
     }
     const proxyMatch = url.match(/\/api\/proxy\?url=([^&]+)/i);
     if (proxyMatch && proxyMatch[1]) {
@@ -209,13 +225,29 @@ export function wrapUrlWithProxy(rawUrl: string): string {
 
   if (url.startsWith('blob:') || url.startsWith('data:')) return url;
   if (url.startsWith('/') && !url.startsWith('/api/proxy')) return url;
-  if (url.includes('raw.githubusercontent.com') || url.includes('github.com')) return url;
+
+  // Convert raw.githubusercontent.com directly to fastly.jsdelivr.net CDN (0 Vercel bandwidth cost)
+  if (url.includes('raw.githubusercontent.com')) {
+    const match = url.match(/^https:\/\/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)$/);
+    if (match) {
+      const [, user, repo, branch, pathStr] = match;
+      return `https://fastly.jsdelivr.net/gh/${user}/${repo}@${branch}/${pathStr}`;
+    }
+    return url;
+  }
+  if (url.includes('github.com')) return url;
 
   if (
     url.includes('torappu.prts.wiki') ||
     url.includes('prts.wiki') ||
     url.includes('banyat.com')
   ) {
+    // Play audio files directly since torappu.prts.wiki has open CORS headers (Access-Control-Allow-Origin: *)
+    // and our cloud run server-side datacenter IPs are blocked by prts.wiki's firewall/DDoS protection.
+    if (/\.(mp3|wav|ogg|flac|aac|m4a)(\?.*)?$/i.test(url) || url.includes('/assets/audio/')) {
+      return url;
+    }
+
     if (
       /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(url) || 
       url.includes('/assets/avg/characters/') ||
@@ -223,10 +255,15 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/avg/images/') ||
       url.includes('/assets/char_arts/')
     ) {
-      return `/api/proxy?url=${encodeURIComponent(url)}`;
+      if (shouldAvoidWeserv()) {
+        // WordPress Photon CDN (i0.wp.com) is an open, unblocked image proxy CDN for CIS region
+        const cleanNoProto = url.replace(/^https?:\/\//, '');
+        return `https://i0.wp.com/${cleanNoProto}`;
+      }
+      // Global Cloudflare-powered image proxy CDN (wsrv.nl)
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
     }
-    // For audio files or other media, return direct URL (browsers play cross-origin audio natively)
-    return url;
+    return `/api/proxy?url=${encodeURIComponent(url)}`;
   }
   return url;
 }
@@ -509,8 +546,12 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
   const promise = (async () => {
     const rawUrl = await resolveAssetUrl(type, name);
     
-    const cachedBlobUrl = await CacheService.getCachedBlobUrl(rawUrl);
-    if (cachedBlobUrl) return cachedBlobUrl;
+    // WebKit/iOS Safari does not support playing audio from blob URLs reliably (or at all).
+    // Always use standard proxy streaming URLs for audio assets.
+    if (type !== 'music' && type !== 'sound' && type !== 'voice') {
+      const cachedBlobUrl = await CacheService.getCachedBlobUrl(rawUrl).catch(() => null);
+      if (cachedBlobUrl) return cachedBlobUrl;
+    }
     
     return wrapUrlWithProxy(rawUrl);
   })();
@@ -527,17 +568,39 @@ const existenceCheckCache = new Map<string, boolean>();
 
 export async function checkImageExists(url: string): Promise<boolean> {
   if (!url) return false;
+  
+  // Audio files on torappu.prts.wiki cannot be checked via browser fetch/HEAD because of CORS limitations.
+  // Instead, always assume they exist so the HTML5 Audio element can play them directly (which supports simple GET requests).
+  if (/\.(mp3|wav|ogg|flac|aac|m4a)(\?.*)?$/i.test(url) || url.includes('/assets/audio/')) {
+    return true;
+  }
+
   if (existenceCheckCache.has(url)) {
     return existenceCheckCache.get(url)!;
   }
   
   try {
     const targetUrl = wrapUrlWithProxy(url);
-    // Use GET with Range: bytes=0-0 for fast, universal single-byte existence check
-    const response = await fetchWithTimeout(targetUrl, { 
-      method: 'GET',
-      headers: { 'Range': 'bytes=0-0' }
-    }, 2500);
+    
+    // WebKit/iOS Safari and other browsers block CORS requests with a custom 'Range' header 
+    // because torappu.prts.wiki does not support the CORS OPTIONS (preflight) request (returns 405).
+    // Instead, use a simple HEAD or GET request (which are simple requests that bypass preflight OPTIONS).
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(targetUrl, { 
+        method: 'HEAD'
+      }, 2500);
+      
+      if (!response.ok && response.status !== 404) {
+        response = await fetchWithTimeout(targetUrl, { 
+          method: 'GET'
+        }, 2500);
+      }
+    } catch {
+      response = await fetchWithTimeout(targetUrl, { 
+        method: 'GET'
+      }, 2500);
+    }
 
     if (response.ok || response.status === 206) {
       const contentType = response.headers.get('content-type');
@@ -550,10 +613,22 @@ export async function checkImageExists(url: string): Promise<boolean> {
     }
 
     if (targetUrl !== url) {
-      const directResponse = await fetchWithTimeout(url, { 
-        method: 'GET',
-        headers: { 'Range': 'bytes=0-0' }
-      }, 2000);
+      let directResponse: Response;
+      try {
+        directResponse = await fetchWithTimeout(url, { 
+          method: 'HEAD'
+        }, 2000);
+        if (!directResponse.ok && directResponse.status !== 404) {
+          directResponse = await fetchWithTimeout(url, { 
+            method: 'GET'
+          }, 2000);
+        }
+      } catch {
+        directResponse = await fetchWithTimeout(url, { 
+          method: 'GET'
+        }, 2000);
+      }
+
       if (directResponse.ok || directResponse.status === 206) {
         const contentType = directResponse.headers.get('content-type');
         const ok = !(contentType && contentType.includes('text/html'));
@@ -564,24 +639,6 @@ export async function checkImageExists(url: string): Promise<boolean> {
     existenceCheckCache.set(url, false);
     return false;
   } catch {
-    try {
-      if (!url.startsWith('/api/proxy')) {
-        const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-        const res = await fetchWithTimeout(proxiedUrl, { 
-          method: 'GET',
-          headers: { 'Range': 'bytes=0-0' }
-        }, 2500);
-        if (res.ok || res.status === 206) {
-          const contentType = res.headers.get('content-type');
-          const ok = !(contentType && contentType.includes('text/html'));
-          existenceCheckCache.set(url, ok);
-          return ok;
-        }
-      }
-    } catch {
-      existenceCheckCache.set(url, false);
-      return false;
-    }
     existenceCheckCache.set(url, false);
     return false;
   }
@@ -713,7 +770,9 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       return urlWithDollar;
     }
     case 'music': {
-      const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
+      const parts = name.split('/');
+      const baseNameOnly = parts[parts.length - 1];
+      const cleanAudioName = baseNameOnly.replace(/^\$/, '').toLowerCase();
       
       if (cleanAudioName in activeAudioMusic) {
         return activeAudioMusic[cleanAudioName];
@@ -731,6 +790,20 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       
       const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player'];
       const candidates: string[] = [];
+      
+      if (parts.length > 1) {
+        const filteredParts = parts.filter((p, i) => {
+          if (i === 0) {
+            const low = p.toLowerCase();
+            return low !== 'sound' && low !== 'sound_beta_2' && low !== 'sound_beta_1' && low !== 'voice' && low !== 'music';
+          }
+          return true;
+        });
+        const pathStr = filteredParts.map(p => p.toLowerCase()).join('/');
+        candidates.push(`https://torappu.prts.wiki/assets/audio/${pathStr}.mp3`);
+        candidates.push(`https://torappu.prts.wiki/assets/audio/music/${pathStr}.mp3`);
+      }
+
       for (const bName of baseNames) {
         for (const folder of folders) {
           candidates.push(`https://torappu.prts.wiki/assets/audio/${folder}/${bName}.mp3`);
@@ -754,7 +827,9 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       return '';
     }
     case 'sound': {
-      const cleanAudioName = name.replace(/^\$/, '').toLowerCase();
+      const parts = name.split('/');
+      const baseNameOnly = parts[parts.length - 1];
+      const cleanAudioName = baseNameOnly.replace(/^\$/, '').toLowerCase();
       
       if (cleanAudioName in activeAudioSound) {
         return activeAudioSound[cleanAudioName];
@@ -769,6 +844,20 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       
       const folders = ['sound/avg', 'sound', 'avg', 'battle', 'general', 'ambience', 'music', 'player'];
       const candidates: string[] = [];
+      
+      if (parts.length > 1) {
+        const filteredParts = parts.filter((p, i) => {
+          if (i === 0) {
+            const low = p.toLowerCase();
+            return low !== 'sound' && low !== 'sound_beta_2' && low !== 'sound_beta_1' && low !== 'voice' && low !== 'music';
+          }
+          return true;
+        });
+        const pathStr = filteredParts.map(p => p.toLowerCase()).join('/');
+        candidates.push(`https://torappu.prts.wiki/assets/audio/${pathStr}.mp3`);
+        candidates.push(`https://torappu.prts.wiki/assets/audio/sound/${pathStr}.mp3`);
+      }
+
       for (const bName of baseNames) {
         for (const folder of folders) {
           candidates.push(`https://torappu.prts.wiki/assets/audio/${folder}/${bName}.mp3`);
@@ -898,6 +987,22 @@ export async function preloadAssets(
     const fileName = extractFileName(url);
     if (onProgress) onProgress(loaded, total, fileName);
     try {
+      if (type === 'audio') {
+        // Preload audio using the standard proxy URL to trigger browser native HTTP caching.
+        // Avoid caching audio as Blob to bypass iOS Safari's WebKit media element blob URL playback bugs.
+        await new Promise<void>((resolve) => {
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.oncanplaythrough = () => resolve();
+          audio.onerror = () => resolve();
+          audio.src = url;
+          audio.load();
+          preloadedAudio.push(audio);
+        });
+        updateProgress(url);
+        return;
+      }
+
       const cachedBlobUrl = await CacheService.getCachedBlobUrl(url).catch(() => null);
       if (cachedBlobUrl) {
         if (type === 'image') {
@@ -907,16 +1012,6 @@ export async function preloadAssets(
             img.onerror = resolve;
             img.src = cachedBlobUrl;
             preloadedImages.push(img);
-          });
-        } else if (type === 'audio') {
-          await new Promise<void>((resolve) => {
-            const audio = new Audio();
-            audio.preload = 'auto';
-            audio.oncanplaythrough = () => resolve();
-            audio.onerror = () => resolve();
-            audio.src = cachedBlobUrl;
-            audio.load();
-            preloadedAudio.push(audio);
           });
         }
         updateProgress(url);
@@ -943,37 +1038,10 @@ export async function preloadAssets(
               preloadedImages.push(img);
             });
           }
-        } else if (type === 'audio') {
-          const blobUrl = await CacheService.getCachedBlobUrl(url);
-          if (blobUrl) {
-            await new Promise<void>((resolve) => {
-              const audio = new Audio();
-              audio.preload = 'auto';
-              audio.oncanplaythrough = () => resolve();
-              audio.onerror = () => resolve();
-              audio.src = blobUrl;
-              audio.load();
-              preloadedAudio.push(audio);
-            });
-          }
         }
       }
     } catch {
-      if (type === 'audio') {
-        try {
-          await new Promise<void>((resolve) => {
-            const audio = new Audio();
-            audio.preload = 'auto';
-            audio.oncanplaythrough = () => resolve();
-            audio.onerror = () => resolve();
-            audio.src = url;
-            audio.load();
-            preloadedAudio.push(audio);
-          });
-        } catch {
-          // Ignore fallback errors
-        }
-      }
+      // fallback handled by outer catch / finally
     } finally {
       updateProgress(url);
     }

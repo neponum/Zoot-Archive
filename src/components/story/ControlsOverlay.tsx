@@ -13,6 +13,8 @@ interface ControlsOverlayProps {
   currentIndex?: number;
   totalLines?: number;
   lang?: string;
+  isRead?: boolean;
+  onToggleRead?: () => void;
   onToggleAuto: () => void;
   onToggleSkip: () => void;
   onBackClick: () => void;
@@ -35,6 +37,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   isFullscreen,
   currentIndex = 0,
   totalLines = 0,
+  isRead,
+  onToggleRead,
   onToggleAuto,
   onToggleSkip,
   onBackClick,
@@ -102,6 +106,22 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           >
             <History className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </button>
+          {onToggleRead && (
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onToggleRead(); }}
+              className={cn(
+                "transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 flex items-center gap-1",
+                isRead ? "text-emerald-400 hover:text-emerald-300" : "text-white/60 hover:text-white"
+              )}
+              title={isRead ? "Прочитано (нажмите, чтобы снять отметку)" : "Отметить как прочитанное"}
+            >
+              <Bookmark className={cn("w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6", isRead && "fill-emerald-400")} />
+            </button>
+          )}
           {onBugReportClick && (
             <button 
               onPointerDown={(e) => e.stopPropagation()}

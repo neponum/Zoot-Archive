@@ -18,20 +18,44 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 function StoryViewerRoute({
   testScript,
   translator,
+  readChapters,
+  onToggleRead,
   handleChapterComplete,
   handleBack
 }: {
   testScript?: string;
   translator?: string;
+  readChapters?: Set<string>;
+  onToggleRead?: (chapterId: string) => void;
   handleChapterComplete: (storyTxt: string) => void;
   handleBack: (storyTxt: string) => void;
 }) {
   const params = useParams();
   const storyTxt = params['*'];
 
+  const [chapterId, setChapterId] = useState<string>(() => storyTxt || '');
+
+  useEffect(() => {
+    if (!storyTxt) return;
+    let isMounted = true;
+    fetchChapterList().then(episodes => {
+      if (!isMounted) return;
+      for (const ep of episodes) {
+        const found = ep.chapters?.find(c => c.storyTxt === storyTxt || c.id === storyTxt);
+        if (found) {
+          setChapterId(found.id);
+          break;
+        }
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, [storyTxt]);
+
   if (!storyTxt) {
     return <Navigate to="/" replace />;
   }
+
+  const isRead = !!(readChapters?.has(chapterId) || readChapters?.has(storyTxt));
 
   return (
     <ErrorBoundary
@@ -44,6 +68,8 @@ function StoryViewerRoute({
         storyTxt={storyTxt}
         customScript={testScript}
         translator={translator}
+        isRead={isRead}
+        onToggleRead={() => onToggleRead?.(chapterId || storyTxt)}
         onBack={() => handleBack(storyTxt)}
         onComplete={() => handleChapterComplete(storyTxt)}
       />
@@ -366,6 +392,34 @@ function AppContent() {
             />
             <Route path="/vote" element={<Navigate to="/music" replace />} />
             <Route 
+              path="/progress" 
+              element={
+                <div className="h-full">
+                  <ChapterSelector 
+                    onSelect={handleSelectChapter} 
+                    onOpenTranslation={handleOpenTranslation}
+                    onTranslatorChange={setSelectedTranslator}
+                    readChapters={readChapters}
+                    onToggleRead={handleToggleRead}
+                  />
+                </div>
+              } 
+            />
+            <Route 
+              path="/records" 
+              element={
+                <div className="h-full">
+                  <ChapterSelector 
+                    onSelect={handleSelectChapter} 
+                    onOpenTranslation={handleOpenTranslation}
+                    onTranslatorChange={setSelectedTranslator}
+                    readChapters={readChapters}
+                    onToggleRead={handleToggleRead}
+                  />
+                </div>
+              } 
+            />
+            <Route 
               path="/operators" 
               element={
                 <div className="h-full">
@@ -443,6 +497,8 @@ function AppContent() {
                   <StoryViewerRoute 
                     testScript={testScript}
                     translator={selectedTranslator}
+                    readChapters={readChapters}
+                    onToggleRead={handleToggleRead}
                     handleChapterComplete={handleChapterComplete}
                     handleBack={handleBackFromViewer}
                   />

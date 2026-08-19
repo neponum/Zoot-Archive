@@ -4,6 +4,7 @@ import { CacheService } from '../cacheService';
 import { TRANSLATION_REGISTRY, getDefaultTranslator } from '../../config/translationsRegistry';
 import { UI_STRINGS } from '../../translations';
 import { TranslationRow } from './storyTypes';
+import { EXTRA_STORIES } from '../../data/extraStories';
 
 export function detectInitialLanguage(): Language {
   try {
@@ -415,6 +416,13 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
     }
   }
 
+  // Merge Extra Stories (Integrated Strategies, Reclamation Algorithm, Side Content)
+  for (const extra of EXTRA_STORIES) {
+    if (!episodes.some(e => e.id === extra.id)) {
+      episodes.push(extra);
+    }
+  }
+
   cachedEpisodes[cacheKey] = episodes;
   return episodes;
 }
@@ -424,6 +432,9 @@ export function normalizeStoryPath(storyPath: string): string {
   let normalized = storyPath;
   if (normalized.startsWith('gamedata/story/')) {
     normalized = normalized.substring('gamedata/story/'.length);
+  }
+  if (normalized.startsWith('story/')) {
+    normalized = normalized.substring('story/'.length);
   }
   if (normalized.endsWith('.txt')) {
     normalized = normalized.slice(0, -4);
@@ -498,24 +509,45 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
     
     if (isOfficial) {
       const baseUrl = getBaseUrl(lang);
-      const url = `${baseUrl}/gamedata/story/${normalizedPath}.txt`;
+      const urlsToTry = [
+        `${baseUrl}/gamedata/story/${normalizedPath}.txt`,
+        `https://torappu.prts.wiki/gamedata/latest/story/${normalizedPath}.txt`
+      ];
+
+      // Add roguelike and legacy path mapping fallbacks
+      if (normalizedPath.includes('ro00_st_') || normalizedPath.includes('ro0_st_')) {
+        let numStr = normalizedPath.slice(-2);
+        if (numStr.startsWith('0')) numStr = numStr.slice(1);
+        urlsToTry.push(`${baseUrl}/gamedata/story/activities/act12d6/level_act12d6_ending_${numStr}.txt`);
+        urlsToTry.push(`https://torappu.prts.wiki/gamedata/latest/story/activities/act12d6/level_act12d6_ending_${numStr}.txt`);
+      } else if (normalizedPath.includes('obt/roguelike/')) {
+        const roMatch = normalizedPath.match(/ro0?(\d)_st_0?(\d)/i);
+        if (roMatch) {
+          const num = roMatch[1];
+          const endingNum = roMatch[2];
+          urlsToTry.push(`https://torappu.prts.wiki/gamedata/latest/story/obt/roguelike/ro${num}/level_rogue${num}_ending_${endingNum}.txt`);
+        }
+      }
       
-      let text = await CacheService.getCachedText(url);
-      
-      if (!text) {
+      let text: string | null = null;
+
+      for (const url of urlsToTry) {
+        text = await CacheService.getCachedText(url);
+        if (text) break;
+
         try {
           const response = await fetchWithTimeout(url);
           if (response.ok) {
-            text = await response.text();
-            const lowerText = text.trim().toLowerCase();
+            const fetchedText = await response.text();
+            const lowerText = fetchedText.trim().toLowerCase();
             if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
+              text = fetchedText;
               await CacheService.cacheText(url, text);
-            } else {
-              text = null;
+              break;
             }
           }
         } catch (e) {
-          console.warn(`Failed to fetch ${lang} official script:`, e);
+          console.warn(`Failed to fetch script from ${url}:`, e);
         }
       }
 

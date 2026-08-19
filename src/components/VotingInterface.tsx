@@ -447,15 +447,23 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const fetchMonsterSirenCatalog = async () => {
     try {
       setLoadingMusic(true);
-      const albumsUrl = encodeURIComponent('https://monster-siren.hypergryph.com/api/albums');
-      const albumsRes = await fetch(`/api/proxy?url=${albumsUrl}`);
+      const fetchDirectOrProxy = async (url: string) => {
+        try {
+          const directRes = await fetch(url);
+          if (directRes.ok) return directRes;
+        } catch {
+          // Fallback to proxy if direct fetch fails
+        }
+        return fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+      };
+
+      const albumsRes = await fetchDirectOrProxy('https://monster-siren.hypergryph.com/api/albums');
       if (!albumsRes.ok) throw new Error('Albums failed');
       const albumsJson = await albumsRes.json();
       const albumList: AlbumData[] = albumsJson.data?.list || albumsJson.data || [];
       setAlbums(albumList);
 
-      const songsUrl = encodeURIComponent('https://monster-siren.hypergryph.com/api/songs');
-      const songsRes = await fetch(`/api/proxy?url=${songsUrl}`);
+      const songsRes = await fetchDirectOrProxy('https://monster-siren.hypergryph.com/api/songs');
       if (!songsRes.ok) throw new Error('Songs failed');
       const songsJson = await songsRes.json();
       const songList: SongData[] = songsJson.data?.list || songsJson.data || [];
@@ -1223,7 +1231,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
   const getEpisodeCoverUrl = (ep: any) => {
-    const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
+    const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
     const imageId = ep.storyEntryPicId || ep.id;
     const chineseName = ep.chineseName || ep.name;
     
@@ -1234,6 +1242,9 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
       const num = ep.id.replace('main_', '');
       const paddedNum = num.length === 1 ? `0${num}` : num;
       return `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
+    } else if (ep.id.startsWith('is_')) {
+      const num = ep.id.replace('is_', '');
+      return `${BANNERS_BASE_URL}/IS_${num}.png`;
     } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
       return `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
     } else {
@@ -1242,7 +1253,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   };
 
   const handleCoverError = (ep: any, e: React.SyntheticEvent<HTMLImageElement>) => {
-    const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
+    const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
     const img = e.currentTarget;
     const currentSrc = img.src;
     const decodedSrc = decodeURIComponent(currentSrc);

@@ -174,8 +174,8 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           onError={(e) => {
             const currentSrc = e.currentTarget.src;
             const cleanUrl = cleanAndUnwrapUrl(data.url || '');
-            // If weserv fails and we haven't tried local proxy yet, try fallback proxy
-            if (currentSrc.includes('images.weserv.nl') && cleanUrl && !currentSrc.includes('/api/proxy')) {
+            const isCdnUrl = currentSrc.includes('weserv.nl') || currentSrc.includes('wsrv.nl') || currentSrc.includes('wp.com') || currentSrc.includes('statically.io');
+            if (isCdnUrl && cleanUrl && !currentSrc.includes('/api/proxy')) {
               e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
               return;
             }
@@ -208,7 +208,8 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             onError={(e) => {
               const currentSrc = e.currentTarget.src;
               const cleanUrl = cleanAndUnwrapUrl(data.faceUrl || '');
-              if (currentSrc.includes('images.weserv.nl') && cleanUrl && !currentSrc.includes('/api/proxy')) {
+              const isCdnUrl = currentSrc.includes('weserv.nl') || currentSrc.includes('wsrv.nl') || currentSrc.includes('wp.com') || currentSrc.includes('statically.io');
+              if (isCdnUrl && cleanUrl && !currentSrc.includes('/api/proxy')) {
                 e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
                 return;
               }

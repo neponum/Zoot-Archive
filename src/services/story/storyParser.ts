@@ -1,4 +1,5 @@
 import { StoryLine } from '../../types';
+import { resolveStoryValue, resolveStoryVariablesInText } from './storyVariablesService';
 
 export enum TokenType {
   LEFT_BRACKET,
@@ -191,12 +192,14 @@ export class StoryParser {
     }
 
     // Process dialogue
-    const dialogueText = lineText.trim();
-    if (dialogueText && dialogueText !== 'undefined' && !hasAnimText && !hasHeader && !hasDelay) {
+    const rawDialogueText = lineText.trim();
+    if (rawDialogueText && rawDialogueText !== 'undefined' && !hasAnimText && !hasHeader && !hasDelay) {
+      const resolvedText = resolveStoryVariablesInText(rawDialogueText);
+      const resolvedCharName = this.currentCharacterName ? resolveStoryVariablesInText(this.currentCharacterName) : undefined;
       lineObjects.push({
         type: 'dialogue',
-        characterName: this.currentCharacterName,
-        text: dialogueText
+        characterName: resolvedCharName,
+        text: resolvedText
       });
     }
 
@@ -216,7 +219,8 @@ export class StoryParser {
 
     const addParam = (k: string, v: string) => {
       if (!k) return;
-      params[k.toLowerCase()] = v;
+      const resolvedVal = resolveStoryValue(v);
+      params[k.toLowerCase()] = resolvedVal;
     };
 
     while (!this.isType(TokenType.RIGHT_BRACKET) && !this.isType(TokenType.EOF) && !this.isType(TokenType.NEWLINE)) {

@@ -11,3 +11,4 @@ export * from './story/storyTypes';
 export * from './story/storyParser';
 export * from './story/storyAssetService';
 export * from './story/storyTreeService';
+export * from './story/storyVariablesService';

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings, Mail, Calendar, Edit2, Plus, X, Search, ChevronLeft, 
@@ -220,11 +221,65 @@ interface MainMenuProps {
   lang: Language;
   setLang: (l: Language) => void;
   readChaptersCount: number;
+  readChapters?: Set<string>;
+  episodes?: StoryEpisode[];
 }
 
-export const MainMenu: React.FC<MainMenuProps> = ({ onOpenTerminal, onOpenArchive, onOpenVote, onOpenOperators, lang, setLang, readChaptersCount }) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ 
+  onOpenTerminal, 
+  onOpenArchive, 
+  onOpenVote, 
+  onOpenOperators, 
+  lang, 
+  setLang, 
+  readChaptersCount,
+  readChapters,
+  episodes = []
+}) => {
+  const navigate = useNavigate();
   const t = UI_STRINGS[lang];
   const isRussian = lang === 'ru_RU' || lang === 'ru_RU_CN';
+
+  // Reading progress stats calculation for the Terminal button
+  const readingStats = useMemo(() => {
+    let totalChapters = 0;
+    const readCount = readChapters ? readChapters.size : readChaptersCount;
+    let completedEpisodes = 0;
+    let validEpisodesCount = 0;
+
+    for (const ep of episodes) {
+      const chs = ep.chapters || [];
+      if (chs.length === 0) continue;
+
+      // Exclude pure operator entries from main story counts if necessary
+      const isOperatorEntry = ep.entryType === 'NONE' || ep.id.startsWith('operator_');
+      if (isOperatorEntry) continue;
+
+      validEpisodesCount++;
+      totalChapters += chs.length;
+
+      if (readChapters && chs.every(c => readChapters.has(c.id))) {
+        completedEpisodes++;
+      }
+    }
+
+    const totalEp = validEpisodesCount > 0 ? validEpisodesCount : (episodes.length > 0 ? episodes.length : 1);
+    const totalCh = totalChapters > 0 ? totalChapters : 1;
+    const pct = totalCh > 0 ? Math.min(100, Math.round((readCount / totalCh) * 100)) : 0;
+    const words = readCount * 1650;
+    const wordsK = (words / 1000).toFixed(1);
+    const hours = Math.round((readCount * 10) / 60);
+
+    return {
+      totalChapters: totalCh,
+      readChaptersTotal: readCount,
+      totalEpisodes: totalEp,
+      completedEpisodes,
+      pct,
+      wordsK,
+      hours
+    };
+  }, [episodes, readChapters, readChaptersCount]);
 
   // Local settings synchronizing with player settings
   const [settings, setSettings] = useState(() => {
@@ -865,43 +920,103 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onOpenTerminal, onOpenArchiv
               {/* RIGHT SIDE: Action grid of cards */}
               <div className="w-full md:flex-1 max-lg:landscape:flex-1 flex flex-col justify-start md:pt-[10%] max-lg:landscape:pt-[2%] gap-2.5 md:gap-3 max-w-[550px] md:ml-auto max-lg:landscape:ml-auto items-center md:items-end max-lg:landscape:items-end pr-0 lg:pr-4 relative z-10 mt-auto md:mt-0 max-lg:landscape:mt-0">
                 
-                {/* 1. TERMINAL */}
-                <button
-                  onClick={onOpenTerminal}
-                  className="group w-full max-w-[440px] h-20 md:h-36 max-lg:landscape:h-28 bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-2xl transition-all duration-300 overflow-hidden text-left flex cursor-pointer"
-                >
+                {/* 1. TERMINAL WITH FULL READING TELEMETRY */}
+                <div className="w-full max-w-[440px] flex flex-col gap-1">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-white/40 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
+                      alpha 0.4
+                    </span>
+                  </div>
+                  <button
+                    onClick={onOpenTerminal}
+                    className="group w-full bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-2xl transition-all duration-300 overflow-hidden text-left flex flex-col cursor-pointer p-3.5 md:p-4"
+                  >
                   <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                   
-                  <div className="flex-1 p-3 md:p-4 flex flex-col justify-between relative h-full">
-                    <div className="flex items-center md:items-start justify-between relative z-10 h-full">
-                      <div className="flex flex-col justify-center h-full">
-                        <h3 className="text-2xl md:text-3.5xl max-lg:landscape:text-2.5xl font-black text-white uppercase tracking-wider font-mono shrink-0">
+                  {/* Top Row: Title + Circular Progress Ring (Left) + Last Played Episode (Right) */}
+                  <div className="flex items-center justify-between relative z-10 w-full mb-3">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      {/* SVG Ring Graph with Percentage (ON THE LEFT) */}
+                      <div className="relative flex items-center justify-center shrink-0 w-12 h-12 md:w-14 md:h-14">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                          <path
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="rgba(255, 255, 255, 0.12)"
+                            strokeWidth="3.2"
+                          />
+                          <path
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="url(#terminal-ring-gradient)"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${readingStats.pct}, 100`}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000 ease-out"
+                          />
+                          <defs>
+                            <linearGradient id="terminal-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#3b82f6" />
+                              <stop offset="50%" stopColor="#38bdf8" />
+                              <stop offset="100%" stopColor="#60a5fa" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-[10px] md:text-[11px] font-mono font-black text-blue-400 drop-shadow-[0_0_6px_rgba(59,130,246,0.8)] leading-none">
+                            {readingStats.pct}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col justify-center">
+                        <h3 className="text-2xl md:text-3.5xl max-lg:landscape:text-2.5xl font-black text-white uppercase tracking-wider font-mono">
                           {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ТЕРМИНАЛ' : 'TERMINAL'}
                         </h3>
                       </div>
-                      
-                      {lastEpisode && lastEpisode.storyEntryPicId && (
-                        <div className="h-full max-h-[50px] md:max-h-none max-lg:landscape:max-h-none aspect-video relative rounded-sm overflow-hidden border border-white/10 group-hover:border-blue-500/50 transition-colors shrink-0 shadow-lg ml-3 md:ml-4">
-                          <img 
-                            src={`https://raw.githubusercontent.com/neponum/zoot-data/main/story_pic/${lastEpisode.storyEntryPicId}.png`} 
-                            alt={lastEpisode.name}
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] via-transparent to-transparent opacity-80" />
-                          <div className="absolute bottom-1 left-1.5 right-1.5 md:bottom-1.5 md:left-2 md:right-2 flex flex-col">
-                            <span className="text-[4px] md:text-[5px] font-black tracking-widest text-blue-400 uppercase">
-                              {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ПОСЛЕДНИЙ АРХИВ' : 'LAST ARCHIVE'}
-                            </span>
-                            <span className="text-[7px] md:text-[9px] font-bold text-white truncate">
-                              {lastEpisode.name}
-                            </span>
-                          </div>
+                    </div>
+                    
+                    {/* Last Episode Thumbnail (RIGHT) */}
+                    {lastEpisode && lastEpisode.storyEntryPicId ? (
+                      <div className="h-11 md:h-13 aspect-video relative rounded-sm overflow-hidden border border-white/10 group-hover:border-blue-500/50 transition-colors shrink-0 shadow-lg ml-3 hidden xs:block">
+                        <img 
+                          src={`https://raw.githubusercontent.com/neponum/zoot-data/main/story_pic/${lastEpisode.storyEntryPicId}.png`} 
+                          alt={lastEpisode.name}
+                          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] via-transparent to-transparent opacity-80" />
+                        <div className="absolute bottom-1 left-1.5 right-1.5 flex flex-col">
+                          <span className="text-[5px] font-black tracking-widest text-blue-400 uppercase">
+                            {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ПОСЛЕДНИЙ' : 'LAST'}
+                          </span>
+                          <span className="text-[8px] font-bold text-white truncate max-w-[70px]">
+                            {lastEpisode.name}
+                          </span>
                         </div>
-                      )}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Reading Progress Stats Bar (Only episodes count, no chapters count, no bottom progress line) */}
+                  <div className="relative z-10 w-full pt-2.5 border-t border-white/10 flex items-center justify-between text-[9px] md:text-[10px] font-mono">
+                    <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                      <span className="text-white font-bold">
+                        {readingStats.completedEpisodes}/{readingStats.totalEpisodes} {isRussian ? 'эпиз.' : 'ep.'}
+                      </span>
+                      <span className="text-white/20">•</span>
+                      <span className="text-white font-bold">
+                        ~{readingStats.wordsK}k {isRussian ? 'слов' : 'words'}
+                      </span>
+                      <span className="text-white/20">•</span>
+                      <span className="text-white font-bold">
+                        ~{readingStats.hours} {isRussian ? 'ч.' : 'hrs'}
+                      </span>
                     </div>
                   </div>
                 </button>
+              </div>
 
                 {/* 2. MUSIC */}
                 <button
@@ -919,40 +1034,41 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onOpenTerminal, onOpenArchiv
                   </div>
                 </button>
 
-                {/* 3. OPERATIVES & ARCHIVE */}
-                <div className="w-full max-w-[440px] flex gap-3 md:gap-4">
-                  {/* OPERATIVES (ACTIVE: OPERATOR RECORD STORIES) */}
+                {/* 3. OPERATIVES & 4. ARCHIVE (ROW) */}
+                <div className="w-full max-w-[440px] flex items-center gap-2 md:gap-3">
+                  {/* OPERATIVES */}
                   <button
                     onClick={onOpenOperators}
-                    className="flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 hover:border-amber-400/60 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-pointer group transition-all duration-300"
+                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-pointer transition-all duration-300"
                   >
-                    <div className="absolute inset-0 bg-amber-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                    <div className="flex-1 px-2.5 md:px-3 flex flex-col justify-center relative z-10 h-full">
-                      <span className="text-[11px] md:text-[13px] font-black text-white group-hover:text-amber-400 transition-colors uppercase tracking-wider font-mono">
+                    <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="flex-1 px-3 md:px-4 flex flex-col justify-center relative z-10 h-full overflow-hidden">
+                      <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-wider font-mono truncate">
                         {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ОПЕРАТИВНИКИ' : 'OPERATIVES'}
                       </span>
-                      <span className="text-[9px] md:text-[10px] font-black text-amber-400/80 group-hover:text-amber-400 uppercase tracking-widest font-mono mt-0.5 transition-colors">
-                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// ИСТОРИИ ОПЕРАТИВНИКОВ' : '// OPERATOR STORIES'}
+                      <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/40 group-hover:text-white/60 uppercase tracking-widest font-mono mt-0.5 transition-colors truncate">
+                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// ИСТОРИИ' : '// STORIES'}
                       </span>
                     </div>
                   </button>
 
-                  {/* ARCHIVES (OBSIDIAN / RECORDS) */}
+                  {/* ARCHIVE (DISABLED) */}
                   <button
-                    disabled={true}
-                    className="flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/40 border border-white/5 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed opacity-50 group transition-all duration-300"
+                    disabled
+                    aria-disabled="true"
+                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/50 border border-white/10 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed opacity-50 transition-all duration-300"
                   >
-                    <div className="flex-1 px-2.5 md:px-3 flex flex-col justify-center relative z-10 h-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] md:text-[13px] font-black text-white/50 uppercase tracking-wider font-mono">
-                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVES'}
+                    <div className="flex-1 px-3 md:px-4 flex flex-col justify-center relative z-10 h-full overflow-hidden">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white/60 uppercase tracking-wider font-mono truncate">
+                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVE'}
                         </span>
-                        <span className="text-[8px] md:text-[9px] font-mono px-1.5 py-0.5 bg-amber-950/40 border border-amber-500/20 text-amber-400 font-bold tracking-widest uppercase rounded-sm">
+                        <span className="shrink-0 text-[7.5px] sm:text-[8.5px] font-mono px-1 py-0.5 bg-blue-950/60 border border-blue-500/30 text-blue-400 font-bold uppercase rounded-sm tracking-wider">
                           {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'СКОРО' : 'SOON'}
                         </span>
                       </div>
-                      <span className="text-[9px] md:text-[10px] font-black text-white/20 uppercase tracking-widest font-mono mt-0.5">
-                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// БАЗА ДАННЫХ' : '// STORY ARCHIVE'}
+                      <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/30 uppercase tracking-widest font-mono mt-0.5 truncate">
+                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// МАТЕРИАЛЫ' : '// EXTRA'}
                       </span>
                     </div>
                   </button>

@@ -9,6 +9,7 @@ class AudioManager {
   private bgmVolume: number = 0.5;
   private bgmFadeInterval: number | null = null;
   private currentPlayId: number = 0;
+  private pendingBgmArgs: { url: string; volume: number; fadeDuration: number; introUrl?: string; name?: string; introName?: string } | null = null;
   
   private masterBGMVolume: number = 1.0;
   private masterSFXVolume: number = 1.0;
@@ -17,6 +18,38 @@ class AudioManager {
   private sfx: Set<HTMLAudioElement> = new Set();
   private voice: HTMLAudioElement | null = null;
   private isUnlocked = false;
+  
+  private log(msg: string) {
+    if (typeof window !== 'undefined') {
+      (window as any).avgAudioLogs = (window as any).avgAudioLogs || [];
+      (window as any).avgAudioLogs.push({
+        time: new Date().toLocaleTimeString(),
+        message: msg,
+        isError: false
+      });
+      if ((window as any).avgAudioLogs.length > 50) {
+        (window as any).avgAudioLogs.shift();
+      }
+      window.dispatchEvent(new CustomEvent('avg-audio-log'));
+    }
+    console.log(msg);
+  }
+
+  private logError(msg: string) {
+    if (typeof window !== 'undefined') {
+      (window as any).avgAudioLogs = (window as any).avgAudioLogs || [];
+      (window as any).avgAudioLogs.push({
+        time: new Date().toLocaleTimeString(),
+        message: msg,
+        isError: true
+      });
+      if ((window as any).avgAudioLogs.length > 50) {
+        (window as any).avgAudioLogs.shift();
+      }
+      window.dispatchEvent(new CustomEvent('avg-audio-log'));
+    }
+    console.error(msg);
+  }
   
   private constructor() {
     // Load volumes from localStorage if available
@@ -29,7 +62,19 @@ class AudioManager {
         this.masterVoiceVolume = voice ?? 1.0;
       }
     } catch (e) {
-      console.error('Failed to load volumes', e);
+      this.logError('Failed to load volumes: ' + (e instanceof Error ? e.message : String(e)));
+    }
+
+    this.log(`AudioManager volumes loaded: BGM=${this.masterBGMVolume}, SFX=${this.masterSFXVolume}, Voice=${this.masterVoiceVolume}`);
+
+    // Proactively bind user gesture listeners to unlock audio on first interaction
+    if (typeof window !== 'undefined') {
+      const unlockEvents = ['click', 'touchstart', 'keydown', 'mousedown', 'pointerdown'];
+      const onInteraction = () => {
+        this.unlock();
+        unlockEvents.forEach(evt => document.removeEventListener(evt, onInteraction));
+      };
+      unlockEvents.forEach(evt => document.addEventListener(evt, onInteraction, { passive: true }));
     }
   }
 
@@ -41,14 +86,41 @@ class AudioManager {
   }
 
   public unlock() {
+    this.log('Unlock requested. Current isUnlocked: ' + this.isUnlocked);
     if (this.isUnlocked) return;
     this.isUnlocked = true;
     
-    // Play a tiny silent audio to bless the audio context on iOS Safari
-    const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
-    silentAudio.play().catch(() => {
-      // Ignore errors if it fails
-    });
+    // Play a tiny silent WAV audio to bless the audio context on iOS Safari/Chrome
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+    silentAudio.play()
+      .then(() => {
+        this.log('Audio playback successfully unlocked!');
+      })
+      .catch((err) => {
+        this.logError('Failed to play silent audio on unlock: ' + (err instanceof Error ? err.message : String(err)));
+      });
+
+    // Also unlock Web Audio API AudioContext if supported
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+          this.log('Web Audio Context resumed successfully');
+        }
+      }
+    } catch (e) {
+      // Ignore Web Audio errors
+    }
+
+    // Play any pending BGM that was blocked before unlocking
+    if (this.pendingBgmArgs) {
+      const args = this.pendingBgmArgs;
+      this.pendingBgmArgs = null;
+      this.log('Replaying pending blocked BGM on user gesture: ' + (args.name || args.url));
+      this.playBGM(args.url, args.volume, args.fadeDuration, args.introUrl, args.name, args.introName);
+    }
   }
 
   public setVolumes(bgm: number, sfx: number, voice: number) {
@@ -100,8 +172,14 @@ class AudioManager {
   private formatAudioUrl(url: string): string {
     if (!url) return url;
     if (url.startsWith('/') || url.startsWith('blob:') || url.startsWith('data:')) return url;
-    if (url.startsWith('/api/proxy?url=')) return url;
-    // HTML5 Audio plays direct cross-origin audio URLs natively without proxying through Vercel
+    if (url.startsWith('/api/proxy?url=')) {
+      // Decode and unwrap proxy if any
+      const unwrapped = new URL(window.location.origin + url).searchParams.get('url');
+      if (unwrapped) return unwrapped;
+    }
+    
+    // Play audio files directly since torappu.prts.wiki has open CORS headers (Access-Control-Allow-Origin: *)
+    // and our cloud run server-side datacenter IPs are blocked by prts.wiki's firewall/DDoS protection.
     return url;
   }
 
@@ -109,12 +187,14 @@ class AudioManager {
    * Play background music with optional crossfade and intro
    */
   public async playBGM(url: string, volume: number = 0.5, fadeDuration: number = 1000, introUrl?: string, name?: string, introName?: string) {
+    this.log(`BGM play requested: ${introName || name || 'unknown'} (${url})`);
     if (!url) {
-      console.warn('Attempted to play BGM with empty URL');
+      this.logError('Attempted to play BGM with empty URL');
       return;
     }
 
     if (this.bgmUrl === url && !introUrl) {
+      this.log(`BGM url same as current, updating volume to ${volume}`);
       if (this.bgm) {
         this.bgm.volume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
       }
@@ -138,6 +218,7 @@ class AudioManager {
     if (oldBgm) {
       oldBgm.onended = null;
       oldBgm.onerror = null;
+      this.log('Fading out old BGM');
       this.fadeAudio(oldBgm, oldBgm.volume, 0, fadeDuration, () => {
         oldBgm.pause();
         oldBgm.onerror = null;
@@ -145,8 +226,10 @@ class AudioManager {
       });
     }
 
+    const formattedUrl = this.formatAudioUrl(introUrl || url);
+    this.log(`BGM resolved URL: ${formattedUrl}`);
     // Load and fade in new BGM
-    const newBgm = new Audio(this.formatAudioUrl(introUrl || url));
+    const newBgm = new Audio(formattedUrl);
     newBgm.loop = !introUrl;
     newBgm.volume = 0;
     
@@ -155,14 +238,17 @@ class AudioManager {
       if (!newBgm.src) return;
       const target = e.target as HTMLAudioElement;
       const errorMsg = target.error ? target.error.message : 'Unknown error';
-      console.error(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+      this.logError(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
     };
     
     try {
+      this.log('Calling BGM .play()');
       await newBgm.play();
+      this.log('BGM .play() succeeded');
       
       // If stopAll or another playBGM was called while waiting for play() to resolve, abort.
       if (playId !== this.currentPlayId) {
+        this.log('BGM play playId outdated, stopping new BGM');
         newBgm.pause();
         newBgm.onerror = null;
         newBgm.src = '';
@@ -170,13 +256,17 @@ class AudioManager {
       }
 
       this.bgm = newBgm;
-      this.bgmFadeInterval = this.fadeAudio(newBgm, 0, Math.max(0, Math.min(1, volume * this.masterBGMVolume)), fadeDuration);
+      const finalVolume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
+      this.log(`BGM playing. Actual volume: ${finalVolume} (lineVolume=${volume}, masterVolume=${this.masterBGMVolume})`);
+      this.bgmFadeInterval = this.fadeAudio(newBgm, 0, finalVolume, fadeDuration);
 
       if (introUrl) {
         newBgm.onended = async () => {
           // Only switch to loop if this intro is still the active BGM
           if (this.bgm === newBgm && playId === this.currentPlayId) {
-            const loopBgm = new Audio(this.formatAudioUrl(url));
+            const loopFormattedUrl = this.formatAudioUrl(url);
+            this.log(`BGM Intro ended. Playing loop: ${loopFormattedUrl}`);
+            const loopBgm = new Audio(loopFormattedUrl);
             loopBgm.loop = true;
             loopBgm.volume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
             
@@ -184,11 +274,12 @@ class AudioManager {
               if (!loopBgm.src) return;
               const target = e.target as HTMLAudioElement;
               const errorMsg = target.error ? target.error.message : 'Unknown error';
-              console.error(`Failed to load loop BGM audio resource: ${name || url}. Error: ${errorMsg}`);
+              this.logError(`Failed to load loop BGM audio resource: ${name || url}. Error: ${errorMsg}`);
             };
             
             try {
               await loopBgm.play();
+              this.log('BGM Loop play succeeded');
               // Double check again after async play
               if (this.bgm === newBgm && playId === this.currentPlayId) {
                 this.bgm = loopBgm;
@@ -199,7 +290,7 @@ class AudioManager {
               }
             } catch (e) {
               const errorMsg = e instanceof Error ? e.message : String(e);
-              console.error(`Failed to play loop BGM: ${name || url}. Error: ${errorMsg}`);
+              this.logError(`Failed to play loop BGM: ${name || url}. Error: ${errorMsg}`);
             }
           }
         };
@@ -207,7 +298,13 @@ class AudioManager {
     } catch (e) {
       if (playId === this.currentPlayId) {
         const errorMsg = e instanceof Error ? e.message : String(e);
-        console.error(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+        this.logError(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+        
+        // Save to pending if we are not unlocked yet or failed due to autoplay
+        if (!this.isUnlocked || errorMsg.includes('NotAllowedError') || errorMsg.includes('allowed') || errorMsg.includes('gesture')) {
+          this.log('Saving BGM to pending queue (awaiting user gesture)');
+          this.pendingBgmArgs = { url, volume, fadeDuration, introUrl, name, introName };
+        }
       }
     }
   }

@@ -34,5 +34,8 @@ export const STORY_LINE_FILTERS: Record<string, string[]> = {
     'act4d0', 'act5d0', 'act7d5', 'act13d0', 'act15d5',
     'act7mini', 'act10mini', 'act11mini', 'act13mini', 'act15mini', 'act16mini', 'act17mini', 'act21mini',
     'act17d0', 'act24side', 'act28side', 'act32side', 'act36side', 'act43side', 'act45side', 'act48side', 'act50side', 'act53side'
-  ]
+  ],
+  'is': ['is_1', 'is_2', 'is_3', 'is_4', 'is_5', 'is_6', 'is_7', 'rogue_'],
+  'ra': ['ra_1', 'ra_2', 'act1sandbox', 'sandbox_'],
+  'side_content': ['act8d2', 'act13d2', 'act17d7', 'act23d7', 'act31d7', 'act40d7', 'act3fun', 'act4fun', 'act5fun', 'act6fun', 'act1fun', 'act2fun', 'af_']
 };
