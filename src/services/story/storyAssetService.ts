@@ -255,21 +255,39 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/avg/images/') ||
       url.includes('/assets/char_arts/')
     ) {
+      const safeUrl = url.replace(/#/g, '%23');
       if (shouldAvoidWeserv()) {
         // WordPress Photon CDN (i0.wp.com) is an open, unblocked image proxy CDN for CIS region
-        const cleanNoProto = url.replace(/^https?:\/\//, '');
+        const cleanNoProto = safeUrl.replace(/^https?:\/\//, '');
         return `https://i0.wp.com/${cleanNoProto}`;
       }
       // Global Cloudflare-powered image proxy CDN (wsrv.nl)
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+      return `https://wsrv.nl/?url=${encodeURIComponent(safeUrl)}`;
     }
     return `/api/proxy?url=${encodeURIComponent(url)}`;
   }
   return url;
 }
 
+const SLOT_NAMES = new Set(['left', 'right', 'center', 'l', 'r', 'c', 'm', '1', '2', '3', 'left2', 'right2']);
 let cachedCharacterData: CharacterDataMap | null = null;
+let cachedNormalizedCharMap: Map<string, CharacterEntry> | null = null;
 let characterDataPromise: Promise<CharacterDataMap> | null = null;
+
+function buildNormalizedCharMap(charData: CharacterDataMap): Map<string, CharacterEntry> {
+  const map = new Map<string, CharacterEntry>();
+  for (const [key, val] of Object.entries(charData)) {
+    const lowKey = key.toLowerCase();
+    map.set(lowKey, val);
+    // Cross-alias char_ <-> avg_
+    if (lowKey.startsWith('char_')) {
+      map.set('avg_' + lowKey.substring(5), val);
+    } else if (lowKey.startsWith('avg_')) {
+      map.set('char_' + lowKey.substring(4), val);
+    }
+  }
+  return map;
+}
 
 /**
  * Robust fetcher for character asset definitions with guaranteed local fallback
@@ -304,6 +322,7 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
             const parsed = JSON.parse(trimmed) as CharacterDataMap;
             if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
               cachedCharacterData = parsed;
+              cachedNormalizedCharMap = buildNormalizedCharMap(parsed);
               return parsed;
             }
           }
@@ -330,6 +349,7 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
           const parsed = JSON.parse(trimmed) as CharacterDataMap;
           if (parsed && typeof parsed === 'object') {
             cachedCharacterData = parsed;
+            cachedNormalizedCharMap = buildNormalizedCharMap(parsed);
             return parsed;
           }
         }
@@ -345,6 +365,7 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
         const localData = (await localResponse.json()) as CharacterDataMap;
         if (localData && typeof localData === 'object' && Object.keys(localData).length > 0) {
           cachedCharacterData = localData;
+          cachedNormalizedCharMap = buildNormalizedCharMap(localData);
           return localData;
         }
       }
@@ -353,6 +374,7 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
     }
 
     cachedCharacterData = {};
+    cachedNormalizedCharMap = new Map();
     return cachedCharacterData;
   })();
 
@@ -360,31 +382,53 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
 }
 
 export async function getCharacterAssetInfo(name: string): Promise<CharacterAssetInfo> {
-  const charData = await fetchCharacterData();
-  
-  let baseName = name;
-  let expression = '';
-  
-  if (name.includes('#')) {
-    [baseName, expression] = name.split('#');
+  if (!name || SLOT_NAMES.has(name.toLowerCase().trim())) {
+    return { bodyUrl: '' };
   }
 
-  const data: CharacterEntry | undefined = charData[baseName];
+  const charData = await fetchCharacterData();
+  if (!cachedNormalizedCharMap || cachedNormalizedCharMap.size === 0) {
+    cachedNormalizedCharMap = buildNormalizedCharMap(charData);
+  }
+  
+  let baseName = name.trim();
+  let expression = '';
+  
+  if (baseName.includes('#')) {
+    const parts = baseName.split('#');
+    baseName = parts[0];
+    expression = parts[1];
+  }
+
+  const lowBase = baseName.toLowerCase();
+  const data: CharacterEntry | undefined = charData[baseName] || 
+    cachedNormalizedCharMap.get(lowBase) ||
+    cachedNormalizedCharMap.get('avg_' + lowBase.replace(/^(char_|avg_)/, '')) ||
+    cachedNormalizedCharMap.get('char_' + lowBase.replace(/^(char_|avg_)/, ''));
+
   let faceItem: CharacterFaceItem | undefined = undefined;
 
   if (data && expression) {
-    faceItem = data.array?.find((item: CharacterFaceItem) => 
-      item.name === expression || 
-      item.name === `${baseName}#${expression}` ||
-      item.name.endsWith(`_${expression}`) ||
-      item.name === `${expression}$1` ||
-      item.alias === expression
-    );
+    const lowExp = expression.toLowerCase();
+    faceItem = data.array?.find((item: CharacterFaceItem) => {
+      const lowItemName = (item.name || '').toLowerCase();
+      const lowAlias = (item.alias || '').toLowerCase();
+      return (
+        lowItemName === lowExp ||
+        lowAlias === lowExp ||
+        lowItemName === `${lowBase}#${lowExp}` ||
+        lowItemName.endsWith(`#${lowExp}`) ||
+        lowItemName.endsWith(`_${lowExp}`) ||
+        lowItemName.endsWith(`$${lowExp}`) ||
+        lowItemName === `${lowExp}$1` ||
+        lowItemName === `${lowExp}$2`
+      );
+    });
     
     if (faceItem) {
       const faceOrImg = faceItem.face || faceItem.image;
       if (faceItem.group === -1 && faceOrImg) {
-        const imagePath = faceOrImg.split('/').map(encodeURIComponent).join('/');
+        const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
         return {
@@ -395,8 +439,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       }
       const group = (data as { groups?: Array<{ base: string; faceRect?: { x: number; y: number; w: number; h: number } }> }).groups?.[faceItem.group ?? 0];
       if (group && faceOrImg) {
-        const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
-        const facePath = faceOrImg.split('/').map(encodeURIComponent).join('/');
+        const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
+        const facePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
         const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
         const cachedBody = await CacheService.getCachedBlobUrl(rawBodyUrl);
@@ -416,7 +460,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     const groupList = (data as { groups?: Array<{ base: string }> }).groups;
     if (groupList && groupList.length > 0) {
       const group = groupList[0];
-      const bodyPath = group.base.split('/').map(encodeURIComponent).join('/');
+      const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
       const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
       const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
       return {
@@ -426,8 +470,9 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
       };
     } else if (data.array && data.array.length > 0) {
       const firstItem = data.array[0];
-      if (firstItem.image) {
-        const imagePath = firstItem.image.split('/').map(encodeURIComponent).join('/');
+      const faceOrImg = firstItem.image || firstItem.face;
+      if (faceOrImg) {
+        const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
         return {
@@ -442,6 +487,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
   // Fallback: character is not indexed in character.json or has unmapped expression
   if (expression && (!data || !faceItem)) {
     const bodyVar = expression.includes('$') ? expression.split('$')[1] : '1';
+    const cleanExp = expression.split('$')[0];
     
     // Canonical candidate 1: specific body variation (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1$2.png)
     const bodyUrlCandidate1 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$' + bodyVar)}.png`;
@@ -449,16 +495,16 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     const bodyUrlCandidate2 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$1')}.png`;
     // Canonical candidate 3: base name directly (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1.png)
     const bodyUrlCandidate3 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName)}.png`;
+    // Canonical candidate 4: base name with expression hash
+    const bodyUrlCandidate4 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '#' + cleanExp)}.png`;
 
-    let resolvedBodyUrl = '';
-    if (await checkImageExists(bodyUrlCandidate1)) {
-      resolvedBodyUrl = bodyUrlCandidate1;
-    } else if (await checkImageExists(bodyUrlCandidate2)) {
-      resolvedBodyUrl = bodyUrlCandidate2;
-    } else if (await checkImageExists(bodyUrlCandidate3)) {
-      resolvedBodyUrl = bodyUrlCandidate3;
-    } else {
-      resolvedBodyUrl = bodyUrlCandidate2;
+    const candidates = [bodyUrlCandidate1, bodyUrlCandidate2, bodyUrlCandidate3, bodyUrlCandidate4];
+    let resolvedBodyUrl = bodyUrlCandidate2;
+    for (const cand of candidates) {
+      if (await checkImageExists(cand)) {
+        resolvedBodyUrl = cand;
+        break;
+      }
     }
 
     // Face is located at avg/characters/{baseName}/{expression}.png
@@ -566,6 +612,37 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
 const resolvedAudioCache: Record<string, string> = {};
 const existenceCheckCache = new Map<string, boolean>();
 
+function checkImageViaElement(url: string, timeoutMs = 3500): Promise<boolean> {
+  if (!url) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    let resolved = false;
+    const img = new Image();
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        img.src = '';
+        resolve(false);
+      }
+    }, timeoutMs);
+
+    img.onload = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        resolve(true);
+      }
+    };
+    img.onerror = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        resolve(false);
+      }
+    };
+    img.src = url;
+  });
+}
+
 export async function checkImageExists(url: string): Promise<boolean> {
   if (!url) return false;
   
@@ -579,65 +656,32 @@ export async function checkImageExists(url: string): Promise<boolean> {
     return existenceCheckCache.get(url)!;
   }
   
-  try {
-    const targetUrl = wrapUrlWithProxy(url);
-    
-    // WebKit/iOS Safari and other browsers block CORS requests with a custom 'Range' header 
-    // because torappu.prts.wiki does not support the CORS OPTIONS (preflight) request (returns 405).
-    // Instead, use a simple HEAD or GET request (which are simple requests that bypass preflight OPTIONS).
-    let response: Response;
-    try {
-      response = await fetchWithTimeout(targetUrl, { 
-        method: 'HEAD'
-      }, 2500);
-      
-      if (!response.ok && response.status !== 404) {
-        response = await fetchWithTimeout(targetUrl, { 
-          method: 'GET'
-        }, 2500);
-      }
-    } catch {
-      response = await fetchWithTimeout(targetUrl, { 
-        method: 'GET'
-      }, 2500);
-    }
+  const targetUrl = wrapUrlWithProxy(url);
 
-    if (response.ok || response.status === 206) {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/html')) {
-        existenceCheckCache.set(url, false);
-        return false;
-      }
+  // In browser, using HTMLImageElement (new Image()) avoids triggering CORS policy violations on 404/400
+  if (typeof window !== 'undefined' && typeof Image !== 'undefined') {
+    const exists = await checkImageViaElement(targetUrl);
+    if (exists) {
       existenceCheckCache.set(url, true);
       return true;
     }
-
     if (targetUrl !== url) {
-      let directResponse: Response;
-      try {
-        directResponse = await fetchWithTimeout(url, { 
-          method: 'HEAD'
-        }, 2000);
-        if (!directResponse.ok && directResponse.status !== 404) {
-          directResponse = await fetchWithTimeout(url, { 
-            method: 'GET'
-          }, 2000);
-        }
-      } catch {
-        directResponse = await fetchWithTimeout(url, { 
-          method: 'GET'
-        }, 2000);
-      }
-
-      if (directResponse.ok || directResponse.status === 206) {
-        const contentType = directResponse.headers.get('content-type');
-        const ok = !(contentType && contentType.includes('text/html'));
-        existenceCheckCache.set(url, ok);
-        return ok;
+      const directExists = await checkImageViaElement(url);
+      if (directExists) {
+        existenceCheckCache.set(url, true);
+        return true;
       }
     }
     existenceCheckCache.set(url, false);
     return false;
+  }
+
+  // Server-side fallback
+  try {
+    const response = await fetchWithTimeout(targetUrl, { method: 'HEAD' }, 2500);
+    const ok = response.ok || response.status === 206;
+    existenceCheckCache.set(url, ok);
+    return ok;
   } catch {
     existenceCheckCache.set(url, false);
     return false;
@@ -936,13 +980,14 @@ export async function preloadAssets(
       if (line.type === 'character') {
         const names = [line.assetName, line.assetName2].filter(Boolean) as string[];
         for (const name of names) {
+          if (SLOT_NAMES.has(name.toLowerCase().trim())) continue;
           resolutionPromises.push(getCharacterAssetInfo(name).then(info => {
             if (info.bodyUrl) imageAssets.add(info.bodyUrl);
             if (info.faceUrl) imageAssets.add(info.faceUrl);
           }));
         }
       } else if (line.type === 'charactercutin' || line.type === 'characteraction') {
-        if (line.assetName) {
+        if (line.assetName && !SLOT_NAMES.has(line.assetName.toLowerCase().trim())) {
           resolutionPromises.push(getCharacterAssetInfo(line.assetName).then(info => {
             if (info.bodyUrl) imageAssets.add(info.bodyUrl);
             if (info.faceUrl) imageAssets.add(info.faceUrl);
@@ -1018,27 +1063,41 @@ export async function preloadAssets(
         return;
       }
 
-      const response = await fetchWithRetry(url, 3);
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error('Fetched response is an HTML page, not binary asset');
-        }
-        const blob = await response.blob();
-        await CacheService.cacheBlob(url, blob);
-        
-        if (type === 'image') {
-          const blobUrl = await CacheService.getCachedBlobUrl(url);
-          if (blobUrl) {
-            await new Promise((resolve) => {
-              const img = new Image();
-              img.onload = resolve;
-              img.onerror = resolve;
-              img.src = blobUrl;
-              preloadedImages.push(img);
-            });
+      // Try blob caching via fetch first
+      try {
+        const response = await fetchWithRetry(url, 2);
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('text/html')) {
+            const blob = await response.blob();
+            await CacheService.cacheBlob(url, blob);
+            const blobUrl = await CacheService.getCachedBlobUrl(url);
+            if (blobUrl) {
+              await new Promise((resolve) => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = resolve;
+                img.src = blobUrl;
+                preloadedImages.push(img);
+              });
+              updateProgress(url);
+              return;
+            }
           }
         }
+      } catch {
+        // Fetch failed, fallback to native Image element preloading
+      }
+
+      // Preload directly via Image element (native browser cache, no CORS restrictions)
+      if (type === 'image') {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = resolve;
+          img.src = url;
+          preloadedImages.push(img);
+        });
       }
     } catch {
       // fallback handled by outer catch / finally
