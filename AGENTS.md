@@ -7,6 +7,7 @@ This file is automatically loaded into the AI Studio agent environment to guide 
 ## 🏛️ Project Architecture Overview
 
 - **Framework**: React 19 + TypeScript + Vite + Express (Full-Stack).
+- **Hosting & Deployment**: Hosted on **Vercel** (uses `@vercel/analytics` and `@vercel/speed-insights`, with `vercel.json` config).
 - **Styling**: Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`).
 - **Data Layer**:
   - `src/data/operators_database.json`: Main dossier dataset for operators.
