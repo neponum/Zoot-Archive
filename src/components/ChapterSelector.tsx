@@ -603,7 +603,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
   };
 
   const [activeTab, setActiveTab] = useState<string>('HOME');
-  const [archiveMode, setArchiveMode] = useState<'graph' | 'obsidian'>('obsidian');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'textLength'>(() => {
     const saved = localStorage.getItem('ak-sort-order');
     return (saved === 'chrono' ? 'asc' : saved as any) || 'asc';
@@ -631,7 +630,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
   }, [activeTab]);
 
   useEffect(() => {
-    if (location.pathname === '/' || location.pathname === '' || location.pathname.startsWith('/records')) {
+    if (location.pathname === '/' || location.pathname === '') {
       setActiveTab('HOME');
     } else if (location.pathname.startsWith('/music') || location.pathname.startsWith('/vote')) {
       setActiveTab('VOTE');

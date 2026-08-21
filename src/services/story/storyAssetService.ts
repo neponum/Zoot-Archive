@@ -386,157 +386,167 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     return { bodyUrl: '' };
   }
 
-  const charData = await fetchCharacterData();
-  if (!cachedNormalizedCharMap || cachedNormalizedCharMap.size === 0) {
-    cachedNormalizedCharMap = buildNormalizedCharMap(charData);
+  const cacheKey = name.trim();
+  if (characterAssetInfoCache.has(cacheKey)) {
+    return characterAssetInfoCache.get(cacheKey)!;
   }
-  
-  let baseName = name.trim();
-  let expression = '';
-  
-  if (baseName.includes('#')) {
-    const parts = baseName.split('#');
-    baseName = parts[0];
-    expression = parts[1];
+  if (pendingCharacterInfoPromises.has(cacheKey)) {
+    return pendingCharacterInfoPromises.get(cacheKey)!;
   }
 
-  const lowBase = baseName.toLowerCase();
-  const data: CharacterEntry | undefined = charData[baseName] || 
-    cachedNormalizedCharMap.get(lowBase) ||
-    cachedNormalizedCharMap.get('avg_' + lowBase.replace(/^(char_|avg_)/, '')) ||
-    cachedNormalizedCharMap.get('char_' + lowBase.replace(/^(char_|avg_)/, ''));
-
-  let faceItem: CharacterFaceItem | undefined = undefined;
-
-  if (data && expression) {
-    const lowExp = expression.toLowerCase();
-    faceItem = data.array?.find((item: CharacterFaceItem) => {
-      const lowItemName = (item.name || '').toLowerCase();
-      const lowAlias = (item.alias || '').toLowerCase();
-      return (
-        lowItemName === lowExp ||
-        lowAlias === lowExp ||
-        lowItemName === `${lowBase}#${lowExp}` ||
-        lowItemName.endsWith(`#${lowExp}`) ||
-        lowItemName.endsWith(`_${lowExp}`) ||
-        lowItemName.endsWith(`$${lowExp}`) ||
-        lowItemName === `${lowExp}$1` ||
-        lowItemName === `${lowExp}$2`
-      );
-    });
+  const promise = (async (): Promise<CharacterAssetInfo> => {
+    const charData = await fetchCharacterData();
+    if (!cachedNormalizedCharMap || cachedNormalizedCharMap.size === 0) {
+      cachedNormalizedCharMap = buildNormalizedCharMap(charData);
+    }
     
-    if (faceItem) {
-      const faceOrImg = faceItem.face || faceItem.image;
-      if (faceItem.group === -1 && faceOrImg) {
-        const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
-        const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
-        const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
-        return {
-          bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
-          size: data.size,
-          pos: data.pos
-        };
+    let baseName = name.trim();
+    let expression = '';
+    
+    if (baseName.includes('#')) {
+      const parts = baseName.split('#');
+      baseName = parts[0];
+      expression = parts[1];
+    }
+
+    const lowBase = baseName.toLowerCase();
+    const data: CharacterEntry | undefined = charData[baseName] || 
+      cachedNormalizedCharMap.get(lowBase) ||
+      cachedNormalizedCharMap.get('avg_' + lowBase.replace(/^(char_|avg_)/, '')) ||
+      cachedNormalizedCharMap.get('char_' + lowBase.replace(/^(char_|avg_)/, ''));
+
+    let faceItem: CharacterFaceItem | undefined = undefined;
+
+    if (data && expression) {
+      const lowExp = expression.toLowerCase();
+      faceItem = data.array?.find((item: CharacterFaceItem) => {
+        const lowItemName = (item.name || '').toLowerCase();
+        const lowAlias = (item.alias || '').toLowerCase();
+        return (
+          lowItemName === lowExp ||
+          lowAlias === lowExp ||
+          lowItemName === `${lowBase}#${lowExp}` ||
+          lowItemName.endsWith(`#${lowExp}`) ||
+          lowItemName.endsWith(`_${lowExp}`) ||
+          lowItemName.endsWith(`$${lowExp}`) ||
+          lowItemName === `${lowExp}$1` ||
+          lowItemName === `${lowExp}$2`
+        );
+      });
+      
+      if (faceItem) {
+        const faceOrImg = faceItem.face || faceItem.image;
+        if (faceItem.group === -1 && faceOrImg) {
+          const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
+          const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
+          const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
+          return {
+            bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
+            size: data.size,
+            pos: data.pos
+          };
+        }
+        const group = (data as { groups?: Array<{ base: string; faceRect?: { x: number; y: number; w: number; h: number } }> }).groups?.[faceItem.group ?? 0];
+        if (group && faceOrImg) {
+          const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
+          const facePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
+          const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
+          const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
+          const cachedBody = await CacheService.getCachedBlobUrl(rawBodyUrl);
+          const cachedFace = await CacheService.getCachedBlobUrl(rawFaceUrl);
+          return {
+            bodyUrl: cachedBody || wrapUrlWithProxy(rawBodyUrl),
+            faceUrl: cachedFace || wrapUrlWithProxy(rawFaceUrl),
+            faceRect: group.faceRect,
+            size: data.size,
+            pos: data.pos
+          };
+        }
       }
-      const group = (data as { groups?: Array<{ base: string; faceRect?: { x: number; y: number; w: number; h: number } }> }).groups?.[faceItem.group ?? 0];
-      if (group && faceOrImg) {
+    }
+
+    if (data && !expression) {
+      const groupList = (data as { groups?: Array<{ base: string }> }).groups;
+      if (groupList && groupList.length > 0) {
+        const group = groupList[0];
         const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
-        const facePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
-        const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
-        const cachedBody = await CacheService.getCachedBlobUrl(rawBodyUrl);
-        const cachedFace = await CacheService.getCachedBlobUrl(rawFaceUrl);
-        return {
-          bodyUrl: cachedBody || wrapUrlWithProxy(rawBodyUrl),
-          faceUrl: cachedFace || wrapUrlWithProxy(rawFaceUrl),
-          faceRect: group.faceRect,
-          size: data.size,
-          pos: data.pos
-        };
-      }
-    }
-  }
-
-  if (data && !expression) {
-    const groupList = (data as { groups?: Array<{ base: string }> }).groups;
-    if (groupList && groupList.length > 0) {
-      const group = groupList[0];
-      const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
-      const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
-      const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
-      return {
-        bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
-        size: data.size,
-        pos: data.pos
-      };
-    } else if (data.array && data.array.length > 0) {
-      const firstItem = data.array[0];
-      const faceOrImg = firstItem.image || firstItem.face;
-      if (faceOrImg) {
-        const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
-        const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
         const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
         return {
           bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
           size: data.size,
           pos: data.pos
         };
-      }
-    }
-  }
-
-  // Fallback: character is not indexed in character.json or has unmapped expression
-  if (expression && (!data || !faceItem)) {
-    const bodyVar = expression.includes('$') ? expression.split('$')[1] : '1';
-    const cleanExp = expression.split('$')[0];
-    
-    // Canonical candidate 1: specific body variation (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1$2.png)
-    const bodyUrlCandidate1 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$' + bodyVar)}.png`;
-    // Canonical candidate 2: default body variation (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1$1.png)
-    const bodyUrlCandidate2 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$1')}.png`;
-    // Canonical candidate 3: base name directly (e.g. avg_1015_aglna2_1/avg_1015_aglna2_1.png)
-    const bodyUrlCandidate3 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName)}.png`;
-    // Canonical candidate 4: base name with expression hash
-    const bodyUrlCandidate4 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '#' + cleanExp)}.png`;
-
-    const candidates = [bodyUrlCandidate1, bodyUrlCandidate2, bodyUrlCandidate3, bodyUrlCandidate4];
-    let resolvedBodyUrl = bodyUrlCandidate2;
-    for (const cand of candidates) {
-      if (await checkImageExists(cand)) {
-        resolvedBodyUrl = cand;
-        break;
+      } else if (data.array && data.array.length > 0) {
+        const firstItem = data.array[0];
+        const faceOrImg = firstItem.image || firstItem.face;
+        if (faceOrImg) {
+          const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
+          const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
+          const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
+          return {
+            bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
+            size: data.size,
+            pos: data.pos
+          };
+        }
       }
     }
 
-    // Face is located at avg/characters/{baseName}/{expression}.png
-    const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
-    let resolvedFaceUrl: string | undefined = undefined;
-    if (await checkImageExists(rawFaceUrl)) {
-      resolvedFaceUrl = rawFaceUrl;
-    } else if (!expression.includes('$') && /^\d+$/.test(expression)) {
-      // If expression was simply '1' instead of '1$1'
-      const rawFaceWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression + '$1')}.png`;
-      if (await checkImageExists(rawFaceWithDollar)) {
-        resolvedFaceUrl = rawFaceWithDollar;
+    // Fallback: character is not indexed in character.json or has unmapped expression
+    if (expression && (!data || !faceItem)) {
+      const bodyVar = expression.includes('$') ? expression.split('$')[1] : '1';
+      const cleanExp = expression.split('$')[0];
+      
+      const bodyUrlCandidate1 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$' + bodyVar)}.png`;
+      const bodyUrlCandidate2 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$1')}.png`;
+      const bodyUrlCandidate3 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName)}.png`;
+      const bodyUrlCandidate4 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '#' + cleanExp)}.png`;
+
+      const candidates = [bodyUrlCandidate1, bodyUrlCandidate2, bodyUrlCandidate3, bodyUrlCandidate4];
+      let resolvedBodyUrl = bodyUrlCandidate2;
+      for (const cand of candidates) {
+        if (await checkImageExists(cand)) {
+          resolvedBodyUrl = cand;
+          break;
+        }
       }
+
+      const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
+      let resolvedFaceUrl: string | undefined = undefined;
+      if (await checkImageExists(rawFaceUrl)) {
+        resolvedFaceUrl = rawFaceUrl;
+      } else if (!expression.includes('$') && /^\d+$/.test(expression)) {
+        const rawFaceWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression + '$1')}.png`;
+        if (await checkImageExists(rawFaceWithDollar)) {
+          resolvedFaceUrl = rawFaceWithDollar;
+        }
+      }
+
+      const cachedBody = await CacheService.getCachedBlobUrl(resolvedBodyUrl);
+      const cachedFace = resolvedFaceUrl ? await CacheService.getCachedBlobUrl(resolvedFaceUrl) : undefined;
+
+      return {
+        bodyUrl: cachedBody || wrapUrlWithProxy(resolvedBodyUrl),
+        faceUrl: cachedFace || (resolvedFaceUrl ? wrapUrlWithProxy(resolvedFaceUrl) : undefined),
+        size: data?.size,
+        pos: data?.pos
+      };
     }
 
-    const cachedBody = await CacheService.getCachedBlobUrl(resolvedBodyUrl);
-    const cachedFace = resolvedFaceUrl ? await CacheService.getCachedBlobUrl(resolvedFaceUrl) : undefined;
-
+    const fallbackBodyUrl = await getImageUrl('character_body', baseName);
+    const cachedFallback = await CacheService.getCachedBlobUrl(fallbackBodyUrl);
     return {
-      bodyUrl: cachedBody || wrapUrlWithProxy(resolvedBodyUrl),
-      faceUrl: cachedFace || (resolvedFaceUrl ? wrapUrlWithProxy(resolvedFaceUrl) : undefined),
-      size: data?.size,
-      pos: data?.pos
+      bodyUrl: cachedFallback || wrapUrlWithProxy(fallbackBodyUrl),
+      size: data?.size
     };
-  }
+  })();
 
-  const fallbackBodyUrl = await getImageUrl('character_body', baseName);
-  const cachedFallback = await CacheService.getCachedBlobUrl(fallbackBodyUrl);
-  return {
-    bodyUrl: cachedFallback || wrapUrlWithProxy(fallbackBodyUrl),
-    size: data?.size
-  };
+  pendingCharacterInfoPromises.set(cacheKey, promise);
+  const result = await promise;
+  characterAssetInfoCache.set(cacheKey, result);
+  pendingCharacterInfoPromises.delete(cacheKey);
+  return result;
 }
 
 const urlCache = new Map<string, string>();
@@ -936,9 +946,36 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
 let preloadedImages: HTMLImageElement[] = [];
 let preloadedAudio: HTMLAudioElement[] = [];
 
+const characterAssetInfoCache = new Map<string, CharacterAssetInfo>();
+const pendingCharacterInfoPromises = new Map<string, Promise<CharacterAssetInfo>>();
+const naturalSizeCache = new Map<string, { w: number; h: number }>();
+const loadedImageUrlSet = new Set<string>();
+
+export function getNaturalSize(url: string): { w: number; h: number } | undefined {
+  if (!url) return undefined;
+  return naturalSizeCache.get(url);
+}
+
+export function isImageLoadedInCache(url: string): boolean {
+  if (!url) return false;
+  return loadedImageUrlSet.has(url);
+}
+
+export function recordLoadedImage(url: string, naturalWidth?: number, naturalHeight?: number): void {
+  if (!url) return;
+  loadedImageUrlSet.add(url);
+  if (naturalWidth && naturalHeight) {
+    naturalSizeCache.set(url, { w: naturalWidth, h: naturalHeight });
+  }
+}
+
 export function clearPreloadedImages(): void {
   preloadedImages = [];
   preloadedAudio = [];
+  characterAssetInfoCache.clear();
+  pendingCharacterInfoPromises.clear();
+  naturalSizeCache.clear();
+  loadedImageUrlSet.clear();
   CacheService.revokeBlobUrls();
   clearUrlCache();
 }
@@ -975,20 +1012,15 @@ export async function preloadAssets(
   const audioAssets = new Set<string>();
   const resolutionPromises: Promise<void>[] = [];
 
+  const charLineTypes = ['character', 'charactertween', 'charactercutin', 'characteraction', 'interlude'];
+
   for (const line of lines) {
     if (line.assetName || (line.type === 'character' && line.assetName2)) {
-      if (line.type === 'character') {
-        const names = [line.assetName, line.assetName2].filter(Boolean) as string[];
+      if (charLineTypes.includes(line.type)) {
+        const names = [line.assetName, (line as { assetName2?: string }).assetName2].filter(Boolean) as string[];
         for (const name of names) {
           if (SLOT_NAMES.has(name.toLowerCase().trim())) continue;
           resolutionPromises.push(getCharacterAssetInfo(name).then(info => {
-            if (info.bodyUrl) imageAssets.add(info.bodyUrl);
-            if (info.faceUrl) imageAssets.add(info.faceUrl);
-          }));
-        }
-      } else if (line.type === 'charactercutin' || line.type === 'characteraction') {
-        if (line.assetName && !SLOT_NAMES.has(line.assetName.toLowerCase().trim())) {
-          resolutionPromises.push(getCharacterAssetInfo(line.assetName).then(info => {
             if (info.bodyUrl) imageAssets.add(info.bodyUrl);
             if (info.faceUrl) imageAssets.add(info.faceUrl);
           }));
@@ -1053,8 +1085,11 @@ export async function preloadAssets(
         if (type === 'image') {
           await new Promise((resolve) => {
             const img = new Image();
-            img.onload = resolve;
-            img.onerror = resolve;
+            img.onload = () => {
+              recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
+              resolve(null);
+            };
+            img.onerror = () => resolve(null);
             img.src = cachedBlobUrl;
             preloadedImages.push(img);
           });
@@ -1075,8 +1110,11 @@ export async function preloadAssets(
             if (blobUrl) {
               await new Promise((resolve) => {
                 const img = new Image();
-                img.onload = resolve;
-                img.onerror = resolve;
+                img.onload = () => {
+                  recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
+                  resolve(null);
+                };
+                img.onerror = () => resolve(null);
                 img.src = blobUrl;
                 preloadedImages.push(img);
               });
@@ -1093,8 +1131,11 @@ export async function preloadAssets(
       if (type === 'image') {
         await new Promise((resolve) => {
           const img = new Image();
-          img.onload = resolve;
-          img.onerror = resolve;
+          img.onload = () => {
+            recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
+            resolve(null);
+          };
+          img.onerror = () => resolve(null);
           img.src = url;
           preloadedImages.push(img);
         });

@@ -4417,7 +4417,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
             </div>
 
             {/* Sidebar Tab Contents */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin p-4 flex flex-col gap-5 bg-[#0c0c0e]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-5 bg-[#0c0c0e]">
               {aiActiveTab === 'translate' ? (
                 // TAB 1: Translate Options & Database
                 <div className="flex flex-col gap-5">
@@ -5068,7 +5068,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
             <div className="flex-1 flex overflow-hidden min-h-0 bg-[#0c0c0e]">
               
               {/* Left Column: Tools, Keys, Glossary, and Directives */}
-              <div className="w-[330px] border-r border-[#1a1a1e] flex flex-col h-full shrink-0 bg-[#0f0f11] overflow-y-auto p-4 gap-5 scrollbar-thin">
+              <div className="w-[330px] border-r border-[#1a1a1e] flex flex-col h-full shrink-0 bg-[#0f0f11] overflow-y-auto p-4 gap-5 custom-scrollbar">
                 
                 {/* Access Settings */}
                 <div className="flex flex-col gap-2.5">

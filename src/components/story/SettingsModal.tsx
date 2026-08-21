@@ -96,7 +96,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="flex-grow overflow-y-auto scrollbar-none px-4 pb-24">
+          <div className="flex-grow overflow-y-auto custom-scrollbar px-6 pb-24">
             <div className="max-w-3xl mx-auto space-y-12 pt-8">
               {/* Sound Settings */}
               <section className="space-y-8">

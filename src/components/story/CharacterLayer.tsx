@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
-import { cleanAndUnwrapUrl } from '../../services/storyService';
+import { cleanAndUnwrapUrl, getNaturalSize, isImageLoadedInCache, recordLoadedImage } from '../../services/storyService';
 
 interface CharacterSlot {
   url: string | null;
@@ -25,29 +25,57 @@ interface CharacterLayerProps {
 }
 
 const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; characterSlots: Record<string, CharacterSlot> }> = ({ slot, data, characterSlots }) => {
-  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
-  const [faceLoaded, setFaceLoaded] = useState(false);
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(() => {
+    if (data.url) {
+      const cached = getNaturalSize(data.url);
+      if (cached) return cached;
+    }
+    if (data.size && data.size.x && data.size.y) {
+      return { w: data.size.x, h: data.size.y };
+    }
+    return null;
+  });
 
-  // Reset face loaded and naturalSize states when URL changes
+  const [faceLoaded, setFaceLoaded] = useState<boolean>(() => {
+    if (!data.faceUrl) return true;
+    return isImageLoadedInCache(data.faceUrl);
+  });
+
+  // Sync face loaded and naturalSize states when URL or size changes
   useEffect(() => {
-    setNaturalSize(null);
-    setFaceLoaded(false);
-  }, [data.url, data.faceUrl]);
+    if (data.url) {
+      const cached = getNaturalSize(data.url);
+      if (cached) {
+        setNaturalSize(cached);
+      } else if (data.size && data.size.x && data.size.y) {
+        setNaturalSize({ w: data.size.x, h: data.size.y });
+      }
+    }
+    if (data.faceUrl) {
+      setFaceLoaded(isImageLoadedInCache(data.faceUrl));
+    } else {
+      setFaceLoaded(true);
+    }
+  }, [data.url, data.faceUrl, data.size]);
 
   const handleBodyRef = React.useCallback((img: HTMLImageElement | null) => {
     if (img && img.complete && img.naturalWidth && img.naturalHeight) {
+      if (data.url) recordLoadedImage(data.url, img.naturalWidth, img.naturalHeight);
       setNaturalSize({
         w: img.naturalWidth,
         h: img.naturalHeight
       });
     }
-  }, []);
+  }, [data.url]);
 
   const handleFaceRef = React.useCallback((img: HTMLImageElement | null) => {
-    if (img && img.complete && img.naturalWidth) {
-      setFaceLoaded(true);
+    if (img) {
+      if (data.faceUrl) recordLoadedImage(data.faceUrl);
+      if (img.complete && img.naturalWidth) {
+        setFaceLoaded(true);
+      }
     }
-  }, []);
+  }, [data.faceUrl]);
 
   // Dimming logic
   const isDimmed = !data.focus && !Object.values(characterSlots).every((s: any) => !s.focus);
@@ -166,10 +194,10 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           draggable="false"
           loading="eager"
           onLoad={(e) => {
-            setNaturalSize({
-              w: e.currentTarget.naturalWidth,
-              h: e.currentTarget.naturalHeight
-            });
+            const w = e.currentTarget.naturalWidth;
+            const h = e.currentTarget.naturalHeight;
+            if (data.url && w && h) recordLoadedImage(data.url, w, h);
+            setNaturalSize({ w, h });
           }}
           onError={(e) => {
             const currentSrc = e.currentTarget.src;
@@ -190,7 +218,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             src={data.faceUrl} 
             alt="" 
             className={cn(
-              "absolute max-w-none transition-opacity duration-150 pointer-events-none select-none",
+              "absolute max-w-none pointer-events-none select-none",
               faceLoaded ? "opacity-100" : "opacity-0"
             )}
             style={{
@@ -204,7 +232,10 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             referrerPolicy="no-referrer"
             draggable="false"
             loading="eager"
-            onLoad={() => setFaceLoaded(true)}
+            onLoad={() => {
+              if (data.faceUrl) recordLoadedImage(data.faceUrl);
+              setFaceLoaded(true);
+            }}
             onError={(e) => {
               const currentSrc = e.currentTarget.src;
               const cleanUrl = cleanAndUnwrapUrl(data.faceUrl || '');

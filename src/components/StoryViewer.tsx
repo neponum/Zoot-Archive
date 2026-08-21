@@ -340,10 +340,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
               // Load character assets (body, face, positioning) using the new asset info service
               const slotUpdates: Record<string, CharacterSlotData> = {};
-              for (const char of charsToLoad) {
-                const assetInfo = await getCharacterAssetInfo(char.name);
-                if (processToken.current !== token) return;
+              const assetInfos = await Promise.all(charsToLoad.map(char => getCharacterAssetInfo(char.name)));
+              if (processToken.current !== token) return;
 
+              charsToLoad.forEach((char, index) => {
+                const assetInfo = assetInfos[index];
                 const existingSlot = characterSlotsRef.current[char.slot];
                 const hasNewAnim = line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined;
                 
@@ -363,7 +364,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     duration: line.duration
                   } : existingSlot?.animation
                 };
-              }
+              });
               dispatch({ type: 'UPDATE_CHARACTER_SLOTS', payload: slotUpdates });
             } else if (line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined) {
               const getSlotName = (rawSlot: string | undefined): string => {

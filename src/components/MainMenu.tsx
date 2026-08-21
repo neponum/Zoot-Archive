@@ -1808,7 +1808,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-8 max-w-4xl mx-auto w-full">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 max-w-4xl mx-auto w-full">
             
             {/* 1. Language Settings */}
             <section className="space-y-4">
