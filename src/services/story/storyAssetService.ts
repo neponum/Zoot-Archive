@@ -255,7 +255,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/avg/images/') ||
       url.includes('/assets/char_arts/')
     ) {
-      const safeUrl = url.replace(/#/g, '%23');
+      const safeUrl = url.replace(/#/g, '%23').replace(/\$/g, '%24');
       if (shouldAvoidWeserv()) {
         // WordPress Photon CDN (i0.wp.com) is an open, unblocked image proxy CDN for CIS region
         const cleanNoProto = safeUrl.replace(/^https?:\/\//, '');
@@ -269,7 +269,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
   return url;
 }
 
-const SLOT_NAMES = new Set(['left', 'right', 'center', 'l', 'r', 'c', 'm', '1', '2', '3', 'left2', 'right2']);
+const SLOT_NAMES = new Set(['left', 'right', 'center', 'l', 'r', 'c', 'm', '1', '2', '3', 'left2', 'right2', 'middle', 'mid', 'top', 'bottom', 'bg', 'sub']);
 let cachedCharacterData: CharacterDataMap | null = null;
 let cachedNormalizedCharMap: Map<string, CharacterEntry> | null = null;
 let characterDataPromise: Promise<CharacterDataMap> | null = null;
@@ -630,7 +630,9 @@ function checkImageViaElement(url: string, timeoutMs = 3500): Promise<boolean> {
     const timer = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        img.src = '';
+        img.onload = null;
+        img.onerror = null;
+        // Do NOT set img.src = '' as setting empty src on an in-flight request triggers NS_BINDING_ABORTED
         resolve(false);
       }
     }, timeoutMs);
@@ -639,6 +641,11 @@ function checkImageViaElement(url: string, timeoutMs = 3500): Promise<boolean> {
       if (!resolved) {
         resolved = true;
         clearTimeout(timer);
+        img.onload = null;
+        img.onerror = null;
+        if (img.naturalWidth && img.naturalHeight) {
+          recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
+        }
         resolve(true);
       }
     };
@@ -646,6 +653,8 @@ function checkImageViaElement(url: string, timeoutMs = 3500): Promise<boolean> {
       if (!resolved) {
         resolved = true;
         clearTimeout(timer);
+        img.onload = null;
+        img.onerror = null;
         resolve(false);
       }
     };
@@ -754,12 +763,12 @@ async function resolveVisualAssetUrl(name: string, preferredType: 'background' |
     }
   }
 
-  // Check all candidates simultaneously in parallel for instant resolution
-  const checks = await Promise.all(
-    uniqueCandidates.map(async url => ({ url, exists: await checkImageExists(url) }))
-  );
-  const match = checks.find(res => res.exists);
-  if (match) return match.url;
+  // Check candidates sequentially to avoid sending redundant parallel requests for non-existent paths
+  for (const cand of uniqueCandidates) {
+    if (await checkImageExists(cand)) {
+      return cand;
+    }
+  }
 
   return uniqueCandidates[0];
 }
@@ -1061,8 +1070,6 @@ export async function preloadAssets(
   };
 
   const loadAsset = async (url: string, type: 'image' | 'audio') => {
-    const fileName = extractFileName(url);
-    if (onProgress) onProgress(loaded, total, fileName);
     try {
       if (type === 'audio') {
         // Preload audio using the standard proxy URL to trigger browser native HTTP caching.
@@ -1076,66 +1083,35 @@ export async function preloadAssets(
           audio.load();
           preloadedAudio.push(audio);
         });
-        updateProgress(url);
         return;
       }
 
       const cachedBlobUrl = await CacheService.getCachedBlobUrl(url).catch(() => null);
       if (cachedBlobUrl) {
         if (type === 'image') {
-          await new Promise((resolve) => {
+          await new Promise<void>((resolve) => {
             const img = new Image();
             img.onload = () => {
               recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
-              resolve(null);
+              resolve();
             };
-            img.onerror = () => resolve(null);
+            img.onerror = () => resolve();
             img.src = cachedBlobUrl;
             preloadedImages.push(img);
           });
         }
-        updateProgress(url);
         return;
       }
 
-      // Try blob caching via fetch first
-      try {
-        const response = await fetchWithRetry(url, 2);
-        if (response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('text/html')) {
-            const blob = await response.blob();
-            await CacheService.cacheBlob(url, blob);
-            const blobUrl = await CacheService.getCachedBlobUrl(url);
-            if (blobUrl) {
-              await new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                  recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
-                  resolve(null);
-                };
-                img.onerror = () => resolve(null);
-                img.src = blobUrl;
-                preloadedImages.push(img);
-              });
-              updateProgress(url);
-              return;
-            }
-          }
-        }
-      } catch {
-        // Fetch failed, fallback to native Image element preloading
-      }
-
-      // Preload directly via Image element (native browser cache, no CORS restrictions)
+      // Preload image directly via HTMLImageElement (populates browser HTTP cache, avoids XHR CORS restrictions)
       if (type === 'image') {
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
           const img = new Image();
           img.onload = () => {
             recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
-            resolve(null);
+            resolve();
           };
-          img.onerror = () => resolve(null);
+          img.onerror = () => resolve();
           img.src = url;
           preloadedImages.push(img);
         });
