@@ -131,10 +131,10 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
       if (!pos || typeof pos !== 'string') return { x: 0, y: 0 };
       const parts = pos.split(',');
       const x = parseFloat(parts[0] || '0');
-      const y = parseFloat(parts[parts.length > 1 ? 1 : 0] || '0');
+      const y = parts.length > 1 ? parseFloat(parts[1] || '0') : 0;
       return { 
         x: isNaN(x) ? 0 : x, 
-        y: isNaN(y) ? 0 : -y // Invert Y for screen coordinates
+        y: isNaN(y) ? 0 : -y // Invert Y for screen coordinates (in AVG engine +Y is up, in CSS translateY +Y is down)
       };
     };
 

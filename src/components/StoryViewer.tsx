@@ -811,10 +811,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           }
 
           case 'characteraction': {
-            const cleanSearchName = line.assetName?.split(/[#$]/)[0]?.toLowerCase();
+            const rawTarget = (line.assetName || '').toLowerCase().trim();
             let resolvedSlot = 'center';
-            
-            if (cleanSearchName) {
+
+            if (rawTarget === 'left' || rawTarget === 'l' || rawTarget === '1') {
+              resolvedSlot = 'left';
+            } else if (rawTarget === 'right' || rawTarget === 'r' || rawTarget === '3') {
+              resolvedSlot = 'right';
+            } else if (rawTarget === 'center' || rawTarget === 'middle' || rawTarget === 'mid' || rawTarget === 'm' || rawTarget === 'c' || rawTarget === '2') {
+              resolvedSlot = 'center';
+            } else if (rawTarget) {
+              const cleanSearchName = rawTarget.split(/[#$]/)[0];
               const foundSlotEntry = Object.entries(characterSlotsRef.current).find(([_, slotData]) => {
                 const typedData = slotData as CharacterSlotData;
                 const slotCleanName = typedData?.name?.split(/[#$]/)[0]?.toLowerCase();
@@ -822,9 +829,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               });
               if (foundSlotEntry) {
                 resolvedSlot = foundSlotEntry[0];
-              } else {
-                // Fallback to literal slot name match
-                resolvedSlot = line.assetName === 'left' ? 'left' : (line.assetName === 'right' ? 'right' : 'center');
               }
             }
 
@@ -836,6 +840,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             } else if (line.actionType === 'move' && line.assetName) {
               const currentSlot = characterSlotsRef.current[resolvedSlot];
               if (currentSlot?.url) {
+                const targetX = line.xpos !== undefined ? line.xpos : 0;
+                const targetY = line.ypos !== undefined ? line.ypos : 0;
                 dispatch({
                   type: 'UPDATE_CHARACTER_SLOT',
                   payload: {
@@ -843,8 +849,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     data: {
                       ...currentSlot,
                       animation: {
-                        posFrom: undefined,
-                        posTo: line.xpos ? `${line.xpos}px` : undefined,
+                        posFrom: currentSlot.animation?.posTo || undefined,
+                        posTo: `${targetX},${targetY}`,
                         duration: line.duration
                       }
                     }

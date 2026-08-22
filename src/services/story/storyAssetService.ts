@@ -299,6 +299,13 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     return { bodyUrl: '' };
   }
 
+  const cleanName = name.trim().toLowerCase();
+  if (cleanName === 'char_empty' || cleanName.startsWith('char_empty#')) {
+    return {
+      bodyUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+    };
+  }
+
   const cacheKey = name.trim();
   if (characterAssetInfoCache.has(cacheKey)) {
     return characterAssetInfoCache.get(cacheKey)!;
