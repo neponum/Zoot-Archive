@@ -20,8 +20,7 @@ const ALLOWED_PREFIXES = [
   'https://torappu.prts.wiki/',
   'https://prts.wiki/',
   'https://monster-siren.hypergryph.com/',
-  'https://web.hycdn.cn/',
-  'https://res01.banyat.com/'
+  'https://web.hycdn.cn/'
 ];
 
 // Pre-parse allowed prefixes for strict hostname and normalized path matching
@@ -79,14 +78,12 @@ router.get('/', proxyLimiter, async (req, res) => {
   const isAllowedDomain = 
     parsedUrl.hostname.endsWith('.hycdn.cn') ||
     parsedUrl.hostname.endsWith('.hypergryph.com') ||
-    parsedUrl.hostname.endsWith('.banyat.com') ||
     parsedUrl.hostname.endsWith('.prts.wiki') ||
     parsedUrl.hostname.endsWith('.githubusercontent.com') ||
     parsedUrl.hostname.endsWith('.jsdelivr.net') ||
     parsedUrl.hostname.endsWith('.weserv.nl') ||
     parsedUrl.hostname === 'hycdn.cn' ||
     parsedUrl.hostname === 'hypergryph.com' ||
-    parsedUrl.hostname === 'banyat.com' ||
     parsedUrl.hostname === 'prts.wiki' ||
     parsedUrl.hostname === 'raw.githubusercontent.com' ||
     parsedUrl.hostname === 'fastly.jsdelivr.net' ||

@@ -16,9 +16,7 @@ const requiredFiles = [
   'operators_database.json',
   'operator_names_map.json',
   'tags_database.json',
-  'translations.json',
-  'audio_music.json',
-  'audio_sound.json'
+  'translations.json'
 ];
 
 for (const file of requiredFiles) {

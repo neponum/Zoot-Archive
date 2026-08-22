@@ -5,6 +5,7 @@ import { TRANSLATION_REGISTRY, getDefaultTranslator } from '../../config/transla
 import { UI_STRINGS } from '../../translations';
 import { TranslationRow } from './storyTypes';
 import { EXTRA_STORIES } from '../../data/extraStories';
+import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../../utils/operatorUtils';
 
 export function detectInitialLanguage(): Language {
   try {
@@ -397,8 +398,25 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
         const manualTranslations = UI_STRINGS[currentLanguage]?.story_titles;
         if (manualTranslations && manualTranslations[key]) {
           displayName = manualTranslations[key];
+        } else if (manualTranslations && chineseName && manualTranslations[chineseName]) {
+          displayName = manualTranslations[chineseName];
+        } else if (manualTranslations && obj.name && manualTranslations[obj.name]) {
+          displayName = manualTranslations[obj.name];
+        } else if (manualTranslations && englishName && manualTranslations[englishName]) {
+          displayName = manualTranslations[englishName];
         } else if (dataLang === 'zh_CN' && currentLanguage !== 'zh_CN' && englishName && !/[\u4e00-\u9fa5]/.test(englishName)) {
           displayName = englishName;
+        }
+
+        // Russian fallback for CN operator records and stories
+        if ((currentLanguage === 'ru_RU' || currentLanguage === 'ru_RU_CN') && /[\u4e00-\u9fa5]/.test(displayName)) {
+          if (isOperatorEpisode(key) || obj.entryType === 'NONE') {
+            const opKey = extractOperatorKey(key);
+            const opDetails = getOperatorDetails(opKey, currentLanguage);
+            const setMatch = key.match(/set_(\d+)/i) || key.match(/record_(\d+)/i) || key.match(/_(\d+)$/);
+            const setNum = setMatch ? setMatch[1] : '1';
+            displayName = `${opDetails.displayName} · Запись ${setNum}`;
+          }
         }
 
         episodes.push({

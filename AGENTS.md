@@ -62,10 +62,8 @@ The visual novel player lives in `src/components/StoryViewer.tsx` and `src/compo
 
 ## 🎵 Audio Subsystem
 
-Managed via `src/services/audioManager.ts`:
-- **Datasets**:
-  - `src/data/audio_sound.json`: Sound effects (SFX) manifest.
-  - `src/data/audio_music.json`: Background music (BGM) manifest.
+Managed via `src/services/audioManager.ts` & `src/services/story/storyAssetService.ts`:
+- **Dynamic Resolution & Caching**: BGM and sound effect URLs are resolved dynamically directly from Torappu PRTS Wiki (`https://torappu.prts.wiki/assets/audio/`) with client-side IndexedDB persistence via `CacheService`.
 - **Audio Unlock Policy**: Browsers block autoplay before user interaction. `audioManager.unlock()` is triggered on initial user interaction (e.g. selecting a chapter).
 - **Fade & Crossfade**: Smooth volume transitions for BGM changes.
 

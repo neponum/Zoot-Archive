@@ -39,55 +39,55 @@
     "displayName": "THRM-EX",
     "englishName": "THRM-EX",
     "chineseName": "THRM-EX",
-    "russianName": "THRM-EX"
+    "russianName": "Термал-EX"
   },
   "therex": {
     "displayName": "THRM-EX",
     "englishName": "THRM-EX",
     "chineseName": "THRM-EX",
-    "russianName": "THRM-EX"
+    "russianName": "Термал-EX"
   },
   "thrmex": {
     "displayName": "THRM-EX",
     "englishName": "THRM-EX",
     "chineseName": "THRM-EX",
-    "russianName": "THRM-EX"
+    "russianName": "Термал-EX"
   },
   "char_4000_jnight": {
     "displayName": "'Justice Knight'",
     "englishName": "'Justice Knight'",
     "chineseName": "正义骑士号",
-    "russianName": "'Justice Knight'"
+    "russianName": "Джастис Найт"
   },
   "jnight": {
     "displayName": "'Justice Knight'",
     "englishName": "'Justice Knight'",
     "chineseName": "正义骑士号",
-    "russianName": "'Justice Knight'"
+    "russianName": "Джастис Найт"
   },
   "justiceknight": {
     "displayName": "'Justice Knight'",
     "englishName": "'Justice Knight'",
     "chineseName": "正义骑士号",
-    "russianName": "'Justice Knight'"
+    "russianName": "Джастис Найт"
   },
   "char_4077_palico": {
     "displayName": "Terra Research Commission",
     "englishName": "Terra Research Commission",
     "chineseName": "泰拉大陆调查团",
-    "russianName": "Terra Research Commission"
+    "russianName": "Исследовательская комиссия Терры"
   },
   "palico": {
     "displayName": "Terra Research Commission",
     "englishName": "Terra Research Commission",
     "chineseName": "泰拉大陆调查团",
-    "russianName": "Terra Research Commission"
+    "russianName": "Исследовательская комиссия Терры"
   },
   "terraresearchcommission": {
     "displayName": "Terra Research Commission",
     "englishName": "Terra Research Commission",
     "chineseName": "泰拉大陆调查团",
-    "russianName": "Terra Research Commission"
+    "russianName": "Исследовательская комиссия Терры"
   },
   "char_4091_ulika": {
     "displayName": "U-Official",
@@ -165,67 +165,67 @@
     "displayName": "Yato",
     "englishName": "Yato",
     "chineseName": "夜刀",
-    "russianName": "Yato"
+    "russianName": "Ято"
   },
   "nblade": {
     "displayName": "Yato",
     "englishName": "Yato",
     "chineseName": "夜刀",
-    "russianName": "Yato"
+    "russianName": "Ято"
   },
   "yato": {
     "displayName": "Yato",
     "englishName": "Yato",
     "chineseName": "夜刀",
-    "russianName": "Yato"
+    "russianName": "Ято"
   },
   "char_500_noirc": {
     "displayName": "Noir Corne",
     "englishName": "Noir Corne",
     "chineseName": "黑角",
-    "russianName": "Noir Corne"
+    "russianName": "Нуар Корн"
   },
   "noirc": {
     "displayName": "Noir Corne",
     "englishName": "Noir Corne",
     "chineseName": "黑角",
-    "russianName": "Noir Corne"
+    "russianName": "Нуар Корн"
   },
   "noircorne": {
     "displayName": "Noir Corne",
     "englishName": "Noir Corne",
     "chineseName": "黑角",
-    "russianName": "Noir Corne"
+    "russianName": "Нуар Корн"
   },
   "char_503_rang": {
     "displayName": "Rangers",
     "englishName": "Rangers",
     "chineseName": "巡林者",
-    "russianName": "Rangers"
+    "russianName": "Рейнджерс"
   },
   "rang": {
     "displayName": "Rangers",
     "englishName": "Rangers",
     "chineseName": "巡林者",
-    "russianName": "Rangers"
+    "russianName": "Рейнджерс"
   },
   "rangers": {
     "displayName": "Rangers",
     "englishName": "Rangers",
     "chineseName": "巡林者",
-    "russianName": "Rangers"
+    "russianName": "Рейнджерс"
   },
   "char_501_durin": {
     "displayName": "Durin",
     "englishName": "Durin",
     "chineseName": "杜林",
-    "russianName": "Durin"
+    "russianName": "Дурин"
   },
   "durin": {
     "displayName": "Durin",
     "englishName": "Durin",
     "chineseName": "杜林",
-    "russianName": "Durin"
+    "russianName": "Дурин"
   },
   "char_009_12fce": {
     "displayName": "12F",
@@ -279,19 +279,19 @@
     "displayName": "Reserve Operator - Melee",
     "englishName": "Reserve Operator - Melee",
     "chineseName": "预备干员-近战",
-    "russianName": "Reserve Operator - Melee"
+    "russianName": "Резервный оперативник (Ближний бой)"
   },
   "rguard": {
     "displayName": "Reserve Operator - Melee",
     "englishName": "Reserve Operator - Melee",
     "chineseName": "预备干员-近战",
-    "russianName": "Reserve Operator - Melee"
+    "russianName": "Резервный оперативник (Ближний бой)"
   },
   "reserveoperatormelee": {
     "displayName": "Reserve Operator - Melee",
     "englishName": "Reserve Operator - Melee",
     "chineseName": "预备干员-近战",
-    "russianName": "Reserve Operator - Melee"
+    "russianName": "Резервный оперативник (Ближний бой)"
   },
   "char_192_falco": {
     "displayName": "Plume",
@@ -351,19 +351,19 @@
     "displayName": "Cardigan",
     "englishName": "Cardigan",
     "chineseName": "卡缇",
-    "russianName": "Cardigan"
+    "russianName": "Кардиган"
   },
   "ardign": {
     "displayName": "Cardigan",
     "englishName": "Cardigan",
     "chineseName": "卡缇",
-    "russianName": "Cardigan"
+    "russianName": "Кардиган"
   },
   "cardigan": {
     "displayName": "Cardigan",
     "englishName": "Cardigan",
     "chineseName": "卡缇",
-    "russianName": "Cardigan"
+    "russianName": "Кардиган"
   },
   "char_122_beagle": {
     "displayName": "Beagle",
@@ -381,19 +381,19 @@
     "displayName": "Reserve Operator - Defender",
     "englishName": "Reserve Operator - Defender",
     "chineseName": "预备干员-重装",
-    "russianName": "Reserve Operator - Defender"
+    "russianName": "Резервный оперативник (Защитник)"
   },
   "rdfend": {
     "displayName": "Reserve Operator - Defender",
     "englishName": "Reserve Operator - Defender",
     "chineseName": "预备干员-重装",
-    "russianName": "Reserve Operator - Defender"
+    "russianName": "Резервный оперативник (Защитник)"
   },
   "reserveoperatordefender": {
     "displayName": "Reserve Operator - Defender",
     "englishName": "Reserve Operator - Defender",
     "chineseName": "预备干员-重装",
-    "russianName": "Reserve Operator - Defender"
+    "russianName": "Резервный оперативник (Защитник)"
   },
   "char_284_spot": {
     "displayName": "Spot",
@@ -441,19 +441,19 @@
     "displayName": "Reserve Operator - Sniper",
     "englishName": "Reserve Operator - Sniper",
     "chineseName": "预备干员-狙击",
-    "russianName": "Reserve Operator - Sniper"
+    "russianName": "Резервный оперативник (Снайпер)"
   },
   "rsnipe": {
     "displayName": "Reserve Operator - Sniper",
     "englishName": "Reserve Operator - Sniper",
     "chineseName": "预备干员-狙击",
-    "russianName": "Reserve Operator - Sniper"
+    "russianName": "Резервный оперативник (Снайпер)"
   },
   "reserveoperatorsniper": {
     "displayName": "Reserve Operator - Sniper",
     "englishName": "Reserve Operator - Sniper",
     "chineseName": "预备干员-狙击",
-    "russianName": "Reserve Operator - Sniper"
+    "russianName": "Резервный оперативник (Снайпер)"
   },
   "char_121_lava": {
     "displayName": "Lava",
@@ -501,19 +501,19 @@
     "displayName": "Reserve Operator - Logistics",
     "englishName": "Reserve Operator - Logistics",
     "chineseName": "预备干员-后勤",
-    "russianName": "Reserve Operator - Logistics"
+    "russianName": "Резервный оперативник (Логистика)"
   },
   "rmedic": {
     "displayName": "Reserve Operator - Logistics",
     "englishName": "Reserve Operator - Logistics",
     "chineseName": "预备干员-后勤",
-    "russianName": "Reserve Operator - Logistics"
+    "russianName": "Резервный оперативник (Логистика)"
   },
   "reserveoperatorlogistics": {
     "displayName": "Reserve Operator - Logistics",
     "englishName": "Reserve Operator - Logistics",
     "chineseName": "预备干员-后勤",
-    "russianName": "Reserve Operator - Logistics"
+    "russianName": "Резервный оперативник (Логистика)"
   },
   "char_210_stward": {
     "displayName": "Steward",
@@ -537,19 +537,19 @@
     "displayName": "Reserve Operator - Caster",
     "englishName": "Reserve Operator - Caster",
     "chineseName": "预备干员-术师",
-    "russianName": "Reserve Operator - Caster"
+    "russianName": "Резервный оперативник (Кастер)"
   },
   "rcast": {
     "displayName": "Reserve Operator - Caster",
     "englishName": "Reserve Operator - Caster",
     "chineseName": "预备干员-术师",
-    "russianName": "Reserve Operator - Caster"
+    "russianName": "Резервный оперативник (Кастер)"
   },
   "reserveoperatorcaster": {
     "displayName": "Reserve Operator - Caster",
     "englishName": "Reserve Operator - Caster",
     "chineseName": "预备干员-术师",
-    "russianName": "Reserve Operator - Caster"
+    "russianName": "Резервный оперативник (Кастер)"
   },
   "char_278_orchid": {
     "displayName": "Orchid",
@@ -567,337 +567,337 @@
     "displayName": "Haze",
     "englishName": "Haze",
     "chineseName": "夜烟",
-    "russianName": "Haze"
+    "russianName": "Хейз"
   },
   "nights": {
     "displayName": "Haze",
     "englishName": "Haze",
     "chineseName": "夜烟",
-    "russianName": "Haze"
+    "russianName": "Хейз"
   },
   "haze": {
     "displayName": "Haze",
     "englishName": "Haze",
     "chineseName": "夜烟",
-    "russianName": "Haze"
+    "russianName": "Хейз"
   },
   "char_604_ccast": {
     "displayName": "预备干员-术师",
     "englishName": "预备干员-术师",
     "chineseName": "预备干员-术师",
-    "russianName": "预备干员-术师"
+    "russianName": "Резервный оперативник (Кастер)"
   },
   "ccast": {
     "displayName": "预备干员-术师",
     "englishName": "预备干员-术师",
     "chineseName": "预备干员-术师",
-    "russianName": "预备干员-术师"
+    "russianName": "Резервный оперативник (Кастер)"
   },
   "char_109_fmout": {
     "displayName": "Gitano",
     "englishName": "Gitano",
     "chineseName": "远山",
-    "russianName": "Gitano"
+    "russianName": "Гитано"
   },
   "fmout": {
     "displayName": "Gitano",
     "englishName": "Gitano",
     "chineseName": "远山",
-    "russianName": "Gitano"
+    "russianName": "Гитано"
   },
   "gitano": {
     "displayName": "Gitano",
     "englishName": "Gitano",
     "chineseName": "远山",
-    "russianName": "Gitano"
+    "russianName": "Гитано"
   },
   "char_253_greyy": {
     "displayName": "Greyy",
     "englishName": "Greyy",
     "chineseName": "格雷伊",
-    "russianName": "Greyy"
+    "russianName": "Грей"
   },
   "greyy": {
     "displayName": "Greyy",
     "englishName": "Greyy",
     "chineseName": "格雷伊",
-    "russianName": "Greyy"
+    "russianName": "Грей"
   },
   "char_328_cammou": {
     "displayName": "Click",
     "englishName": "Click",
     "chineseName": "卡达",
-    "russianName": "Click"
+    "russianName": "Клик"
   },
   "cammou": {
     "displayName": "Click",
     "englishName": "Click",
     "chineseName": "卡达",
-    "russianName": "Click"
+    "russianName": "Клик"
   },
   "click": {
     "displayName": "Click",
     "englishName": "Click",
     "chineseName": "卡达",
-    "russianName": "Click"
+    "russianName": "Клик"
   },
   "char_469_indigo": {
     "displayName": "Indigo",
     "englishName": "Indigo",
     "chineseName": "深靛",
-    "russianName": "Indigo"
+    "russianName": "Индиго"
   },
   "indigo": {
     "displayName": "Indigo",
     "englishName": "Indigo",
     "chineseName": "深靛",
-    "russianName": "Indigo"
+    "russianName": "Индиго"
   },
   "char_4004_pudd": {
     "displayName": "Pudding",
     "englishName": "Pudding",
     "chineseName": "布丁",
-    "russianName": "Pudding"
+    "russianName": "Пудинг"
   },
   "pudd": {
     "displayName": "Pudding",
     "englishName": "Pudding",
     "chineseName": "布丁",
-    "russianName": "Pudding"
+    "russianName": "Пудинг"
   },
   "pudding": {
     "displayName": "Pudding",
     "englishName": "Pudding",
     "chineseName": "布丁",
-    "russianName": "Pudding"
+    "russianName": "Пудинг"
   },
   "char_235_jesica": {
     "displayName": "Jessica",
     "englishName": "Jessica",
     "chineseName": "杰西卡",
-    "russianName": "Jessica"
+    "russianName": "Джессика"
   },
   "jesica": {
     "displayName": "Jessica",
     "englishName": "Jessica",
     "chineseName": "杰西卡",
-    "russianName": "Jessica"
+    "russianName": "Джессика"
   },
   "jessica": {
     "displayName": "Jessica",
     "englishName": "Jessica",
     "chineseName": "杰西卡",
-    "russianName": "Jessica"
+    "russianName": "Джессика"
   },
   "char_126_shotst": {
     "displayName": "Meteor",
     "englishName": "Meteor",
     "chineseName": "流星",
-    "russianName": "Meteor"
+    "russianName": "Метеор"
   },
   "shotst": {
     "displayName": "Meteor",
     "englishName": "Meteor",
     "chineseName": "流星",
-    "russianName": "Meteor"
+    "russianName": "Метеор"
   },
   "meteor": {
     "displayName": "Meteor",
     "englishName": "Meteor",
     "chineseName": "流星",
-    "russianName": "Meteor"
+    "russianName": "Метеор"
   },
   "char_190_clour": {
     "displayName": "Vermeil",
     "englishName": "Vermeil",
     "chineseName": "红云",
-    "russianName": "Vermeil"
+    "russianName": "Вермей"
   },
   "clour": {
     "displayName": "Vermeil",
     "englishName": "Vermeil",
     "chineseName": "红云",
-    "russianName": "Vermeil"
+    "russianName": "Вермей"
   },
   "vermeil": {
     "displayName": "Vermeil",
     "englishName": "Vermeil",
     "chineseName": "红云",
-    "russianName": "Vermeil"
+    "russianName": "Вермей"
   },
   "char_133_mm": {
     "displayName": "May",
     "englishName": "May",
     "chineseName": "梅",
-    "russianName": "May"
+    "russianName": "Мэй"
   },
   "mm": {
     "displayName": "May",
     "englishName": "May",
     "chineseName": "梅",
-    "russianName": "May"
+    "russianName": "Мэй"
   },
   "may": {
     "displayName": "May",
     "englishName": "May",
     "chineseName": "梅",
-    "russianName": "May"
+    "russianName": "Мэй"
   },
   "char_603_csnipe": {
     "displayName": "预备干员-狙击",
     "englishName": "预备干员-狙击",
     "chineseName": "预备干员-狙击",
-    "russianName": "预备干员-狙击"
+    "russianName": "Резервный оперативник (Снайпер)"
   },
   "csnipe": {
     "displayName": "预备干员-狙击",
     "englishName": "预备干员-狙击",
     "chineseName": "预备干员-狙击",
-    "russianName": "预备干员-狙击"
+    "russianName": "Резервный оперативник (Снайпер)"
   },
   "char_118_yuki": {
     "displayName": "Shirayuki",
     "englishName": "Shirayuki",
     "chineseName": "白雪",
-    "russianName": "Shirayuki"
+    "russianName": "Сираюки"
   },
   "yuki": {
     "displayName": "Shirayuki",
     "englishName": "Shirayuki",
     "chineseName": "白雪",
-    "russianName": "Shirayuki"
+    "russianName": "Сираюки"
   },
   "shirayuki": {
     "displayName": "Shirayuki",
     "englishName": "Shirayuki",
     "chineseName": "白雪",
-    "russianName": "Shirayuki"
+    "russianName": "Сираюки"
   },
   "char_440_pinecn": {
     "displayName": "Pinecone",
     "englishName": "Pinecone",
     "chineseName": "松果",
-    "russianName": "Pinecone"
+    "russianName": "Пайнкон"
   },
   "pinecn": {
     "displayName": "Pinecone",
     "englishName": "Pinecone",
     "chineseName": "松果",
-    "russianName": "Pinecone"
+    "russianName": "Пайнкон"
   },
   "pinecone": {
     "displayName": "Pinecone",
     "englishName": "Pinecone",
     "chineseName": "松果",
-    "russianName": "Pinecone"
+    "russianName": "Пайнкон"
   },
   "char_302_glaze": {
     "displayName": "Ambriel",
     "englishName": "Ambriel",
     "chineseName": "安比尔",
-    "russianName": "Ambriel"
+    "russianName": "Амбриэль"
   },
   "glaze": {
     "displayName": "Ambriel",
     "englishName": "Ambriel",
     "chineseName": "安比尔",
-    "russianName": "Ambriel"
+    "russianName": "Амбриэль"
   },
   "ambriel": {
     "displayName": "Ambriel",
     "englishName": "Ambriel",
     "chineseName": "安比尔",
-    "russianName": "Ambriel"
+    "russianName": "Амбриэль"
   },
   "char_366_acdrop": {
     "displayName": "Aciddrop",
     "englishName": "Aciddrop",
     "chineseName": "酸糖",
-    "russianName": "Aciddrop"
+    "russianName": "Эйсиддроп"
   },
   "acdrop": {
     "displayName": "Aciddrop",
     "englishName": "Aciddrop",
     "chineseName": "酸糖",
-    "russianName": "Aciddrop"
+    "russianName": "Эйсиддроп"
   },
   "aciddrop": {
     "displayName": "Aciddrop",
     "englishName": "Aciddrop",
     "chineseName": "酸糖",
-    "russianName": "Aciddrop"
+    "russianName": "Эйсиддроп"
   },
   "char_4062_totter": {
     "displayName": "Totter",
     "englishName": "Totter",
     "chineseName": "铅踝",
-    "russianName": "Totter"
+    "russianName": "Тоттер"
   },
   "totter": {
     "displayName": "Totter",
     "englishName": "Totter",
     "chineseName": "铅踝",
-    "russianName": "Totter"
+    "russianName": "Тоттер"
   },
   "char_4100_caper": {
     "displayName": "Caper",
     "englishName": "Caper",
     "chineseName": "跃跃",
-    "russianName": "Caper"
+    "russianName": "Кейпер"
   },
   "caper": {
     "displayName": "Caper",
     "englishName": "Caper",
     "chineseName": "跃跃",
-    "russianName": "Caper"
+    "russianName": "Кейпер"
   },
   "char_198_blackd": {
     "displayName": "Courier",
     "englishName": "Courier",
     "chineseName": "讯使",
-    "russianName": "Courier"
+    "russianName": "Курьер"
   },
   "blackd": {
     "displayName": "Courier",
     "englishName": "Courier",
     "chineseName": "讯使",
-    "russianName": "Courier"
+    "russianName": "Курьер"
   },
   "courier": {
     "displayName": "Courier",
     "englishName": "Courier",
     "chineseName": "讯使",
-    "russianName": "Courier"
+    "russianName": "Курьер"
   },
   "char_149_scave": {
     "displayName": "Scavenger",
     "englishName": "Scavenger",
     "chineseName": "清道夫",
-    "russianName": "Scavenger"
+    "russianName": "Скавенджер"
   },
   "scave": {
     "displayName": "Scavenger",
     "englishName": "Scavenger",
     "chineseName": "清道夫",
-    "russianName": "Scavenger"
+    "russianName": "Скавенджер"
   },
   "scavenger": {
     "displayName": "Scavenger",
     "englishName": "Scavenger",
     "chineseName": "清道夫",
-    "russianName": "Scavenger"
+    "russianName": "Скавенджер"
   },
   "char_600_cpione": {
     "displayName": "预备干员-先锋",
     "englishName": "预备干员-先锋",
     "chineseName": "预备干员-先锋",
-    "russianName": "预备干员-先锋"
+    "russianName": "Резервный оперативник (Авангард)"
   },
   "cpione": {
     "displayName": "预备干员-先锋",
     "englishName": "预备干员-先锋",
     "chineseName": "预备干员-先锋",
-    "russianName": "预备干员-先锋"
+    "russianName": "Резервный оперативник (Авангард)"
   },
   "char_290_vigna": {
     "displayName": "Vigna",
@@ -927,313 +927,313 @@
     "displayName": "Beanstalk",
     "englishName": "Beanstalk",
     "chineseName": "豆苗",
-    "russianName": "Beanstalk"
+    "russianName": "Бинсталк"
   },
   "bstalk": {
     "displayName": "Beanstalk",
     "englishName": "Beanstalk",
     "chineseName": "豆苗",
-    "russianName": "Beanstalk"
+    "russianName": "Бинсталк"
   },
   "beanstalk": {
     "displayName": "Beanstalk",
     "englishName": "Beanstalk",
     "chineseName": "豆苗",
-    "russianName": "Beanstalk"
+    "russianName": "Бинсталк"
   },
   "char_4208_wintim": {
     "displayName": "冬时",
     "englishName": "冬时",
     "chineseName": "冬时",
-    "russianName": "冬时"
+    "russianName": "Дунши"
   },
   "wintim": {
     "displayName": "冬时",
     "englishName": "冬时",
     "chineseName": "冬时",
-    "russianName": "冬时"
+    "russianName": "Дунши"
   },
   "char_130_doberm": {
     "displayName": "Dobermann",
     "englishName": "Dobermann",
     "chineseName": "杜宾",
-    "russianName": "Dobermann"
+    "russianName": "Доберманн"
   },
   "doberm": {
     "displayName": "Dobermann",
     "englishName": "Dobermann",
     "chineseName": "杜宾",
-    "russianName": "Dobermann"
+    "russianName": "Доберманн"
   },
   "dobermann": {
     "displayName": "Dobermann",
     "englishName": "Dobermann",
     "chineseName": "杜宾",
-    "russianName": "Dobermann"
+    "russianName": "Доберманн"
   },
   "char_289_gyuki": {
     "displayName": "Matoimaru",
     "englishName": "Matoimaru",
     "chineseName": "缠丸",
-    "russianName": "Matoimaru"
+    "russianName": "Матоимару"
   },
   "gyuki": {
     "displayName": "Matoimaru",
     "englishName": "Matoimaru",
     "chineseName": "缠丸",
-    "russianName": "Matoimaru"
+    "russianName": "Матоимару"
   },
   "matoimaru": {
     "displayName": "Matoimaru",
     "englishName": "Matoimaru",
     "chineseName": "缠丸",
-    "russianName": "Matoimaru"
+    "russianName": "Матоимару"
   },
   "char_159_peacok": {
     "displayName": "Conviction",
     "englishName": "Conviction",
     "chineseName": "断罪者",
-    "russianName": "Conviction"
+    "russianName": "Конвикшн"
   },
   "peacok": {
     "displayName": "Conviction",
     "englishName": "Conviction",
     "chineseName": "断罪者",
-    "russianName": "Conviction"
+    "russianName": "Конвикшн"
   },
   "conviction": {
     "displayName": "Conviction",
     "englishName": "Conviction",
     "chineseName": "断罪者",
-    "russianName": "Conviction"
+    "russianName": "Конвикшн"
   },
   "char_601_cguard": {
     "displayName": "预备干员-近卫",
     "englishName": "预备干员-近卫",
     "chineseName": "预备干员-近卫",
-    "russianName": "预备干员-近卫"
+    "russianName": "Резервный оперативник (Гвардеец)"
   },
   "cguard": {
     "displayName": "预备干员-近卫",
     "englishName": "预备干员-近卫",
     "chineseName": "预备干员-近卫",
-    "russianName": "预备干员-近卫"
+    "russianName": "Резервный оперативник (Гвардеец)"
   },
   "char_193_frostl": {
     "displayName": "Frostleaf",
     "englishName": "Frostleaf",
     "chineseName": "霜叶",
-    "russianName": "Frostleaf"
+    "russianName": "Фростлиф"
   },
   "frostl": {
     "displayName": "Frostleaf",
     "englishName": "Frostleaf",
     "chineseName": "霜叶",
-    "russianName": "Frostleaf"
+    "russianName": "Фростлиф"
   },
   "frostleaf": {
     "displayName": "Frostleaf",
     "englishName": "Frostleaf",
     "chineseName": "霜叶",
-    "russianName": "Frostleaf"
+    "russianName": "Фростлиф"
   },
   "char_127_estell": {
     "displayName": "Estelle",
     "englishName": "Estelle",
     "chineseName": "艾丝黛尔",
-    "russianName": "Estelle"
+    "russianName": "Эстель"
   },
   "estell": {
     "displayName": "Estelle",
     "englishName": "Estelle",
     "chineseName": "艾丝黛尔",
-    "russianName": "Estelle"
+    "russianName": "Эстель"
   },
   "estelle": {
     "displayName": "Estelle",
     "englishName": "Estelle",
     "chineseName": "艾丝黛尔",
-    "russianName": "Estelle"
+    "russianName": "Эстель"
   },
   "char_185_frncat": {
     "displayName": "Mousse",
     "englishName": "Mousse",
     "chineseName": "慕斯",
-    "russianName": "Mousse"
+    "russianName": "Мусс"
   },
   "frncat": {
     "displayName": "Mousse",
     "englishName": "Mousse",
     "chineseName": "慕斯",
-    "russianName": "Mousse"
+    "russianName": "Мусс"
   },
   "mousse": {
     "displayName": "Mousse",
     "englishName": "Mousse",
     "chineseName": "慕斯",
-    "russianName": "Mousse"
+    "russianName": "Мусс"
   },
   "char_301_cutter": {
     "displayName": "Cutter",
     "englishName": "Cutter",
     "chineseName": "刻刀",
-    "russianName": "Cutter"
+    "russianName": "Каттер"
   },
   "cutter": {
     "displayName": "Cutter",
     "englishName": "Cutter",
     "chineseName": "刻刀",
-    "russianName": "Cutter"
+    "russianName": "Каттер"
   },
   "char_337_utage": {
     "displayName": "Utage",
     "englishName": "Utage",
     "chineseName": "宴",
-    "russianName": "Utage"
+    "russianName": "Утагэ"
   },
   "utage": {
     "displayName": "Utage",
     "englishName": "Utage",
     "chineseName": "宴",
-    "russianName": "Utage"
+    "russianName": "Утагэ"
   },
   "char_271_spikes": {
     "displayName": "Arene",
     "englishName": "Arene",
     "chineseName": "芳汀",
-    "russianName": "Arene"
+    "russianName": "Арен"
   },
   "spikes": {
     "displayName": "Arene",
     "englishName": "Arene",
     "chineseName": "芳汀",
-    "russianName": "Arene"
+    "russianName": "Арен"
   },
   "arene": {
     "displayName": "Arene",
     "englishName": "Arene",
     "chineseName": "芳汀",
-    "russianName": "Arene"
+    "russianName": "Арен"
   },
   "char_4067_lolxh": {
     "displayName": "Luo Xiaohei",
     "englishName": "Luo Xiaohei",
     "chineseName": "罗小黑",
-    "russianName": "Luo Xiaohei"
+    "russianName": "Ло Сяохэй"
   },
   "lolxh": {
     "displayName": "Luo Xiaohei",
     "englishName": "Luo Xiaohei",
     "chineseName": "罗小黑",
-    "russianName": "Luo Xiaohei"
+    "russianName": "Ло Сяохэй"
   },
   "luoxiaohei": {
     "displayName": "Luo Xiaohei",
     "englishName": "Luo Xiaohei",
     "chineseName": "罗小黑",
-    "russianName": "Luo Xiaohei"
+    "russianName": "Ло Сяохэй"
   },
   "char_4063_quartz": {
     "displayName": "Quartz",
     "englishName": "Quartz",
     "chineseName": "石英",
-    "russianName": "Quartz"
+    "russianName": "Кварц"
   },
   "quartz": {
     "displayName": "Quartz",
     "englishName": "Quartz",
     "chineseName": "石英",
-    "russianName": "Quartz"
+    "russianName": "Кварц"
   },
   "char_491_humus": {
     "displayName": "Humus",
     "englishName": "Humus",
     "chineseName": "休谟斯",
-    "russianName": "Humus"
+    "russianName": "Гумус"
   },
   "humus": {
     "displayName": "Humus",
     "englishName": "Humus",
     "chineseName": "休谟斯",
-    "russianName": "Humus"
+    "russianName": "Гумус"
   },
   "char_445_wscoot": {
     "displayName": "骋风",
     "englishName": "骋风",
     "chineseName": "骋风",
-    "russianName": "骋风"
+    "russianName": "Чэнфэн"
   },
   "wscoot": {
     "displayName": "骋风",
     "englishName": "骋风",
     "chineseName": "骋风",
-    "russianName": "骋风"
+    "russianName": "Чэнфэн"
   },
   "char_237_gravel": {
     "displayName": "Gravel",
     "englishName": "Gravel",
     "chineseName": "砾",
-    "russianName": "Gravel"
+    "russianName": "Гравель"
   },
   "gravel": {
     "displayName": "Gravel",
     "englishName": "Gravel",
     "chineseName": "砾",
-    "russianName": "Gravel"
+    "russianName": "Гравель"
   },
   "char_607_cspec": {
     "displayName": "预备干员-特种",
     "englishName": "预备干员-特种",
     "chineseName": "预备干员-特种",
-    "russianName": "预备干员-特种"
+    "russianName": "Резервный оперативник (Специалист)"
   },
   "cspec": {
     "displayName": "预备干员-特种",
     "englishName": "预备干员-特种",
     "chineseName": "预备干员-特种",
-    "russianName": "预备干员-特种"
+    "russianName": "Резервный оперативник (Специалист)"
   },
   "char_272_strong": {
     "displayName": "Jaye",
     "englishName": "Jaye",
     "chineseName": "孑",
-    "russianName": "Jaye"
+    "russianName": "Джей"
   },
   "strong": {
     "displayName": "Jaye",
     "englishName": "Jaye",
     "chineseName": "孑",
-    "russianName": "Jaye"
+    "russianName": "Джей"
   },
   "jaye": {
     "displayName": "Jaye",
     "englishName": "Jaye",
     "chineseName": "孑",
-    "russianName": "Jaye"
+    "russianName": "Джей"
   },
   "char_236_rope": {
     "displayName": "Rope",
     "englishName": "Rope",
     "chineseName": "暗索",
-    "russianName": "Rope"
+    "russianName": "Роуп"
   },
   "rope": {
     "displayName": "Rope",
     "englishName": "Rope",
     "chineseName": "暗索",
-    "russianName": "Rope"
+    "russianName": "Роуп"
   },
   "char_117_myrrh": {
     "displayName": "Myrrh",
     "englishName": "Myrrh",
     "chineseName": "末药",
-    "russianName": "Myrrh"
+    "russianName": "Мирра"
   },
   "myrrh": {
     "displayName": "Myrrh",
     "englishName": "Myrrh",
     "chineseName": "末药",
-    "russianName": "Myrrh"
+    "russianName": "Мирра"
   },
   "char_187_ccheal": {
     "displayName": "Gavial",
@@ -1257,31 +1257,31 @@
     "displayName": "Sussurro",
     "englishName": "Sussurro",
     "chineseName": "苏苏洛",
-    "russianName": "Sussurro"
+    "russianName": "Суссурро"
   },
   "susuro": {
     "displayName": "Sussurro",
     "englishName": "Sussurro",
     "chineseName": "苏苏洛",
-    "russianName": "Sussurro"
+    "russianName": "Суссурро"
   },
   "sussurro": {
     "displayName": "Sussurro",
     "englishName": "Sussurro",
     "chineseName": "苏苏洛",
-    "russianName": "Sussurro"
+    "russianName": "Суссурро"
   },
   "char_605_cmedic": {
     "displayName": "预备干员-医疗",
     "englishName": "预备干员-医疗",
     "chineseName": "预备干员-医疗",
-    "russianName": "预备干员-医疗"
+    "russianName": "Резервный оперативник (Медик)"
   },
   "cmedic": {
     "displayName": "预备干员-医疗",
     "englishName": "预备干员-医疗",
     "chineseName": "预备干员-医疗",
-    "russianName": "预备干员-医疗"
+    "russianName": "Резервный оперативник (Медик)"
   },
   "char_181_flower": {
     "displayName": "Perfumer",
@@ -1305,55 +1305,55 @@
     "displayName": "Purestream",
     "englishName": "Purestream",
     "chineseName": "清流",
-    "russianName": "Purestream"
+    "russianName": "Пьюрстрим"
   },
   "finlpp": {
     "displayName": "Purestream",
     "englishName": "Purestream",
     "chineseName": "清流",
-    "russianName": "Purestream"
+    "russianName": "Пьюрстрим"
   },
   "purestream": {
     "displayName": "Purestream",
     "englishName": "Purestream",
     "chineseName": "清流",
-    "russianName": "Purestream"
+    "russianName": "Пьюрстрим"
   },
   "char_4041_chnut": {
     "displayName": "Chestnut",
     "englishName": "Chestnut",
     "chineseName": "褐果",
-    "russianName": "Chestnut"
+    "russianName": "Честнат"
   },
   "chnut": {
     "displayName": "Chestnut",
     "englishName": "Chestnut",
     "chineseName": "褐果",
-    "russianName": "Chestnut"
+    "russianName": "Честнат"
   },
   "chestnut": {
     "displayName": "Chestnut",
     "englishName": "Chestnut",
     "chineseName": "褐果",
-    "russianName": "Chestnut"
+    "russianName": "Честнат"
   },
   "char_199_yak": {
     "displayName": "Matterhorn",
     "englishName": "Matterhorn",
     "chineseName": "角峰",
-    "russianName": "Matterhorn"
+    "russianName": "Маттерхорн"
   },
   "yak": {
     "displayName": "Matterhorn",
     "englishName": "Matterhorn",
     "chineseName": "角峰",
-    "russianName": "Matterhorn"
+    "russianName": "Маттерхорн"
   },
   "matterhorn": {
     "displayName": "Matterhorn",
     "englishName": "Matterhorn",
     "chineseName": "角峰",
-    "russianName": "Matterhorn"
+    "russianName": "Маттерхорн"
   },
   "char_150_snakek": {
     "displayName": "Cuora",
@@ -1377,43 +1377,43 @@
     "displayName": "Bubble",
     "englishName": "Bubble",
     "chineseName": "泡泡",
-    "russianName": "Bubble"
+    "russianName": "Баббл"
   },
   "bubble": {
     "displayName": "Bubble",
     "englishName": "Bubble",
     "chineseName": "泡泡",
-    "russianName": "Bubble"
+    "russianName": "Баббл"
   },
   "char_602_cdfend": {
     "displayName": "预备干员-重装",
     "englishName": "预备干员-重装",
     "chineseName": "预备干员-重装",
-    "russianName": "预备干员-重装"
+    "russianName": "Резервный оперативник (Защитник)"
   },
   "cdfend": {
     "displayName": "预备干员-重装",
     "englishName": "预备干员-重装",
     "chineseName": "预备干员-重装",
-    "russianName": "预备干员-重装"
+    "russianName": "Резервный оперативник (Защитник)"
   },
   "char_4130_luton": {
     "displayName": "Lutonada",
     "englishName": "Lutonada",
     "chineseName": "露托",
-    "russianName": "Lutonada"
+    "russianName": "Лютонада"
   },
   "luton": {
     "displayName": "Lutonada",
     "englishName": "Lutonada",
     "chineseName": "露托",
-    "russianName": "Lutonada"
+    "russianName": "Лютонада"
   },
   "lutonada": {
     "displayName": "Lutonada",
     "englishName": "Lutonada",
     "chineseName": "露托",
-    "russianName": "Lutonada"
+    "russianName": "Лютонада"
   },
   "char_196_sunbr": {
     "displayName": "Gummy",
@@ -1437,157 +1437,157 @@
     "displayName": "Dur-nar",
     "englishName": "Dur-nar",
     "chineseName": "坚雷",
-    "russianName": "Dur-nar"
+    "russianName": "Дур-нар"
   },
   "durnar": {
     "displayName": "Dur-nar",
     "englishName": "Dur-nar",
     "chineseName": "坚雷",
-    "russianName": "Dur-nar"
+    "russianName": "Дур-нар"
   },
   "char_110_deepcl": {
     "displayName": "Deepcolor",
     "englishName": "Deepcolor",
     "chineseName": "深海色",
-    "russianName": "Deepcolor"
+    "russianName": "Дипколор"
   },
   "deepcl": {
     "displayName": "Deepcolor",
     "englishName": "Deepcolor",
     "chineseName": "深海色",
-    "russianName": "Deepcolor"
+    "russianName": "Дипколор"
   },
   "deepcolor": {
     "displayName": "Deepcolor",
     "englishName": "Deepcolor",
     "chineseName": "深海色",
-    "russianName": "Deepcolor"
+    "russianName": "Дипколор"
   },
   "char_183_skgoat": {
     "displayName": "Earthspirit",
     "englishName": "Earthspirit",
     "chineseName": "地灵",
-    "russianName": "Earthspirit"
+    "russianName": "Эртспирит"
   },
   "skgoat": {
     "displayName": "Earthspirit",
     "englishName": "Earthspirit",
     "chineseName": "地灵",
-    "russianName": "Earthspirit"
+    "russianName": "Эртспирит"
   },
   "earthspirit": {
     "displayName": "Earthspirit",
     "englishName": "Earthspirit",
     "chineseName": "地灵",
-    "russianName": "Earthspirit"
+    "russianName": "Эртспирит"
   },
   "char_258_podego": {
     "displayName": "Podenco",
     "englishName": "Podenco",
     "chineseName": "波登可",
-    "russianName": "Podenco"
+    "russianName": "Поденко"
   },
   "podego": {
     "displayName": "Podenco",
     "englishName": "Podenco",
     "chineseName": "波登可",
-    "russianName": "Podenco"
+    "russianName": "Поденко"
   },
   "podenco": {
     "displayName": "Podenco",
     "englishName": "Podenco",
     "chineseName": "波登可",
-    "russianName": "Podenco"
+    "russianName": "Поденко"
   },
   "char_606_csuppo": {
     "displayName": "预备干员-辅助",
     "englishName": "预备干员-辅助",
     "chineseName": "预备干员-辅助",
-    "russianName": "预备干员-辅助"
+    "russianName": "Резервный оперативник (Поддержка)"
   },
   "csuppo": {
     "displayName": "预备干员-辅助",
     "englishName": "预备干员-辅助",
     "chineseName": "预备干员-辅助",
-    "russianName": "预备干员-辅助"
+    "russianName": "Резервный оперативник (Поддержка)"
   },
   "char_484_robrta": {
     "displayName": "Roberta",
     "englishName": "Roberta",
     "chineseName": "罗比菈塔",
-    "russianName": "Roberta"
+    "russianName": "Роберта"
   },
   "robrta": {
     "displayName": "Roberta",
     "englishName": "Roberta",
     "chineseName": "罗比菈塔",
-    "russianName": "Roberta"
+    "russianName": "Роберта"
   },
   "roberta": {
     "displayName": "Roberta",
     "englishName": "Roberta",
     "chineseName": "罗比菈塔",
-    "russianName": "Roberta"
+    "russianName": "Роберта"
   },
   "char_355_ethan": {
     "displayName": "Ethan",
     "englishName": "Ethan",
     "chineseName": "伊桑",
-    "russianName": "Ethan"
+    "russianName": "Итан"
   },
   "ethan": {
     "displayName": "Ethan",
     "englishName": "Ethan",
     "chineseName": "伊桑",
-    "russianName": "Ethan"
+    "russianName": "Итан"
   },
   "char_277_sqrrel": {
     "displayName": "Shaw",
     "englishName": "Shaw",
     "chineseName": "阿消",
-    "russianName": "Shaw"
+    "russianName": "Шоу"
   },
   "sqrrel": {
     "displayName": "Shaw",
     "englishName": "Shaw",
     "chineseName": "阿消",
-    "russianName": "Shaw"
+    "russianName": "Шоу"
   },
   "shaw": {
     "displayName": "Shaw",
     "englishName": "Shaw",
     "chineseName": "阿消",
-    "russianName": "Shaw"
+    "russianName": "Шоу"
   },
   "char_4107_vrdant": {
     "displayName": "Verdant",
     "englishName": "Verdant",
     "chineseName": "维荻",
-    "russianName": "Verdant"
+    "russianName": "Вердант"
   },
   "vrdant": {
     "displayName": "Verdant",
     "englishName": "Verdant",
     "chineseName": "维荻",
-    "russianName": "Verdant"
+    "russianName": "Вердант"
   },
   "verdant": {
     "displayName": "Verdant",
     "englishName": "Verdant",
     "chineseName": "维荻",
-    "russianName": "Verdant"
+    "russianName": "Вердант"
   },
   "char_4165_ctrail": {
     "displayName": "云迹",
     "englishName": "云迹",
     "chineseName": "云迹",
-    "russianName": "云迹"
+    "russianName": "Юньцзи"
   },
   "ctrail": {
     "displayName": "云迹",
     "englishName": "云迹",
     "chineseName": "云迹",
-    "russianName": "云迹"
+    "russianName": "Юньцзи"
   },
   "char_128_plosis": {
     "displayName": "Ptilopsis",
@@ -1611,25 +1611,25 @@
     "displayName": "Breeze",
     "englishName": "Breeze",
     "chineseName": "微风",
-    "russianName": "Breeze"
+    "russianName": "Бриз"
   },
   "breeze": {
     "displayName": "Breeze",
     "englishName": "Breeze",
     "chineseName": "微风",
-    "russianName": "Breeze"
+    "russianName": "Бриз"
   },
   "char_4163_rosesa": {
     "displayName": "瑰盐",
     "englishName": "瑰盐",
     "chineseName": "瑰盐",
-    "russianName": "瑰盐"
+    "russianName": "Гуйянь"
   },
   "rosesa": {
     "displayName": "瑰盐",
     "englishName": "瑰盐",
     "chineseName": "瑰盐",
-    "russianName": "瑰盐"
+    "russianName": "Гуйянь"
   },
   "char_115_headbr": {
     "displayName": "Zima",
@@ -1665,133 +1665,133 @@
     "displayName": "Chiave",
     "englishName": "Chiave",
     "chineseName": "贾维",
-    "russianName": "Chiave"
+    "russianName": "Кьяве"
   },
   "chiave": {
     "displayName": "Chiave",
     "englishName": "Chiave",
     "chineseName": "贾维",
-    "russianName": "Chiave"
+    "russianName": "Кьяве"
   },
   "char_488_buildr": {
     "displayName": "Poncirus",
     "englishName": "Poncirus",
     "chineseName": "青枳",
-    "russianName": "Poncirus"
+    "russianName": "Понцирус"
   },
   "buildr": {
     "displayName": "Poncirus",
     "englishName": "Poncirus",
     "chineseName": "青枳",
-    "russianName": "Poncirus"
+    "russianName": "Понцирус"
   },
   "poncirus": {
     "displayName": "Poncirus",
     "englishName": "Poncirus",
     "chineseName": "青枳",
-    "russianName": "Poncirus"
+    "russianName": "Понцирус"
   },
   "char_513_apionr": {
     "displayName": "Tulip",
     "englishName": "Tulip",
     "chineseName": "郁金香",
-    "russianName": "Tulip"
+    "russianName": "Тюльпан"
   },
   "apionr": {
     "displayName": "Tulip",
     "englishName": "Tulip",
     "chineseName": "郁金香",
-    "russianName": "Tulip"
+    "russianName": "Тюльпан"
   },
   "tulip": {
     "displayName": "Tulip",
     "englishName": "Tulip",
     "chineseName": "郁金香",
-    "russianName": "Tulip"
+    "russianName": "Тюльпан"
   },
   "char_4023_rfalcn": {
     "displayName": "Kestrel",
     "englishName": "Kestrel",
     "chineseName": "红隼",
-    "russianName": "Kestrel"
+    "russianName": "Кестрел"
   },
   "rfalcn": {
     "displayName": "Kestrel",
     "englishName": "Kestrel",
     "chineseName": "红隼",
-    "russianName": "Kestrel"
+    "russianName": "Кестрел"
   },
   "kestrel": {
     "displayName": "Kestrel",
     "englishName": "Kestrel",
     "chineseName": "红隼",
-    "russianName": "Kestrel"
+    "russianName": "Кестрел"
   },
   "char_4199_makiri": {
     "displayName": "松桐",
     "englishName": "松桐",
     "chineseName": "松桐",
-    "russianName": "松桐"
+    "russianName": "Сунтун"
   },
   "makiri": {
     "displayName": "松桐",
     "englishName": "松桐",
     "chineseName": "松桐",
-    "russianName": "松桐"
+    "russianName": "Сунтун"
   },
   "char_261_sddrag": {
     "displayName": "Reed",
     "englishName": "Reed",
     "chineseName": "苇草",
-    "russianName": "Reed"
+    "russianName": "Рид"
   },
   "sddrag": {
     "displayName": "Reed",
     "englishName": "Reed",
     "chineseName": "苇草",
-    "russianName": "Reed"
+    "russianName": "Рид"
   },
   "reed": {
     "displayName": "Reed",
     "englishName": "Reed",
     "chineseName": "苇草",
-    "russianName": "Reed"
+    "russianName": "Рид"
   },
   "char_496_wildmn": {
     "displayName": "Wild Mane",
     "englishName": "Wild Mane",
     "chineseName": "野鬃",
-    "russianName": "Wild Mane"
+    "russianName": "Уайлд Мейн"
   },
   "wildmn": {
     "displayName": "Wild Mane",
     "englishName": "Wild Mane",
     "chineseName": "野鬃",
-    "russianName": "Wild Mane"
+    "russianName": "Уайлд Мейн"
   },
   "wildmane": {
     "displayName": "Wild Mane",
     "englishName": "Wild Mane",
     "chineseName": "野鬃",
-    "russianName": "Wild Mane"
+    "russianName": "Уайлд Мейн"
   },
   "char_1036_fang2": {
     "displayName": "Fang the Fire-Sharpened",
     "englishName": "Fang the Fire-Sharpened",
     "chineseName": "历阵锐枪芬",
-    "russianName": "Fang the Fire-Sharpened"
+    "russianName": "Фанг Закалённая Огнём"
   },
   "fang2": {
     "displayName": "Fang the Fire-Sharpened",
     "englishName": "Fang the Fire-Sharpened",
     "chineseName": "历阵锐枪芬",
-    "russianName": "Fang the Fire-Sharpened"
+    "russianName": "Фанг Закалённая Огнём"
   },
   "fangthefiresharpened": {
     "displayName": "Fang the Fire-Sharpened",
     "englishName": "Fang the Fire-Sharpened",
     "chineseName": "历阵锐枪芬",
-    "russianName": "Fang the Fire-Sharpened"
+    "russianName": "Фанг Закалённая Огнём"
   },
   "char_401_elysm": {
     "displayName": "Elysium",
@@ -1815,283 +1815,283 @@
     "displayName": "Wanqing",
     "englishName": "Wanqing",
     "chineseName": "万顷",
-    "russianName": "Wanqing"
+    "russianName": "Ваньцин"
   },
   "wanqin": {
     "displayName": "Wanqing",
     "englishName": "Wanqing",
     "chineseName": "万顷",
-    "russianName": "Wanqing"
+    "russianName": "Ваньцин"
   },
   "wanqing": {
     "displayName": "Wanqing",
     "englishName": "Wanqing",
     "chineseName": "万顷",
-    "russianName": "Wanqing"
+    "russianName": "Ваньцин"
   },
   "char_476_blkngt": {
     "displayName": "Blacknight",
     "englishName": "Blacknight",
     "chineseName": "夜半",
-    "russianName": "Blacknight"
+    "russianName": "Блэкнайт"
   },
   "blkngt": {
     "displayName": "Blacknight",
     "englishName": "Blacknight",
     "chineseName": "夜半",
-    "russianName": "Blacknight"
+    "russianName": "Блэкнайт"
   },
   "blacknight": {
     "displayName": "Blacknight",
     "englishName": "Blacknight",
     "chineseName": "夜半",
-    "russianName": "Blacknight"
+    "russianName": "Блэкнайт"
   },
   "char_4147_mitm": {
     "displayName": "渡桥",
     "englishName": "渡桥",
     "chineseName": "渡桥",
-    "russianName": "渡桥"
+    "russianName": "Дуцяо"
   },
   "mitm": {
     "displayName": "渡桥",
     "englishName": "渡桥",
     "chineseName": "渡桥",
-    "russianName": "渡桥"
+    "russianName": "Дуцяо"
   },
   "char_497_ctable": {
     "displayName": "Cantabile",
     "englishName": "Cantabile",
     "chineseName": "晓歌",
-    "russianName": "Cantabile"
+    "russianName": "Кантабиле"
   },
   "ctable": {
     "displayName": "Cantabile",
     "englishName": "Cantabile",
     "chineseName": "晓歌",
-    "russianName": "Cantabile"
+    "russianName": "Кантабиле"
   },
   "cantabile": {
     "displayName": "Cantabile",
     "englishName": "Cantabile",
     "chineseName": "晓歌",
-    "russianName": "Cantabile"
+    "russianName": "Кантабиле"
   },
   "char_4017_puzzle": {
     "displayName": "Puzzle",
     "englishName": "Puzzle",
     "chineseName": "谜图",
-    "russianName": "Puzzle"
+    "russianName": "Паззл"
   },
   "puzzle": {
     "displayName": "Puzzle",
     "englishName": "Puzzle",
     "chineseName": "谜图",
-    "russianName": "Puzzle"
+    "russianName": "Паззл"
   },
   "char_4144_chilc": {
     "displayName": "齐尔查克",
     "englishName": "齐尔查克",
     "chineseName": "齐尔查克",
-    "russianName": "齐尔查克"
+    "russianName": "Чилчак"
   },
   "chilc": {
     "displayName": "齐尔查克",
     "englishName": "齐尔查克",
     "chineseName": "齐尔查克",
-    "russianName": "齐尔查克"
+    "russianName": "Чилчак"
   },
   "char_4052_surfer": {
     "displayName": "寻澜",
     "englishName": "寻澜",
     "chineseName": "寻澜",
-    "russianName": "寻澜"
+    "russianName": "Сюньлань"
   },
   "surfer": {
     "displayName": "寻澜",
     "englishName": "寻澜",
     "chineseName": "寻澜",
-    "russianName": "寻澜"
+    "russianName": "Сюньлань"
   },
   "char_308_swire": {
     "displayName": "Swire",
     "englishName": "Swire",
     "chineseName": "诗怀雅",
-    "russianName": "Swire"
+    "russianName": "Свайр"
   },
   "swire": {
     "displayName": "Swire",
     "englishName": "Swire",
     "chineseName": "诗怀雅",
-    "russianName": "Swire"
+    "russianName": "Свайр"
   },
   "char_265_sophia": {
     "displayName": "Whislash",
     "englishName": "Whislash",
     "chineseName": "鞭刃",
-    "russianName": "Whislash"
+    "russianName": "Вислаш"
   },
   "sophia": {
     "displayName": "Whislash",
     "englishName": "Whislash",
     "chineseName": "鞭刃",
-    "russianName": "Whislash"
+    "russianName": "Вислаш"
   },
   "whislash": {
     "displayName": "Whislash",
     "englishName": "Whislash",
     "chineseName": "鞭刃",
-    "russianName": "Whislash"
+    "russianName": "Вислаш"
   },
   "char_4106_bryota": {
     "displayName": "Bryophyta",
     "englishName": "Bryophyta",
     "chineseName": "苍苔",
-    "russianName": "Bryophyta"
+    "russianName": "Бриофита"
   },
   "bryota": {
     "displayName": "Bryophyta",
     "englishName": "Bryophyta",
     "chineseName": "苍苔",
-    "russianName": "Bryophyta"
+    "russianName": "Бриофита"
   },
   "bryophyta": {
     "displayName": "Bryophyta",
     "englishName": "Bryophyta",
     "chineseName": "苍苔",
-    "russianName": "Bryophyta"
+    "russianName": "Бриофита"
   },
   "char_4125_rdoc": {
     "displayName": "Doc",
     "englishName": "Doc",
     "chineseName": "医生",
-    "russianName": "Doc"
+    "russianName": "Док"
   },
   "rdoc": {
     "displayName": "Doc",
     "englishName": "Doc",
     "chineseName": "医生",
-    "russianName": "Doc"
+    "russianName": "Док"
   },
   "doc": {
     "displayName": "Doc",
     "englishName": "Doc",
     "chineseName": "医生",
-    "russianName": "Doc"
+    "russianName": "Док"
   },
   "char_106_franka": {
     "displayName": "Franka",
     "englishName": "Franka",
     "chineseName": "芙兰卡",
-    "russianName": "Franka"
+    "russianName": "Франка"
   },
   "franka": {
     "displayName": "Franka",
     "englishName": "Franka",
     "chineseName": "芙兰卡",
-    "russianName": "Franka"
+    "russianName": "Франка"
   },
   "char_131_flameb": {
     "displayName": "Flamebringer",
     "englishName": "Flamebringer",
     "chineseName": "炎客",
-    "russianName": "Flamebringer"
+    "russianName": "Флеймбрингер"
   },
   "flameb": {
     "displayName": "Flamebringer",
     "englishName": "Flamebringer",
     "chineseName": "炎客",
-    "russianName": "Flamebringer"
+    "russianName": "Флеймбрингер"
   },
   "flamebringer": {
     "displayName": "Flamebringer",
     "englishName": "Flamebringer",
     "chineseName": "炎客",
-    "russianName": "Flamebringer"
+    "russianName": "Флеймбрингер"
   },
   "char_154_morgan": {
     "displayName": "Morgan",
     "englishName": "Morgan",
     "chineseName": "摩根",
-    "russianName": "Morgan"
+    "russianName": "Морган"
   },
   "morgan": {
     "displayName": "Morgan",
     "englishName": "Morgan",
     "chineseName": "摩根",
-    "russianName": "Morgan"
+    "russianName": "Морган"
   },
   "char_508_aguard": {
     "displayName": "Sharp",
     "englishName": "Sharp",
     "chineseName": "Sharp",
-    "russianName": "Sharp"
+    "russianName": "Шарп"
   },
   "aguard": {
     "displayName": "Sharp",
     "englishName": "Sharp",
     "chineseName": "Sharp",
-    "russianName": "Sharp"
+    "russianName": "Шарп"
   },
   "sharp": {
     "displayName": "Sharp",
     "englishName": "Sharp",
     "chineseName": "Sharp",
-    "russianName": "Sharp"
+    "russianName": "Шарп"
   },
   "char_4142_laios": {
     "displayName": "莱欧斯",
     "englishName": "莱欧斯",
     "chineseName": "莱欧斯",
-    "russianName": "莱欧斯"
+    "russianName": "Лайос"
   },
   "laios": {
     "displayName": "莱欧斯",
     "englishName": "莱欧斯",
     "chineseName": "莱欧斯",
-    "russianName": "莱欧斯"
+    "russianName": "Лайос"
   },
   "char_155_tiger": {
     "displayName": "Indra",
     "englishName": "Indra",
     "chineseName": "因陀罗",
-    "russianName": "Indra"
+    "russianName": "Индра"
   },
   "tiger": {
     "displayName": "Indra",
     "englishName": "Indra",
     "chineseName": "因陀罗",
-    "russianName": "Indra"
+    "russianName": "Индра"
   },
   "indra": {
     "displayName": "Indra",
     "englishName": "Indra",
     "chineseName": "因陀罗",
-    "russianName": "Indra"
+    "russianName": "Индра"
   },
   "char_415_flint": {
     "displayName": "Flint",
     "englishName": "Flint",
     "chineseName": "燧石",
-    "russianName": "Flint"
+    "russianName": "Флинт"
   },
   "flint": {
     "displayName": "Flint",
     "englishName": "Flint",
     "chineseName": "燧石",
-    "russianName": "Flint"
+    "russianName": "Флинт"
   },
   "char_157_dagda": {
     "displayName": "Dagda",
     "englishName": "Dagda",
     "chineseName": "达格达",
-    "russianName": "Dagda"
+    "russianName": "Дагда"
   },
   "dagda": {
     "displayName": "Dagda",
     "englishName": "Dagda",
     "chineseName": "达格达",
-    "russianName": "Dagda"
+    "russianName": "Дагда"
   },
   "char_140_whitew": {
     "displayName": "Lappland",
@@ -2115,79 +2115,79 @@
     "displayName": "Ayerscarpe",
     "englishName": "Ayerscarpe",
     "chineseName": "断崖",
-    "russianName": "Ayerscarpe"
+    "russianName": "Айерскарп"
   },
   "ayer": {
     "displayName": "Ayerscarpe",
     "englishName": "Ayerscarpe",
     "chineseName": "断崖",
-    "russianName": "Ayerscarpe"
+    "russianName": "Айерскарп"
   },
   "ayerscarpe": {
     "displayName": "Ayerscarpe",
     "englishName": "Ayerscarpe",
     "chineseName": "断崖",
-    "russianName": "Ayerscarpe"
+    "russianName": "Айерскарп"
   },
   "char_194_leto": {
     "displayName": "Leto",
     "englishName": "Leto",
     "chineseName": "烈夏",
-    "russianName": "Leto"
+    "russianName": "Лето"
   },
   "leto": {
     "displayName": "Leto",
     "englishName": "Leto",
     "chineseName": "烈夏",
-    "russianName": "Leto"
+    "russianName": "Лето"
   },
   "char_4083_chimes": {
     "displayName": "Wind Chimes",
     "englishName": "Wind Chimes",
     "chineseName": "铎铃",
-    "russianName": "Wind Chimes"
+    "russianName": "Уинд Чаймс"
   },
   "chimes": {
     "displayName": "Wind Chimes",
     "englishName": "Wind Chimes",
     "chineseName": "铎铃",
-    "russianName": "Wind Chimes"
+    "russianName": "Уинд Чаймс"
   },
   "windchimes": {
     "displayName": "Wind Chimes",
     "englishName": "Wind Chimes",
     "chineseName": "铎铃",
-    "russianName": "Wind Chimes"
+    "russianName": "Уинд Чаймс"
   },
   "char_252_bibeak": {
     "displayName": "Bibeak",
     "englishName": "Bibeak",
     "chineseName": "柏喙",
-    "russianName": "Bibeak"
+    "russianName": "Бибик"
   },
   "bibeak": {
     "displayName": "Bibeak",
     "englishName": "Bibeak",
     "chineseName": "柏喙",
-    "russianName": "Bibeak"
+    "russianName": "Бибик"
   },
   "char_459_tachak": {
     "displayName": "Tachanka",
     "englishName": "Tachanka",
     "chineseName": "战车",
-    "russianName": "Tachanka"
+    "russianName": "Тачанка"
   },
   "tachak": {
     "displayName": "Tachanka",
     "englishName": "Tachanka",
     "chineseName": "战车",
-    "russianName": "Tachanka"
+    "russianName": "Тачанка"
   },
   "tachanka": {
     "displayName": "Tachanka",
     "englishName": "Tachanka",
     "chineseName": "战车",
-    "russianName": "Tachanka"
+    "russianName": "Тачанка"
   },
   "char_143_ghost": {
     "displayName": "Specter",
@@ -2211,403 +2211,403 @@
     "displayName": "Broca",
     "englishName": "Broca",
     "chineseName": "布洛卡",
-    "russianName": "Broca"
+    "russianName": "Брока"
   },
   "broca": {
     "displayName": "Broca",
     "englishName": "Broca",
     "chineseName": "布洛卡",
-    "russianName": "Broca"
+    "russianName": "Брока"
   },
   "char_4126_fuze": {
     "displayName": "Fuze",
     "englishName": "Fuze",
     "chineseName": "导火索",
-    "russianName": "Fuze"
+    "russianName": "Фьюз"
   },
   "fuze": {
     "displayName": "Fuze",
     "englishName": "Fuze",
     "chineseName": "导火索",
-    "russianName": "Fuze"
+    "russianName": "Фьюз"
   },
   "char_274_astesi": {
     "displayName": "Astesia",
     "englishName": "Astesia",
     "chineseName": "星极",
-    "russianName": "Astesia"
+    "russianName": "Астезия"
   },
   "astesi": {
     "displayName": "Astesia",
     "englishName": "Astesia",
     "chineseName": "星极",
-    "russianName": "Astesia"
+    "russianName": "Астезия"
   },
   "astesia": {
     "displayName": "Astesia",
     "englishName": "Astesia",
     "chineseName": "星极",
-    "russianName": "Astesia"
+    "russianName": "Астезия"
   },
   "char_333_sidero": {
     "displayName": "Sideroca",
     "englishName": "Sideroca",
     "chineseName": "铸铁",
-    "russianName": "Sideroca"
+    "russianName": "Сидерока"
   },
   "sidero": {
     "displayName": "Sideroca",
     "englishName": "Sideroca",
     "chineseName": "铸铁",
-    "russianName": "Sideroca"
+    "russianName": "Сидерока"
   },
   "sideroca": {
     "displayName": "Sideroca",
     "englishName": "Sideroca",
     "chineseName": "铸铁",
-    "russianName": "Sideroca"
+    "russianName": "Сидерока"
   },
   "char_475_akafyu": {
     "displayName": "Akafuyu",
     "englishName": "Akafuyu",
     "chineseName": "赤冬",
-    "russianName": "Akafuyu"
+    "russianName": "Акафую"
   },
   "akafyu": {
     "displayName": "Akafuyu",
     "englishName": "Akafuyu",
     "chineseName": "赤冬",
-    "russianName": "Akafuyu"
+    "russianName": "Акафую"
   },
   "akafuyu": {
     "displayName": "Akafuyu",
     "englishName": "Akafuyu",
     "chineseName": "赤冬",
-    "russianName": "Akafuyu"
+    "russianName": "Акафую"
   },
   "char_1030_noirc2": {
     "displayName": "Rathalos S Noir Corne",
     "englishName": "Rathalos S Noir Corne",
     "chineseName": "火龙S黑角",
-    "russianName": "Rathalos S Noir Corne"
+    "russianName": "Раталос S Нуар Корн"
   },
   "noirc2": {
     "displayName": "Rathalos S Noir Corne",
     "englishName": "Rathalos S Noir Corne",
     "chineseName": "火龙S黑角",
-    "russianName": "Rathalos S Noir Corne"
+    "russianName": "Раталос S Нуар Корн"
   },
   "rathalossnoircorne": {
     "displayName": "Rathalos S Noir Corne",
     "englishName": "Rathalos S Noir Corne",
     "chineseName": "火龙S黑角",
-    "russianName": "Rathalos S Noir Corne"
+    "russianName": "Раталос S Нуар Корн"
   },
   "char_421_crow": {
     "displayName": "La Pluma",
     "englishName": "La Pluma",
     "chineseName": "羽毛笔",
-    "russianName": "La Pluma"
+    "russianName": "Ла Плюма"
   },
   "crow": {
     "displayName": "La Pluma",
     "englishName": "La Pluma",
     "chineseName": "羽毛笔",
-    "russianName": "La Pluma"
+    "russianName": "Ла Плюма"
   },
   "lapluma": {
     "displayName": "La Pluma",
     "englishName": "La Pluma",
     "chineseName": "羽毛笔",
-    "russianName": "La Pluma"
+    "russianName": "Ла Плюма"
   },
   "char_4066_highmo": {
     "displayName": "Highmore",
     "englishName": "Highmore",
     "chineseName": "海沫",
-    "russianName": "Highmore"
+    "russianName": "Хаймор"
   },
   "highmo": {
     "displayName": "Highmore",
     "englishName": "Highmore",
     "chineseName": "海沫",
-    "russianName": "Highmore"
+    "russianName": "Хаймор"
   },
   "highmore": {
     "displayName": "Highmore",
     "englishName": "Highmore",
     "chineseName": "海沫",
-    "russianName": "Highmore"
+    "russianName": "Хаймор"
   },
   "char_486_takila": {
     "displayName": "Tequila",
     "englishName": "Tequila",
     "chineseName": "龙舌兰",
-    "russianName": "Tequila"
+    "russianName": "Текила"
   },
   "takila": {
     "displayName": "Tequila",
     "englishName": "Tequila",
     "chineseName": "龙舌兰",
-    "russianName": "Tequila"
+    "russianName": "Текила"
   },
   "tequila": {
     "displayName": "Tequila",
     "englishName": "Tequila",
     "chineseName": "龙舌兰",
-    "russianName": "Tequila"
+    "russianName": "Текила"
   },
   "char_4131_odda": {
     "displayName": "Odda",
     "englishName": "Odda",
     "chineseName": "奥达",
-    "russianName": "Odda"
+    "russianName": "Одда"
   },
   "odda": {
     "displayName": "Odda",
     "englishName": "Odda",
     "chineseName": "奥达",
-    "russianName": "Odda"
+    "russianName": "Одда"
   },
   "char_4187_graceb": {
     "displayName": "聆音",
     "englishName": "聆音",
     "chineseName": "聆音",
-    "russianName": "聆音"
+    "russianName": "Линъинь"
   },
   "graceb": {
     "displayName": "聆音",
     "englishName": "聆音",
     "chineseName": "聆音",
-    "russianName": "聆音"
+    "russianName": "Линъинь"
   },
   "char_4185_amoris": {
     "displayName": "祐天寺若麦",
     "englishName": "祐天寺若麦",
     "chineseName": "祐天寺若麦",
-    "russianName": "祐天寺若麦"
+    "russianName": "Ютэнзи Вакаба"
   },
   "amoris": {
     "displayName": "祐天寺若麦",
     "englishName": "祐天寺若麦",
     "chineseName": "祐天寺若麦",
-    "russianName": "祐天寺若麦"
+    "russianName": "Ютэнзи Вакаба"
   },
   "char_129_bluep": {
     "displayName": "Blue Poison",
     "englishName": "Blue Poison",
     "chineseName": "蓝毒",
-    "russianName": "Blue Poison"
+    "russianName": "Блю Пойзон"
   },
   "bluep": {
     "displayName": "Blue Poison",
     "englishName": "Blue Poison",
     "chineseName": "蓝毒",
-    "russianName": "Blue Poison"
+    "russianName": "Блю Пойзон"
   },
   "bluepoison": {
     "displayName": "Blue Poison",
     "englishName": "Blue Poison",
     "chineseName": "蓝毒",
-    "russianName": "Blue Poison"
+    "russianName": "Блю Пойзон"
   },
   "char_204_platnm": {
     "displayName": "Platinum",
     "englishName": "Platinum",
     "chineseName": "白金",
-    "russianName": "Platinum"
+    "russianName": "Платина"
   },
   "platnm": {
     "displayName": "Platinum",
     "englishName": "Platinum",
     "chineseName": "白金",
-    "russianName": "Platinum"
+    "russianName": "Платина"
   },
   "platinum": {
     "displayName": "Platinum",
     "englishName": "Platinum",
     "chineseName": "白金",
-    "russianName": "Platinum"
+    "russianName": "Платина"
   },
   "char_367_swllow": {
     "displayName": "GreyThroat",
     "englishName": "GreyThroat",
     "chineseName": "灰喉",
-    "russianName": "GreyThroat"
+    "russianName": "Грейтроут"
   },
   "swllow": {
     "displayName": "GreyThroat",
     "englishName": "GreyThroat",
     "chineseName": "灰喉",
-    "russianName": "GreyThroat"
+    "russianName": "Грейтроут"
   },
   "greythroat": {
     "displayName": "GreyThroat",
     "englishName": "GreyThroat",
     "chineseName": "灰喉",
-    "russianName": "GreyThroat"
+    "russianName": "Грейтроут"
   },
   "char_511_asnipe": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
     "chineseName": "Stormeye",
-    "russianName": "Stormeye"
+    "russianName": "Штормай"
   },
   "asnipe": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
     "chineseName": "Stormeye",
-    "russianName": "Stormeye"
+    "russianName": "Штормай"
   },
   "stormeye": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
     "chineseName": "Stormeye",
-    "russianName": "Stormeye"
+    "russianName": "Штормай"
   },
   "char_365_aprl": {
     "displayName": "April",
     "englishName": "April",
     "chineseName": "四月",
-    "russianName": "April"
+    "russianName": "Эйприл"
   },
   "aprl": {
     "displayName": "April",
     "englishName": "April",
     "chineseName": "四月",
-    "russianName": "April"
+    "russianName": "Эйприл"
   },
   "april": {
     "displayName": "April",
     "englishName": "April",
     "chineseName": "四月",
-    "russianName": "April"
+    "russianName": "Эйприл"
   },
   "char_1021_kroos2": {
     "displayName": "Kroos the Keen Glint",
     "englishName": "Kroos the Keen Glint",
     "chineseName": "寒芒克洛丝",
-    "russianName": "Kroos the Keen Glint"
+    "russianName": "Крус Сияющий Взгляд"
   },
   "kroos2": {
     "displayName": "Kroos the Keen Glint",
     "englishName": "Kroos the Keen Glint",
     "chineseName": "寒芒克洛丝",
-    "russianName": "Kroos the Keen Glint"
+    "russianName": "Крус Сияющий Взгляд"
   },
   "kroosthekeenglint": {
     "displayName": "Kroos the Keen Glint",
     "englishName": "Kroos the Keen Glint",
     "chineseName": "寒芒克洛丝",
-    "russianName": "Kroos the Keen Glint"
+    "russianName": "Крус Сияющий Взгляд"
   },
   "char_498_inside": {
     "displayName": "Insider",
     "englishName": "Insider",
     "chineseName": "隐现",
-    "russianName": "Insider"
+    "russianName": "Инсайдер"
   },
   "inside": {
     "displayName": "Insider",
     "englishName": "Insider",
     "chineseName": "隐现",
-    "russianName": "Insider"
+    "russianName": "Инсайдер"
   },
   "insider": {
     "displayName": "Insider",
     "englishName": "Insider",
     "chineseName": "隐现",
-    "russianName": "Insider"
+    "russianName": "Инсайдер"
   },
   "char_219_meteo": {
     "displayName": "Meteorite",
     "englishName": "Meteorite",
     "chineseName": "陨星",
-    "russianName": "Meteorite"
+    "russianName": "Метеорит"
   },
   "meteo": {
     "displayName": "Meteorite",
     "englishName": "Meteorite",
     "chineseName": "陨星",
-    "russianName": "Meteorite"
+    "russianName": "Метеорит"
   },
   "meteorite": {
     "displayName": "Meteorite",
     "englishName": "Meteorite",
     "chineseName": "陨星",
-    "russianName": "Meteorite"
+    "russianName": "Метеорит"
   },
   "char_379_sesa": {
     "displayName": "Sesa",
     "englishName": "Sesa",
     "chineseName": "慑砂",
-    "russianName": "Sesa"
+    "russianName": "Сеса"
   },
   "sesa": {
     "displayName": "Sesa",
     "englishName": "Sesa",
     "chineseName": "慑砂",
-    "russianName": "Sesa"
+    "russianName": "Сеса"
   },
   "char_4078_bdhkgt": {
     "displayName": "Jieyun",
     "englishName": "Jieyun",
     "chineseName": "截云",
-    "russianName": "Jieyun"
+    "russianName": "Цзеюнь"
   },
   "bdhkgt": {
     "displayName": "Jieyun",
     "englishName": "Jieyun",
     "chineseName": "截云",
-    "russianName": "Jieyun"
+    "russianName": "Цзеюнь"
   },
   "jieyun": {
     "displayName": "Jieyun",
     "englishName": "Jieyun",
     "chineseName": "截云",
-    "russianName": "Jieyun"
+    "russianName": "Цзеюнь"
   },
   "char_279_excu": {
     "displayName": "Executor",
     "englishName": "Executor",
     "chineseName": "送葬人",
-    "russianName": "Executor"
+    "russianName": "Экзекутор"
   },
   "excu": {
     "displayName": "Executor",
     "englishName": "Executor",
     "chineseName": "送葬人",
-    "russianName": "Executor"
+    "russianName": "Экзекутор"
   },
   "executor": {
     "displayName": "Executor",
     "englishName": "Executor",
     "chineseName": "送葬人",
-    "russianName": "Executor"
+    "russianName": "Экзекутор"
   },
   "char_346_aosta": {
     "displayName": "Aosta",
     "englishName": "Aosta",
     "chineseName": "奥斯塔",
-    "russianName": "Aosta"
+    "russianName": "Аоста"
   },
   "aosta": {
     "displayName": "Aosta",
     "englishName": "Aosta",
     "chineseName": "奥斯塔",
-    "russianName": "Aosta"
+    "russianName": "Аоста"
   },
   "char_4203_kichi": {
     "displayName": "吉星",
     "englishName": "吉星",
     "chineseName": "吉星",
-    "russianName": "吉星"
+    "russianName": "Цзисин"
   },
   "kichi": {
     "displayName": "吉星",
     "englishName": "吉星",
     "chineseName": "吉星",
-    "russianName": "吉星"
+    "russianName": "Цзисин"
   },
   "char_002_amiya": {
     "displayName": "Amiya",
@@ -2625,685 +2625,685 @@
     "displayName": "Absinthe",
     "englishName": "Absinthe",
     "chineseName": "苦艾",
-    "russianName": "Absinthe"
+    "russianName": "Абсент"
   },
   "absin": {
     "displayName": "Absinthe",
     "englishName": "Absinthe",
     "chineseName": "苦艾",
-    "russianName": "Absinthe"
+    "russianName": "Абсент"
   },
   "absinthe": {
     "displayName": "Absinthe",
     "englishName": "Absinthe",
     "chineseName": "苦艾",
-    "russianName": "Absinthe"
+    "russianName": "Абсент"
   },
   "char_411_tomimi": {
     "displayName": "Tomimi",
     "englishName": "Tomimi",
     "chineseName": "特米米",
-    "russianName": "Tomimi"
+    "russianName": "Томими"
   },
   "tomimi": {
     "displayName": "Tomimi",
     "englishName": "Tomimi",
     "chineseName": "特米米",
-    "russianName": "Tomimi"
+    "russianName": "Томими"
   },
   "char_466_qanik": {
     "displayName": "Qanipalaat",
     "englishName": "Qanipalaat",
     "chineseName": "雪绒",
-    "russianName": "Qanipalaat"
+    "russianName": "Канипалаат"
   },
   "qanik": {
     "displayName": "Qanipalaat",
     "englishName": "Qanipalaat",
     "chineseName": "雪绒",
-    "russianName": "Qanipalaat"
+    "russianName": "Канипалаат"
   },
   "qanipalaat": {
     "displayName": "Qanipalaat",
     "englishName": "Qanipalaat",
     "chineseName": "雪绒",
-    "russianName": "Qanipalaat"
+    "russianName": "Канипалаат"
   },
   "char_166_skfire": {
     "displayName": "Skyfire",
     "englishName": "Skyfire",
     "chineseName": "天火",
-    "russianName": "Skyfire"
+    "russianName": "Скайфайр"
   },
   "skfire": {
     "displayName": "Skyfire",
     "englishName": "Skyfire",
     "chineseName": "天火",
-    "russianName": "Skyfire"
+    "russianName": "Скайфайр"
   },
   "skyfire": {
     "displayName": "Skyfire",
     "englishName": "Skyfire",
     "chineseName": "天火",
-    "russianName": "Skyfire"
+    "russianName": "Скайфайр"
   },
   "char_509_acast": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
-    "russianName": "Pith"
+    "russianName": "Пит"
   },
   "acast": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
-    "russianName": "Pith"
+    "russianName": "Пит"
   },
   "pith": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
-    "russianName": "Pith"
+    "russianName": "Пит"
   },
   "char_306_leizi": {
     "displayName": "Leizi",
     "englishName": "Leizi",
     "chineseName": "惊蛰",
-    "russianName": "Leizi"
+    "russianName": "Лэйцзы"
   },
   "leizi": {
     "displayName": "Leizi",
     "englishName": "Leizi",
     "chineseName": "惊蛰",
-    "russianName": "Leizi"
+    "russianName": "Лэйцзы"
   },
   "char_135_halo": {
     "displayName": "Astgenne",
     "englishName": "Astgenne",
     "chineseName": "星源",
-    "russianName": "Astgenne"
+    "russianName": "Астгенн"
   },
   "halo": {
     "displayName": "Astgenne",
     "englishName": "Astgenne",
     "chineseName": "星源",
-    "russianName": "Astgenne"
+    "russianName": "Астгенн"
   },
   "astgenne": {
     "displayName": "Astgenne",
     "englishName": "Astgenne",
     "chineseName": "星源",
-    "russianName": "Astgenne"
+    "russianName": "Астгенн"
   },
   "char_344_beewax": {
     "displayName": "Beeswax",
     "englishName": "Beeswax",
     "chineseName": "蜜蜡",
-    "russianName": "Beeswax"
+    "russianName": "Бизвакс"
   },
   "beewax": {
     "displayName": "Beeswax",
     "englishName": "Beeswax",
     "chineseName": "蜜蜡",
-    "russianName": "Beeswax"
+    "russianName": "Бизвакс"
   },
   "beeswax": {
     "displayName": "Beeswax",
     "englishName": "Beeswax",
     "chineseName": "蜜蜡",
-    "russianName": "Beeswax"
+    "russianName": "Бизвакс"
   },
   "char_373_lionhd": {
     "displayName": "Leonhardt",
     "englishName": "Leonhardt",
     "chineseName": "莱恩哈特",
-    "russianName": "Leonhardt"
+    "russianName": "Леонхардт"
   },
   "lionhd": {
     "displayName": "Leonhardt",
     "englishName": "Leonhardt",
     "chineseName": "莱恩哈特",
-    "russianName": "Leonhardt"
+    "russianName": "Леонхардт"
   },
   "leonhardt": {
     "displayName": "Leonhardt",
     "englishName": "Leonhardt",
     "chineseName": "莱恩哈特",
-    "russianName": "Leonhardt"
+    "russianName": "Леонхардт"
   },
   "char_341_sntlla": {
     "displayName": "Santalla",
     "englishName": "Santalla",
     "chineseName": "寒檀",
-    "russianName": "Santalla"
+    "russianName": "Сантала"
   },
   "sntlla": {
     "displayName": "Santalla",
     "englishName": "Santalla",
     "chineseName": "寒檀",
-    "russianName": "Santalla"
+    "russianName": "Сантала"
   },
   "santalla": {
     "displayName": "Santalla",
     "englishName": "Santalla",
     "chineseName": "寒檀",
-    "russianName": "Santalla"
+    "russianName": "Сантала"
   },
   "char_388_mint": {
     "displayName": "Mint",
     "englishName": "Mint",
     "chineseName": "薄绿",
-    "russianName": "Mint"
+    "russianName": "Минт"
   },
   "mint": {
     "displayName": "Mint",
     "englishName": "Mint",
     "chineseName": "薄绿",
-    "russianName": "Mint"
+    "russianName": "Минт"
   },
   "char_338_iris": {
     "displayName": "Iris",
     "englishName": "Iris",
     "chineseName": "爱丽丝",
-    "russianName": "Iris"
+    "russianName": "Айрис"
   },
   "iris": {
     "displayName": "Iris",
     "englishName": "Iris",
     "chineseName": "爱丽丝",
-    "russianName": "Iris"
+    "russianName": "Айрис"
   },
   "char_297_hamoni": {
     "displayName": "Harmonie",
     "englishName": "Harmonie",
     "chineseName": "和弦",
-    "russianName": "Harmonie"
+    "russianName": "Гармония"
   },
   "hamoni": {
     "displayName": "Harmonie",
     "englishName": "Harmonie",
     "chineseName": "和弦",
-    "russianName": "Harmonie"
+    "russianName": "Гармония"
   },
   "harmonie": {
     "displayName": "Harmonie",
     "englishName": "Harmonie",
     "chineseName": "和弦",
-    "russianName": "Harmonie"
+    "russianName": "Гармония"
   },
   "char_4110_delphn": {
     "displayName": "Delphine",
     "englishName": "Delphine",
     "chineseName": "戴菲恩",
-    "russianName": "Delphine"
+    "russianName": "Дельфина"
   },
   "delphn": {
     "displayName": "Delphine",
     "englishName": "Delphine",
     "chineseName": "戴菲恩",
-    "russianName": "Delphine"
+    "russianName": "Дельфина"
   },
   "delphine": {
     "displayName": "Delphine",
     "englishName": "Delphine",
     "chineseName": "戴菲恩",
-    "russianName": "Delphine"
+    "russianName": "Дельфина"
   },
   "char_1011_lava2": {
     "displayName": "Lava the Purgatory",
     "englishName": "Lava the Purgatory",
     "chineseName": "炎狱炎熔",
-    "russianName": "Lava the Purgatory"
+    "russianName": "Лава Чистилища"
   },
   "lava2": {
     "displayName": "Lava the Purgatory",
     "englishName": "Lava the Purgatory",
     "chineseName": "炎狱炎熔",
-    "russianName": "Lava the Purgatory"
+    "russianName": "Лава Чистилища"
   },
   "lavathepurgatory": {
     "displayName": "Lava the Purgatory",
     "englishName": "Lava the Purgatory",
     "chineseName": "炎狱炎熔",
-    "russianName": "Lava the Purgatory"
+    "russianName": "Лава Чистилища"
   },
   "char_489_serum": {
     "displayName": "Corroserum",
     "englishName": "Corroserum",
     "chineseName": "蚀清",
-    "russianName": "Corroserum"
+    "russianName": "Корросерум"
   },
   "serum": {
     "displayName": "Corroserum",
     "englishName": "Corroserum",
     "chineseName": "蚀清",
-    "russianName": "Corroserum"
+    "russianName": "Корросерум"
   },
   "corroserum": {
     "displayName": "Corroserum",
     "englishName": "Corroserum",
     "chineseName": "蚀清",
-    "russianName": "Corroserum"
+    "russianName": "Корросерум"
   },
   "char_446_aroma": {
     "displayName": "Aroma",
     "englishName": "Aroma",
     "chineseName": "阿罗玛",
-    "russianName": "Aroma"
+    "russianName": "Арома"
   },
   "aroma": {
     "displayName": "Aroma",
     "englishName": "Aroma",
     "chineseName": "阿罗玛",
-    "russianName": "Aroma"
+    "russianName": "Арома"
   },
   "char_4013_kjera": {
     "displayName": "Kjera",
     "englishName": "Kjera",
     "chineseName": "耶拉",
-    "russianName": "Kjera"
+    "russianName": "Кьера"
   },
   "kjera": {
     "displayName": "Kjera",
     "englishName": "Kjera",
     "chineseName": "耶拉",
-    "russianName": "Kjera"
+    "russianName": "Кьера"
   },
   "char_4040_rockr": {
     "displayName": "Rockrock",
     "englishName": "Rockrock",
     "chineseName": "洛洛",
-    "russianName": "Rockrock"
+    "russianName": "Рокрок"
   },
   "rockr": {
     "displayName": "Rockrock",
     "englishName": "Rockrock",
     "chineseName": "洛洛",
-    "russianName": "Rockrock"
+    "russianName": "Рокрок"
   },
   "rockrock": {
     "displayName": "Rockrock",
     "englishName": "Rockrock",
     "chineseName": "洛洛",
-    "russianName": "Rockrock"
+    "russianName": "Рокрок"
   },
   "char_4054_malist": {
     "displayName": "Minimalist",
     "englishName": "Minimalist",
     "chineseName": "至简",
-    "russianName": "Minimalist"
+    "russianName": "Минималист"
   },
   "malist": {
     "displayName": "Minimalist",
     "englishName": "Minimalist",
     "chineseName": "至简",
-    "russianName": "Minimalist"
+    "russianName": "Минималист"
   },
   "minimalist": {
     "displayName": "Minimalist",
     "englishName": "Minimalist",
     "chineseName": "至简",
-    "russianName": "Minimalist"
+    "russianName": "Минималист"
   },
   "char_499_kaitou": {
     "displayName": "Diamante",
     "englishName": "Diamante",
     "chineseName": "折光",
-    "russianName": "Diamante"
+    "russianName": "Диаманте"
   },
   "kaitou": {
     "displayName": "Diamante",
     "englishName": "Diamante",
     "chineseName": "折光",
-    "russianName": "Diamante"
+    "russianName": "Диаманте"
   },
   "diamante": {
     "displayName": "Diamante",
     "englishName": "Diamante",
     "chineseName": "折光",
-    "russianName": "Diamante"
+    "russianName": "Диаманте"
   },
   "char_4081_warmy": {
     "displayName": "Warmy",
     "englishName": "Warmy",
     "chineseName": "温米",
-    "russianName": "Warmy"
+    "russianName": "Ворми"
   },
   "warmy": {
     "displayName": "Warmy",
     "englishName": "Warmy",
     "chineseName": "温米",
-    "russianName": "Warmy"
+    "russianName": "Ворми"
   },
   "char_4198_christ": {
     "displayName": "Miss.Christine",
     "englishName": "Miss.Christine",
     "chineseName": "Miss.Christine",
-    "russianName": "Miss.Christine"
+    "russianName": "Мисс Кристин"
   },
   "christ": {
     "displayName": "Miss.Christine",
     "englishName": "Miss.Christine",
     "chineseName": "Miss.Christine",
-    "russianName": "Miss.Christine"
+    "russianName": "Мисс Кристин"
   },
   "misschristine": {
     "displayName": "Miss.Christine",
     "englishName": "Miss.Christine",
     "chineseName": "Miss.Christine",
-    "russianName": "Miss.Christine"
+    "russianName": "Мисс Кристин"
   },
   "char_4164_tecno": {
     "displayName": "特克诺",
     "englishName": "特克诺",
     "chineseName": "特克诺",
-    "russianName": "特克诺"
+    "russianName": "Текно"
   },
   "tecno": {
     "displayName": "特克诺",
     "englishName": "特克诺",
     "chineseName": "特克诺",
-    "russianName": "特克诺"
+    "russianName": "Текно"
   },
   "char_242_otter": {
     "displayName": "Mayer",
     "englishName": "Mayer",
     "chineseName": "梅尔",
-    "russianName": "Mayer"
+    "russianName": "Майер"
   },
   "otter": {
     "displayName": "Mayer",
     "englishName": "Mayer",
     "chineseName": "梅尔",
-    "russianName": "Mayer"
+    "russianName": "Майер"
   },
   "mayer": {
     "displayName": "Mayer",
     "englishName": "Mayer",
     "chineseName": "梅尔",
-    "russianName": "Mayer"
+    "russianName": "Майер"
   },
   "char_336_folivo": {
     "displayName": "Scene",
     "englishName": "Scene",
     "chineseName": "稀音",
-    "russianName": "Scene"
+    "russianName": "Сцена"
   },
   "folivo": {
     "displayName": "Scene",
     "englishName": "Scene",
     "chineseName": "稀音",
-    "russianName": "Scene"
+    "russianName": "Сцена"
   },
   "scene": {
     "displayName": "Scene",
     "englishName": "Scene",
     "chineseName": "稀音",
-    "russianName": "Scene"
+    "russianName": "Сцена"
   },
   "char_4140_lasher": {
     "displayName": "衡沙",
     "englishName": "衡沙",
     "chineseName": "衡沙",
-    "russianName": "衡沙"
+    "russianName": "Хэнша"
   },
   "lasher": {
     "displayName": "衡沙",
     "englishName": "衡沙",
     "chineseName": "衡沙",
-    "russianName": "衡沙"
+    "russianName": "Хэнша"
   },
   "char_108_silent": {
     "displayName": "Silence",
     "englishName": "Silence",
     "chineseName": "赫默",
-    "russianName": "Silence"
+    "russianName": "Сайленс"
   },
   "silent": {
     "displayName": "Silence",
     "englishName": "Silence",
     "chineseName": "赫默",
-    "russianName": "Silence"
+    "russianName": "Сайленс"
   },
   "silence": {
     "displayName": "Silence",
     "englishName": "Silence",
     "chineseName": "赫默",
-    "russianName": "Silence"
+    "russianName": "Сайленс"
   },
   "char_171_bldsk": {
     "displayName": "Warfarin",
     "englishName": "Warfarin",
     "chineseName": "华法琳",
-    "russianName": "Warfarin"
+    "russianName": "Варфарин"
   },
   "bldsk": {
     "displayName": "Warfarin",
     "englishName": "Warfarin",
     "chineseName": "华法琳",
-    "russianName": "Warfarin"
+    "russianName": "Варфарин"
   },
   "warfarin": {
     "displayName": "Warfarin",
     "englishName": "Warfarin",
     "chineseName": "华法琳",
-    "russianName": "Warfarin"
+    "russianName": "Варфарин"
   },
   "char_345_folnic": {
     "displayName": "Folinic",
     "englishName": "Folinic",
     "chineseName": "亚叶",
-    "russianName": "Folinic"
+    "russianName": "Фолиник"
   },
   "folnic": {
     "displayName": "Folinic",
     "englishName": "Folinic",
     "chineseName": "亚叶",
-    "russianName": "Folinic"
+    "russianName": "Фолиник"
   },
   "folinic": {
     "displayName": "Folinic",
     "englishName": "Folinic",
     "chineseName": "亚叶",
-    "russianName": "Folinic"
+    "russianName": "Фолиник"
   },
   "char_510_amedic": {
     "displayName": "Touch",
     "englishName": "Touch",
     "chineseName": "Touch",
-    "russianName": "Touch"
+    "russianName": "Тач"
   },
   "amedic": {
     "displayName": "Touch",
     "englishName": "Touch",
     "chineseName": "Touch",
-    "russianName": "Touch"
+    "russianName": "Тач"
   },
   "touch": {
     "displayName": "Touch",
     "englishName": "Touch",
     "chineseName": "Touch",
-    "russianName": "Touch"
+    "russianName": "Тач"
   },
   "char_4196_reckpr": {
     "displayName": "录武官",
     "englishName": "录武官",
     "chineseName": "录武官",
-    "russianName": "录武官"
+    "russianName": "Лу Угуань"
   },
   "reckpr": {
     "displayName": "录武官",
     "englishName": "录武官",
     "chineseName": "录武官",
-    "russianName": "录武官"
+    "russianName": "Лу Угуань"
   },
   "char_348_ceylon": {
     "displayName": "Ceylon",
     "englishName": "Ceylon",
     "chineseName": "锡兰",
-    "russianName": "Ceylon"
+    "russianName": "Цейлон"
   },
   "ceylon": {
     "displayName": "Ceylon",
     "englishName": "Ceylon",
     "chineseName": "锡兰",
-    "russianName": "Ceylon"
+    "russianName": "Цейлон"
   },
   "char_436_whispr": {
     "displayName": "Whisperain",
     "englishName": "Whisperain",
     "chineseName": "絮雨",
-    "russianName": "Whisperain"
+    "russianName": "Висперейн"
   },
   "whispr": {
     "displayName": "Whisperain",
     "englishName": "Whisperain",
     "chineseName": "絮雨",
-    "russianName": "Whisperain"
+    "russianName": "Висперейн"
   },
   "whisperain": {
     "displayName": "Whisperain",
     "englishName": "Whisperain",
     "chineseName": "絮雨",
-    "russianName": "Whisperain"
+    "russianName": "Висперейн"
   },
   "char_4173_nowell": {
     "displayName": "诺威尔",
     "englishName": "诺威尔",
     "chineseName": "诺威尔",
-    "russianName": "诺威尔"
+    "russianName": "Новелл"
   },
   "nowell": {
     "displayName": "诺威尔",
     "englishName": "诺威尔",
     "chineseName": "诺威尔",
-    "russianName": "诺威尔"
+    "russianName": "Новелл"
   },
   "char_402_tuye": {
     "displayName": "Tuye",
     "englishName": "Tuye",
     "chineseName": "图耶",
-    "russianName": "Tuye"
+    "russianName": "Туйе"
   },
   "tuye": {
     "displayName": "Tuye",
     "englishName": "Tuye",
     "chineseName": "图耶",
-    "russianName": "Tuye"
+    "russianName": "Туйе"
   },
   "char_473_mberry": {
     "displayName": "Mulberry",
     "englishName": "Mulberry",
     "chineseName": "桑葚",
-    "russianName": "Mulberry"
+    "russianName": "Малберри"
   },
   "mberry": {
     "displayName": "Mulberry",
     "englishName": "Mulberry",
     "chineseName": "桑葚",
-    "russianName": "Mulberry"
+    "russianName": "Малберри"
   },
   "mulberry": {
     "displayName": "Mulberry",
     "englishName": "Mulberry",
     "chineseName": "桑葚",
-    "russianName": "Mulberry"
+    "russianName": "Малберри"
   },
   "char_449_glider": {
     "displayName": "Honeyberry",
     "englishName": "Honeyberry",
     "chineseName": "蜜莓",
-    "russianName": "Honeyberry"
+    "russianName": "Ханиберри"
   },
   "glider": {
     "displayName": "Honeyberry",
     "englishName": "Honeyberry",
     "chineseName": "蜜莓",
-    "russianName": "Honeyberry"
+    "russianName": "Ханиберри"
   },
   "honeyberry": {
     "displayName": "Honeyberry",
     "englishName": "Honeyberry",
     "chineseName": "蜜莓",
-    "russianName": "Honeyberry"
+    "russianName": "Ханиберри"
   },
   "char_4114_harold": {
     "displayName": "Harold",
     "englishName": "Harold",
     "chineseName": "哈洛德",
-    "russianName": "Harold"
+    "russianName": "Гарольд"
   },
   "harold": {
     "displayName": "Harold",
     "englishName": "Harold",
     "chineseName": "哈洛德",
-    "russianName": "Harold"
+    "russianName": "Гарольд"
   },
   "char_1024_hbisc2": {
     "displayName": "Hibiscus the Purifier",
     "englishName": "Hibiscus the Purifier",
     "chineseName": "濯尘芙蓉",
-    "russianName": "Hibiscus the Purifier"
+    "russianName": "Гибискус Очистительница"
   },
   "hbisc2": {
     "displayName": "Hibiscus the Purifier",
     "englishName": "Hibiscus the Purifier",
     "chineseName": "濯尘芙蓉",
-    "russianName": "Hibiscus the Purifier"
+    "russianName": "Гибискус Очистительница"
   },
   "hibiscusthepurifier": {
     "displayName": "Hibiscus the Purifier",
     "englishName": "Hibiscus the Purifier",
     "chineseName": "濯尘芙蓉",
-    "russianName": "Hibiscus the Purifier"
+    "russianName": "Гибискус Очистительница"
   },
   "char_494_vendla": {
     "displayName": "Vendela",
     "englishName": "Vendela",
     "chineseName": "刺玫",
-    "russianName": "Vendela"
+    "russianName": "Вендела"
   },
   "vendla": {
     "displayName": "Vendela",
     "englishName": "Vendela",
     "chineseName": "刺玫",
-    "russianName": "Vendela"
+    "russianName": "Вендела"
   },
   "vendela": {
     "displayName": "Vendela",
     "englishName": "Vendela",
     "chineseName": "刺玫",
-    "russianName": "Vendela"
+    "russianName": "Вендела"
   },
   "char_4071_peper": {
     "displayName": "Paprika",
     "englishName": "Paprika",
     "chineseName": "明椒",
-    "russianName": "Paprika"
+    "russianName": "Паприка"
   },
   "peper": {
     "displayName": "Paprika",
     "englishName": "Paprika",
     "chineseName": "明椒",
-    "russianName": "Paprika"
+    "russianName": "Паприка"
   },
   "paprika": {
     "displayName": "Paprika",
     "englishName": "Paprika",
     "chineseName": "明椒",
-    "russianName": "Paprika"
+    "russianName": "Паприка"
   },
   "char_4139_papyrs": {
     "displayName": "莎草",
     "englishName": "莎草",
     "chineseName": "莎草",
-    "russianName": "莎草"
+    "russianName": "Шацао"
   },
   "papyrs": {
     "displayName": "莎草",
     "englishName": "莎草",
     "chineseName": "莎草",
-    "russianName": "莎草"
+    "russianName": "Шацао"
   },
   "char_148_nearl": {
     "displayName": "Nearl",
@@ -3321,655 +3321,655 @@
     "displayName": "Hung",
     "englishName": "Hung",
     "chineseName": "吽",
-    "russianName": "Hung"
+    "russianName": "Ханг"
   },
   "hmau": {
     "displayName": "Hung",
     "englishName": "Hung",
     "chineseName": "吽",
-    "russianName": "Hung"
+    "russianName": "Ханг"
   },
   "hung": {
     "displayName": "Hung",
     "englishName": "Hung",
     "chineseName": "吽",
-    "russianName": "Hung"
+    "russianName": "Ханг"
   },
   "char_4109_baslin": {
     "displayName": "Bassline",
     "englishName": "Bassline",
     "chineseName": "深律",
-    "russianName": "Bassline"
+    "russianName": "Басслайн"
   },
   "baslin": {
     "displayName": "Bassline",
     "englishName": "Bassline",
     "chineseName": "深律",
-    "russianName": "Bassline"
+    "russianName": "Басслайн"
   },
   "bassline": {
     "displayName": "Bassline",
     "englishName": "Bassline",
     "chineseName": "深律",
-    "russianName": "Bassline"
+    "russianName": "Басслайн"
   },
   "char_4143_sensi": {
     "displayName": "森西",
     "englishName": "森西",
     "chineseName": "森西",
-    "russianName": "森西"
+    "russianName": "Сэнши"
   },
   "sensi": {
     "displayName": "森西",
     "englishName": "森西",
     "chineseName": "森西",
-    "russianName": "森西"
+    "russianName": "Сэнши"
   },
   "char_144_red": {
     "displayName": "Projekt Red",
     "englishName": "Projekt Red",
     "chineseName": "红",
-    "russianName": "Projekt Red"
+    "russianName": "Проект Ред"
   },
   "red": {
     "displayName": "Projekt Red",
     "englishName": "Projekt Red",
     "chineseName": "红",
-    "russianName": "Projekt Red"
+    "russianName": "Проект Ред"
   },
   "projektred": {
     "displayName": "Projekt Red",
     "englishName": "Projekt Red",
     "chineseName": "红",
-    "russianName": "Projekt Red"
+    "russianName": "Проект Ред"
   },
   "char_243_waaifu": {
     "displayName": "Waai Fu",
     "englishName": "Waai Fu",
     "chineseName": "槐琥",
-    "russianName": "Waai Fu"
+    "russianName": "Вай Фу"
   },
   "waaifu": {
     "displayName": "Waai Fu",
     "englishName": "Waai Fu",
     "chineseName": "槐琥",
-    "russianName": "Waai Fu"
+    "russianName": "Вай Фу"
   },
   "char_214_kafka": {
     "displayName": "Kafka",
     "englishName": "Kafka",
     "chineseName": "卡夫卡",
-    "russianName": "Kafka"
+    "russianName": "Кафка"
   },
   "kafka": {
     "displayName": "Kafka",
     "englishName": "Kafka",
     "chineseName": "卡夫卡",
-    "russianName": "Kafka"
+    "russianName": "Кафка"
   },
   "char_455_nothin": {
     "displayName": "Mr. Nothing",
     "englishName": "Mr. Nothing",
     "chineseName": "乌有",
-    "russianName": "Mr. Nothing"
+    "russianName": "Мистер Ничто"
   },
   "nothin": {
     "displayName": "Mr. Nothing",
     "englishName": "Mr. Nothing",
     "chineseName": "乌有",
-    "russianName": "Mr. Nothing"
+    "russianName": "Мистер Ничто"
   },
   "mrnothing": {
     "displayName": "Mr. Nothing",
     "englishName": "Mr. Nothing",
     "chineseName": "乌有",
-    "russianName": "Mr. Nothing"
+    "russianName": "Мистер Ничто"
   },
   "char_4155_talr": {
     "displayName": "裁度",
     "englishName": "裁度",
     "chineseName": "裁度",
-    "russianName": "裁度"
+    "russianName": "Цайду"
   },
   "talr": {
     "displayName": "裁度",
     "englishName": "裁度",
     "chineseName": "裁度",
-    "russianName": "裁度"
+    "russianName": "Цайду"
   },
   "char_107_liskam": {
     "displayName": "Liskarm",
     "englishName": "Liskarm",
     "chineseName": "雷蛇",
-    "russianName": "Liskarm"
+    "russianName": "Лискарм"
   },
   "liskam": {
     "displayName": "Liskarm",
     "englishName": "Liskarm",
     "chineseName": "雷蛇",
-    "russianName": "Liskarm"
+    "russianName": "Лискарм"
   },
   "liskarm": {
     "displayName": "Liskarm",
     "englishName": "Liskarm",
     "chineseName": "雷蛇",
-    "russianName": "Liskarm"
+    "russianName": "Лискарм"
   },
   "char_4137_udflow": {
     "displayName": "深巡",
     "englishName": "深巡",
     "chineseName": "深巡",
-    "russianName": "深巡"
+    "russianName": "Шэньсюнь"
   },
   "udflow": {
     "displayName": "深巡",
     "englishName": "深巡",
     "chineseName": "深巡",
-    "russianName": "深巡"
+    "russianName": "Шэньсюнь"
   },
   "char_201_moeshd": {
     "displayName": "Croissant",
     "englishName": "Croissant",
     "chineseName": "可颂",
-    "russianName": "Croissant"
+    "russianName": "Круассан"
   },
   "moeshd": {
     "displayName": "Croissant",
     "englishName": "Croissant",
     "chineseName": "可颂",
-    "russianName": "Croissant"
+    "russianName": "Круассан"
   },
   "croissant": {
     "displayName": "Croissant",
     "englishName": "Croissant",
     "chineseName": "可颂",
-    "russianName": "Croissant"
+    "russianName": "Круассан"
   },
   "char_325_bison": {
     "displayName": "Bison",
     "englishName": "Bison",
     "chineseName": "拜松",
-    "russianName": "Bison"
+    "russianName": "Бизон"
   },
   "bison": {
     "displayName": "Bison",
     "englishName": "Bison",
     "chineseName": "拜松",
-    "russianName": "Bison"
+    "russianName": "Бизон"
   },
   "char_163_hpsts": {
     "displayName": "Vulcan",
     "englishName": "Vulcan",
     "chineseName": "火神",
-    "russianName": "Vulcan"
+    "russianName": "Вулкан"
   },
   "hpsts": {
     "displayName": "Vulcan",
     "englishName": "Vulcan",
     "chineseName": "火神",
-    "russianName": "Vulcan"
+    "russianName": "Вулкан"
   },
   "vulcan": {
     "displayName": "Vulcan",
     "englishName": "Vulcan",
     "chineseName": "火神",
-    "russianName": "Vulcan"
+    "russianName": "Вулкан"
   },
   "char_4207_branch": {
     "displayName": "折桠",
     "englishName": "折桠",
     "chineseName": "折桠",
-    "russianName": "折桠"
+    "russianName": "Чжэя"
   },
   "branch": {
     "displayName": "折桠",
     "englishName": "折桠",
     "chineseName": "折桠",
-    "russianName": "折桠"
+    "russianName": "Чжэя"
   },
   "char_378_asbest": {
     "displayName": "Asbestos",
     "englishName": "Asbestos",
     "chineseName": "石棉",
-    "russianName": "Asbestos"
+    "russianName": "Асбестос"
   },
   "asbest": {
     "displayName": "Asbestos",
     "englishName": "Asbestos",
     "chineseName": "石棉",
-    "russianName": "Asbestos"
+    "russianName": "Асбестос"
   },
   "asbestos": {
     "displayName": "Asbestos",
     "englishName": "Asbestos",
     "chineseName": "石棉",
-    "russianName": "Asbestos"
+    "russianName": "Асбестос"
   },
   "char_512_aprot": {
     "displayName": "Shalem",
     "englishName": "Shalem",
     "chineseName": "暮落",
-    "russianName": "Shalem"
+    "russianName": "Шалем"
   },
   "aprot": {
     "displayName": "Shalem",
     "englishName": "Shalem",
     "chineseName": "暮落",
-    "russianName": "Shalem"
+    "russianName": "Шалем"
   },
   "shalem": {
     "displayName": "Shalem",
     "englishName": "Shalem",
     "chineseName": "暮落",
-    "russianName": "Shalem"
+    "russianName": "Шалем"
   },
   "char_4025_aprot2": {
     "displayName": "Shalem",
     "englishName": "Shalem",
     "chineseName": "暮落",
-    "russianName": "Shalem"
+    "russianName": "Шалем"
   },
   "aprot2": {
     "displayName": "Shalem",
     "englishName": "Shalem",
     "chineseName": "暮落",
-    "russianName": "Shalem"
+    "russianName": "Шалем"
   },
   "char_4047_pianst": {
     "displayName": "Czerny",
     "englishName": "Czerny",
     "chineseName": "车尔尼",
-    "russianName": "Czerny"
+    "russianName": "Черни"
   },
   "pianst": {
     "displayName": "Czerny",
     "englishName": "Czerny",
     "chineseName": "车尔尼",
-    "russianName": "Czerny"
+    "russianName": "Черни"
   },
   "czerny": {
     "displayName": "Czerny",
     "englishName": "Czerny",
     "chineseName": "车尔尼",
-    "russianName": "Czerny"
+    "russianName": "Черни"
   },
   "char_457_blitz": {
     "displayName": "Blitz",
     "englishName": "Blitz",
     "chineseName": "闪击",
-    "russianName": "Blitz"
+    "russianName": "Блиц"
   },
   "blitz": {
     "displayName": "Blitz",
     "englishName": "Blitz",
     "chineseName": "闪击",
-    "russianName": "Blitz"
+    "russianName": "Блиц"
   },
   "char_304_zebra": {
     "displayName": "Heavyrain",
     "englishName": "Heavyrain",
     "chineseName": "暴雨",
-    "russianName": "Heavyrain"
+    "russianName": "Хэвирейн"
   },
   "zebra": {
     "displayName": "Heavyrain",
     "englishName": "Heavyrain",
     "chineseName": "暴雨",
-    "russianName": "Heavyrain"
+    "russianName": "Хэвирейн"
   },
   "heavyrain": {
     "displayName": "Heavyrain",
     "englishName": "Heavyrain",
     "chineseName": "暴雨",
-    "russianName": "Heavyrain"
+    "russianName": "Хэвирейн"
   },
   "char_431_ashlok": {
     "displayName": "Ashlock",
     "englishName": "Ashlock",
     "chineseName": "灰毫",
-    "russianName": "Ashlock"
+    "russianName": "Эшлок"
   },
   "ashlok": {
     "displayName": "Ashlock",
     "englishName": "Ashlock",
     "chineseName": "灰毫",
-    "russianName": "Ashlock"
+    "russianName": "Эшлок"
   },
   "ashlock": {
     "displayName": "Ashlock",
     "englishName": "Ashlock",
     "chineseName": "灰毫",
-    "russianName": "Ashlock"
+    "russianName": "Эшлок"
   },
   "char_493_firwhl": {
     "displayName": "Firewhistle",
     "englishName": "Firewhistle",
     "chineseName": "火哨",
-    "russianName": "Firewhistle"
+    "russianName": "Файрвистл"
   },
   "firwhl": {
     "displayName": "Firewhistle",
     "englishName": "Firewhistle",
     "chineseName": "火哨",
-    "russianName": "Firewhistle"
+    "russianName": "Файрвистл"
   },
   "firewhistle": {
     "displayName": "Firewhistle",
     "englishName": "Firewhistle",
     "chineseName": "火哨",
-    "russianName": "Firewhistle"
+    "russianName": "Файрвистл"
   },
   "char_422_aurora": {
     "displayName": "Aurora",
     "englishName": "Aurora",
     "chineseName": "极光",
-    "russianName": "Aurora"
+    "russianName": "Аврора"
   },
   "aurora": {
     "displayName": "Aurora",
     "englishName": "Aurora",
     "chineseName": "极光",
-    "russianName": "Aurora"
+    "russianName": "Аврора"
   },
   "char_464_cement": {
     "displayName": "Cement",
     "englishName": "Cement",
     "chineseName": "洋灰",
-    "russianName": "Cement"
+    "russianName": "Цемент"
   },
   "cement": {
     "displayName": "Cement",
     "englishName": "Cement",
     "chineseName": "洋灰",
-    "russianName": "Cement"
+    "russianName": "Цемент"
   },
   "char_4148_philae": {
     "displayName": "菲莱",
     "englishName": "菲莱",
     "chineseName": "菲莱",
-    "russianName": "菲莱"
+    "russianName": "Филай"
   },
   "philae": {
     "displayName": "菲莱",
     "englishName": "菲莱",
     "chineseName": "菲莱",
-    "russianName": "菲莱"
+    "russianName": "Филай"
   },
   "char_145_prove": {
     "displayName": "Provence",
     "englishName": "Provence",
     "chineseName": "普罗旺斯",
-    "russianName": "Provence"
+    "russianName": "Прованс"
   },
   "prove": {
     "displayName": "Provence",
     "englishName": "Provence",
     "chineseName": "普罗旺斯",
-    "russianName": "Provence"
+    "russianName": "Прованс"
   },
   "provence": {
     "displayName": "Provence",
     "englishName": "Provence",
     "chineseName": "普罗旺斯",
-    "russianName": "Provence"
+    "russianName": "Прованс"
   },
   "char_4006_melnte": {
     "displayName": "Melanite",
     "englishName": "Melanite",
     "chineseName": "玫拉",
-    "russianName": "Melanite"
+    "russianName": "Меланит"
   },
   "melnte": {
     "displayName": "Melanite",
     "englishName": "Melanite",
     "chineseName": "玫拉",
-    "russianName": "Melanite"
+    "russianName": "Меланит"
   },
   "melanite": {
     "displayName": "Melanite",
     "englishName": "Melanite",
     "chineseName": "玫拉",
-    "russianName": "Melanite"
+    "russianName": "Меланит"
   },
   "char_158_milu": {
     "displayName": "Firewatch",
     "englishName": "Firewatch",
     "chineseName": "守林人",
-    "russianName": "Firewatch"
+    "russianName": "Файрвотч"
   },
   "milu": {
     "displayName": "Firewatch",
     "englishName": "Firewatch",
     "chineseName": "守林人",
-    "russianName": "Firewatch"
+    "russianName": "Файрвотч"
   },
   "firewatch": {
     "displayName": "Firewatch",
     "englishName": "Firewatch",
     "chineseName": "守林人",
-    "russianName": "Firewatch"
+    "russianName": "Файрвотч"
   },
   "char_218_cuttle": {
     "displayName": "Andreana",
     "englishName": "Andreana",
     "chineseName": "安哲拉",
-    "russianName": "Andreana"
+    "russianName": "Андреана"
   },
   "cuttle": {
     "displayName": "Andreana",
     "englishName": "Andreana",
     "chineseName": "安哲拉",
-    "russianName": "Andreana"
+    "russianName": "Андреана"
   },
   "andreana": {
     "displayName": "Andreana",
     "englishName": "Andreana",
     "chineseName": "安哲拉",
-    "russianName": "Andreana"
+    "russianName": "Андреана"
   },
   "char_4014_lunacu": {
     "displayName": "Lunacub",
     "englishName": "Lunacub",
     "chineseName": "子月",
-    "russianName": "Lunacub"
+    "russianName": "Лунакаб"
   },
   "lunacu": {
     "displayName": "Lunacub",
     "englishName": "Lunacub",
     "chineseName": "子月",
-    "russianName": "Lunacub"
+    "russianName": "Лунакаб"
   },
   "lunacub": {
     "displayName": "Lunacub",
     "englishName": "Lunacub",
     "chineseName": "子月",
-    "russianName": "Lunacub"
+    "russianName": "Лунакаб"
   },
   "char_363_toddi": {
     "displayName": "Toddifons",
     "englishName": "Toddifons",
     "chineseName": "熔泉",
-    "russianName": "Toddifons"
+    "russianName": "Тоддифонс"
   },
   "toddi": {
     "displayName": "Toddifons",
     "englishName": "Toddifons",
     "chineseName": "熔泉",
-    "russianName": "Toddifons"
+    "russianName": "Тоддифонс"
   },
   "toddifons": {
     "displayName": "Toddifons",
     "englishName": "Toddifons",
     "chineseName": "熔泉",
-    "russianName": "Toddifons"
+    "russianName": "Тоддифонс"
   },
   "char_4043_erato": {
     "displayName": "Erato",
     "englishName": "Erato",
     "chineseName": "埃拉托",
-    "russianName": "Erato"
+    "russianName": "Эрато"
   },
   "erato": {
     "displayName": "Erato",
     "englishName": "Erato",
     "chineseName": "埃拉托",
-    "russianName": "Erato"
+    "russianName": "Эрато"
   },
   "char_1027_greyy2": {
     "displayName": "Greyy the Lightningbearer",
     "englishName": "Greyy the Lightningbearer",
     "chineseName": "承曦格雷伊",
-    "russianName": "Greyy the Lightningbearer"
+    "russianName": "Грей Несущий Молнию"
   },
   "greyy2": {
     "displayName": "Greyy the Lightningbearer",
     "englishName": "Greyy the Lightningbearer",
     "chineseName": "承曦格雷伊",
-    "russianName": "Greyy the Lightningbearer"
+    "russianName": "Грей Несущий Молнию"
   },
   "greyythelightningbearer": {
     "displayName": "Greyy the Lightningbearer",
     "englishName": "Greyy the Lightningbearer",
     "chineseName": "承曦格雷伊",
-    "russianName": "Greyy the Lightningbearer"
+    "russianName": "Грей Несущий Молнию"
   },
   "char_4104_coldst": {
     "displayName": "Coldshot",
     "englishName": "Coldshot",
     "chineseName": "冰酿",
-    "russianName": "Coldshot"
+    "russianName": "Колдшот"
   },
   "coldst": {
     "displayName": "Coldshot",
     "englishName": "Coldshot",
     "chineseName": "冰酿",
-    "russianName": "Coldshot"
+    "russianName": "Колдшот"
   },
   "coldshot": {
     "displayName": "Coldshot",
     "englishName": "Coldshot",
     "chineseName": "冰酿",
-    "russianName": "Coldshot"
+    "russianName": "Колдшот"
   },
   "char_4177_brigid": {
     "displayName": "水灯心",
     "englishName": "水灯心",
     "chineseName": "水灯心",
-    "russianName": "水灯心"
+    "russianName": "Шуй Дэнсинь"
   },
   "brigid": {
     "displayName": "水灯心",
     "englishName": "水灯心",
     "chineseName": "水灯心",
-    "russianName": "水灯心"
+    "russianName": "Шуй Дэнсинь"
   },
   "char_4015_spuria": {
     "displayName": "Spuria",
     "englishName": "Spuria",
     "chineseName": "空构",
-    "russianName": "Spuria"
+    "russianName": "Спурия"
   },
   "spuria": {
     "displayName": "Spuria",
     "englishName": "Spuria",
     "chineseName": "空构",
-    "russianName": "Spuria"
+    "russianName": "Спурия"
   },
   "char_173_slchan": {
     "displayName": "Cliffheart",
     "englishName": "Cliffheart",
     "chineseName": "崖心",
-    "russianName": "Cliffheart"
+    "russianName": "Клиффхарт"
   },
   "slchan": {
     "displayName": "Cliffheart",
     "englishName": "Cliffheart",
     "chineseName": "崖心",
-    "russianName": "Cliffheart"
+    "russianName": "Клиффхарт"
   },
   "cliffheart": {
     "displayName": "Cliffheart",
     "englishName": "Cliffheart",
     "chineseName": "崖心",
-    "russianName": "Cliffheart"
+    "russianName": "Клиффхарт"
   },
   "char_383_snsant": {
     "displayName": "Snowsant",
     "englishName": "Snowsant",
     "chineseName": "雪雉",
-    "russianName": "Snowsant"
+    "russianName": "Сноусант"
   },
   "snsant": {
     "displayName": "Snowsant",
     "englishName": "Snowsant",
     "chineseName": "雪雉",
-    "russianName": "Snowsant"
+    "russianName": "Сноусант"
   },
   "snowsant": {
     "displayName": "Snowsant",
     "englishName": "Snowsant",
     "chineseName": "雪雉",
-    "russianName": "Snowsant"
+    "russianName": "Сноусант"
   },
   "char_4105_almond": {
     "displayName": "Almond",
     "englishName": "Almond",
     "chineseName": "杏仁",
-    "russianName": "Almond"
+    "russianName": "Алмонд"
   },
   "almond": {
     "displayName": "Almond",
     "englishName": "Almond",
     "chineseName": "杏仁",
-    "russianName": "Almond"
+    "russianName": "Алмонд"
   },
   "char_174_slbell": {
     "displayName": "Pramanix",
     "englishName": "Pramanix",
     "chineseName": "初雪",
-    "russianName": "Pramanix"
+    "russianName": "Праманикс"
   },
   "slbell": {
     "displayName": "Pramanix",
     "englishName": "Pramanix",
     "chineseName": "初雪",
-    "russianName": "Pramanix"
+    "russianName": "Праманикс"
   },
   "pramanix": {
     "displayName": "Pramanix",
     "englishName": "Pramanix",
     "chineseName": "初雪",
-    "russianName": "Pramanix"
+    "russianName": "Праманикс"
   },
   "char_254_vodfox": {
     "displayName": "Shamare",
     "englishName": "Shamare",
     "chineseName": "巫恋",
-    "russianName": "Shamare"
+    "russianName": "Шамаре"
   },
   "vodfox": {
     "displayName": "Shamare",
     "englishName": "Shamare",
     "chineseName": "巫恋",
-    "russianName": "Shamare"
+    "russianName": "Шамаре"
   },
   "shamare": {
     "displayName": "Shamare",
     "englishName": "Shamare",
     "chineseName": "巫恋",
-    "russianName": "Shamare"
+    "russianName": "Шамаре"
   },
   "char_4079_haini": {
     "displayName": "海霓",
     "englishName": "海霓",
     "chineseName": "海霓",
-    "russianName": "海霓"
+    "russianName": "Хайни"
   },
   "haini": {
     "displayName": "海霓",
     "englishName": "海霓",
     "chineseName": "海霓",
-    "russianName": "海霓"
+    "russianName": "Хайни"
   },
   "char_195_glassb": {
     "displayName": "Istina",
@@ -3993,427 +3993,427 @@
     "displayName": "Glaucus",
     "englishName": "Glaucus",
     "chineseName": "格劳克斯",
-    "russianName": "Glaucus"
+    "russianName": "Глаукус"
   },
   "glacus": {
     "displayName": "Glaucus",
     "englishName": "Glaucus",
     "chineseName": "格劳克斯",
-    "russianName": "Glaucus"
+    "russianName": "Глаукус"
   },
   "glaucus": {
     "displayName": "Glaucus",
     "englishName": "Glaucus",
     "chineseName": "格劳克斯",
-    "russianName": "Glaucus"
+    "russianName": "Глаукус"
   },
   "char_4032_provs": {
     "displayName": "Proviso",
     "englishName": "Proviso",
     "chineseName": "但书",
-    "russianName": "Proviso"
+    "russianName": "Провизо"
   },
   "provs": {
     "displayName": "Proviso",
     "englishName": "Proviso",
     "chineseName": "但书",
-    "russianName": "Proviso"
+    "russianName": "Провизо"
   },
   "proviso": {
     "displayName": "Proviso",
     "englishName": "Proviso",
     "chineseName": "但书",
-    "russianName": "Proviso"
+    "russianName": "Провизо"
   },
   "char_4122_grabds": {
     "displayName": "Grain Buds",
     "englishName": "Grain Buds",
     "chineseName": "小满",
-    "russianName": "Grain Buds"
+    "russianName": "Грейн Бадс"
   },
   "grabds": {
     "displayName": "Grain Buds",
     "englishName": "Grain Buds",
     "chineseName": "小满",
-    "russianName": "Grain Buds"
+    "russianName": "Грейн Бадс"
   },
   "grainbuds": {
     "displayName": "Grain Buds",
     "englishName": "Grain Buds",
     "chineseName": "小满",
-    "russianName": "Grain Buds"
+    "russianName": "Грейн Бадс"
   },
   "char_433_windft": {
     "displayName": "Windflit",
     "englishName": "Windflit",
     "chineseName": "掠风",
-    "russianName": "Windflit"
+    "russianName": "Виндфлит"
   },
   "windft": {
     "displayName": "Windflit",
     "englishName": "Windflit",
     "chineseName": "掠风",
-    "russianName": "Windflit"
+    "russianName": "Виндфлит"
   },
   "windflit": {
     "displayName": "Windflit",
     "englishName": "Windflit",
     "chineseName": "掠风",
-    "russianName": "Windflit"
+    "russianName": "Виндфлит"
   },
   "char_4162_cathy": {
     "displayName": "凯瑟琳",
     "englishName": "凯瑟琳",
     "chineseName": "凯瑟琳",
-    "russianName": "凯瑟琳"
+    "russianName": "Кэтрин"
   },
   "cathy": {
     "displayName": "凯瑟琳",
     "englishName": "凯瑟琳",
     "chineseName": "凯瑟琳",
-    "russianName": "凯瑟琳"
+    "russianName": "Кэтрин"
   },
   "char_4178_alanna": {
     "displayName": "阿兰娜",
     "englishName": "阿兰娜",
     "chineseName": "阿兰娜",
-    "russianName": "阿兰娜"
+    "russianName": "Аланна"
   },
   "alanna": {
     "displayName": "阿兰娜",
     "englishName": "阿兰娜",
     "chineseName": "阿兰娜",
-    "russianName": "阿兰娜"
+    "russianName": "Аланна"
   },
   "char_101_sora": {
     "displayName": "Sora",
     "englishName": "Sora",
     "chineseName": "空",
-    "russianName": "Sora"
+    "russianName": "Сора"
   },
   "sora": {
     "displayName": "Sora",
     "englishName": "Sora",
     "chineseName": "空",
-    "russianName": "Sora"
+    "russianName": "Сора"
   },
   "char_4045_heidi": {
     "displayName": "Heidi",
     "englishName": "Heidi",
     "chineseName": "海蒂",
-    "russianName": "Heidi"
+    "russianName": "Хайди"
   },
   "heidi": {
     "displayName": "Heidi",
     "englishName": "Heidi",
     "chineseName": "海蒂",
-    "russianName": "Heidi"
+    "russianName": "Хайди"
   },
   "char_4184_dolris": {
     "displayName": "三角初华",
     "englishName": "三角初华",
     "chineseName": "三角初华",
-    "russianName": "三角初华"
+    "russianName": "Мисуми Уика"
   },
   "dolris": {
     "displayName": "三角初华",
     "englishName": "三角初华",
     "chineseName": "三角初华",
-    "russianName": "三角初华"
+    "russianName": "Мисуми Уика"
   },
   "char_343_tknogi": {
     "displayName": "Tsukinogi",
     "englishName": "Tsukinogi",
     "chineseName": "月禾",
-    "russianName": "Tsukinogi"
+    "russianName": "Цукиноги"
   },
   "tknogi": {
     "displayName": "Tsukinogi",
     "englishName": "Tsukinogi",
     "chineseName": "月禾",
-    "russianName": "Tsukinogi"
+    "russianName": "Цукиноги"
   },
   "tsukinogi": {
     "displayName": "Tsukinogi",
     "englishName": "Tsukinogi",
     "chineseName": "月禾",
-    "russianName": "Tsukinogi"
+    "russianName": "Цукиноги"
   },
   "char_4019_ncdeer": {
     "displayName": "Nine-Colored Deer",
     "englishName": "Nine-Colored Deer",
     "chineseName": "九色鹿",
-    "russianName": "Nine-Colored Deer"
+    "russianName": "Девятицветный Олень"
   },
   "ncdeer": {
     "displayName": "Nine-Colored Deer",
     "englishName": "Nine-Colored Deer",
     "chineseName": "九色鹿",
-    "russianName": "Nine-Colored Deer"
+    "russianName": "Девятицветный Олень"
   },
   "ninecoloreddeer": {
     "displayName": "Nine-Colored Deer",
     "englishName": "Nine-Colored Deer",
     "chineseName": "九色鹿",
-    "russianName": "Nine-Colored Deer"
+    "russianName": "Девятицветный Олень"
   },
   "char_492_quercu": {
     "displayName": "Quercus",
     "englishName": "Quercus",
     "chineseName": "夏栎",
-    "russianName": "Quercus"
+    "russianName": "Кверкус"
   },
   "quercu": {
     "displayName": "Quercus",
     "englishName": "Quercus",
     "chineseName": "夏栎",
-    "russianName": "Quercus"
+    "russianName": "Кверкус"
   },
   "quercus": {
     "displayName": "Quercus",
     "englishName": "Quercus",
     "chineseName": "夏栎",
-    "russianName": "Quercus"
+    "russianName": "Кверкус"
   },
   "char_4172_xingzh": {
     "displayName": "行箸",
     "englishName": "行箸",
     "chineseName": "行箸",
-    "russianName": "行箸"
+    "russianName": "Синчжу"
   },
   "xingzh": {
     "displayName": "行箸",
     "englishName": "行箸",
     "chineseName": "行箸",
-    "russianName": "行箸"
+    "russianName": "Синчжу"
   },
   "char_4102_threye": {
     "displayName": "Valarqvin",
     "englishName": "Valarqvin",
     "chineseName": "凛视",
-    "russianName": "Valarqvin"
+    "russianName": "Валарквин"
   },
   "threye": {
     "displayName": "Valarqvin",
     "englishName": "Valarqvin",
     "chineseName": "凛视",
-    "russianName": "Valarqvin"
+    "russianName": "Валарквин"
   },
   "valarqvin": {
     "displayName": "Valarqvin",
     "englishName": "Valarqvin",
     "chineseName": "凛视",
-    "russianName": "Valarqvin"
+    "russianName": "Валарквин"
   },
   "char_487_bobb": {
     "displayName": "波卜",
     "englishName": "波卜",
     "chineseName": "波卜",
-    "russianName": "波卜"
+    "russianName": "Бобу"
   },
   "bobb": {
     "displayName": "波卜",
     "englishName": "波卜",
     "chineseName": "波卜",
-    "russianName": "波卜"
+    "russianName": "Бобу"
   },
   "char_215_mantic": {
     "displayName": "Manticore",
     "englishName": "Manticore",
     "chineseName": "狮蝎",
-    "russianName": "Manticore"
+    "russianName": "Мантикора"
   },
   "mantic": {
     "displayName": "Manticore",
     "englishName": "Manticore",
     "chineseName": "狮蝎",
-    "russianName": "Manticore"
+    "russianName": "Мантикора"
   },
   "manticore": {
     "displayName": "Manticore",
     "englishName": "Manticore",
     "chineseName": "狮蝎",
-    "russianName": "Manticore"
+    "russianName": "Мантикора"
   },
   "char_478_kirara": {
     "displayName": "Kirara",
     "englishName": "Kirara",
     "chineseName": "绮良",
-    "russianName": "Kirara"
+    "russianName": "Кирара"
   },
   "kirara": {
     "displayName": "Kirara",
     "englishName": "Kirara",
     "chineseName": "绮良",
-    "russianName": "Kirara"
+    "russianName": "Кирара"
   },
   "char_4186_tmoris": {
     "displayName": "八幡海铃",
     "englishName": "八幡海铃",
     "chineseName": "八幡海铃",
-    "russianName": "八幡海铃"
+    "russianName": "Яхата Умири"
   },
   "tmoris": {
     "displayName": "八幡海铃",
     "englishName": "八幡海铃",
     "chineseName": "八幡海铃",
-    "russianName": "八幡海铃"
+    "russianName": "Яхата Умири"
   },
   "char_241_panda": {
     "displayName": "FEater",
     "englishName": "FEater",
     "chineseName": "食铁兽",
-    "russianName": "FEater"
+    "russianName": "Клиффхарт (FEater)"
   },
   "panda": {
     "displayName": "FEater",
     "englishName": "FEater",
     "chineseName": "食铁兽",
-    "russianName": "FEater"
+    "russianName": "Клиффхарт (FEater)"
   },
   "feater": {
     "displayName": "FEater",
     "englishName": "FEater",
     "chineseName": "食铁兽",
-    "russianName": "FEater"
+    "russianName": "Клиффхарт (FEater)"
   },
   "char_4036_forcer": {
     "displayName": "Enforcer",
     "englishName": "Enforcer",
     "chineseName": "见行者",
-    "russianName": "Enforcer"
+    "russianName": "Энфорсер"
   },
   "forcer": {
     "displayName": "Enforcer",
     "englishName": "Enforcer",
     "chineseName": "见行者",
-    "russianName": "Enforcer"
+    "russianName": "Энфорсер"
   },
   "enforcer": {
     "displayName": "Enforcer",
     "englishName": "Enforcer",
     "chineseName": "见行者",
-    "russianName": "Enforcer"
+    "russianName": "Энфорсер"
   },
   "char_451_robin": {
     "displayName": "Robin",
     "englishName": "Robin",
     "chineseName": "罗宾",
-    "russianName": "Robin"
+    "russianName": "Робин"
   },
   "robin": {
     "displayName": "Robin",
     "englishName": "Robin",
     "chineseName": "罗宾",
-    "russianName": "Robin"
+    "russianName": "Робин"
   },
   "char_458_rfrost": {
     "displayName": "Frost",
     "englishName": "Frost",
     "chineseName": "霜华",
-    "russianName": "Frost"
+    "russianName": "Фрост"
   },
   "rfrost": {
     "displayName": "Frost",
     "englishName": "Frost",
     "chineseName": "霜华",
-    "russianName": "Frost"
+    "russianName": "Фрост"
   },
   "frost": {
     "displayName": "Frost",
     "englishName": "Frost",
     "chineseName": "霜华",
-    "russianName": "Frost"
+    "russianName": "Фрост"
   },
   "char_4171_wulfen": {
     "displayName": "钼铅",
     "englishName": "钼铅",
     "chineseName": "钼铅",
-    "russianName": "钼铅"
+    "russianName": "Муцянь"
   },
   "wulfen": {
     "displayName": "钼铅",
     "englishName": "钼铅",
     "chineseName": "钼铅",
-    "russianName": "钼铅"
+    "russianName": "Муцянь"
   },
   "char_369_bena": {
     "displayName": "Bena",
     "englishName": "Bena",
     "chineseName": "贝娜",
-    "russianName": "Bena"
+    "russianName": "Бена"
   },
   "bena": {
     "displayName": "Bena",
     "englishName": "Bena",
     "chineseName": "贝娜",
-    "russianName": "Bena"
+    "russianName": "Бена"
   },
   "char_4016_kazema": {
     "displayName": "Kazemaru",
     "englishName": "Kazemaru",
     "chineseName": "风丸",
-    "russianName": "Kazemaru"
+    "russianName": "Каземару"
   },
   "kazema": {
     "displayName": "Kazemaru",
     "englishName": "Kazemaru",
     "chineseName": "风丸",
-    "russianName": "Kazemaru"
+    "russianName": "Каземару"
   },
   "kazemaru": {
     "displayName": "Kazemaru",
     "englishName": "Kazemaru",
     "chineseName": "风丸",
-    "russianName": "Kazemaru"
+    "russianName": "Каземару"
   },
   "char_4124_iana": {
     "displayName": "Iana",
     "englishName": "Iana",
     "chineseName": "双月",
-    "russianName": "Iana"
+    "russianName": "Яна"
   },
   "iana": {
     "displayName": "Iana",
     "englishName": "Iana",
     "chineseName": "双月",
-    "russianName": "Iana"
+    "russianName": "Яна"
   },
   "char_4183_mortis": {
     "displayName": "若叶睦",
     "englishName": "若叶睦",
     "chineseName": "若叶睦",
-    "russianName": "若叶睦"
+    "russianName": "Вакаба Муцуми"
   },
   "mortis": {
     "displayName": "若叶睦",
     "englishName": "若叶睦",
     "chineseName": "若叶睦",
-    "russianName": "若叶睦"
+    "russianName": "Вакаба Муцуми"
   },
   "char_4151_tinman": {
     "displayName": "锡人",
     "englishName": "锡人",
     "chineseName": "锡人",
-    "russianName": "锡人"
+    "russianName": "Оловянный Человек"
   },
   "tinman": {
     "displayName": "锡人",
     "englishName": "锡人",
     "chineseName": "锡人",
-    "russianName": "锡人"
+    "russianName": "Оловянный Человек"
   },
   "char_4191_tippi": {
     "displayName": "蒂比",
     "englishName": "蒂比",
     "chineseName": "蒂比",
-    "russianName": "蒂比"
+    "russianName": "Тиби"
   },
   "tippi": {
     "displayName": "蒂比",
     "englishName": "蒂比",
     "chineseName": "蒂比",
-    "russianName": "蒂比"
+    "russianName": "Тиби"
   },
   "char_103_angel": {
     "displayName": "Exusiai",
@@ -4437,109 +4437,109 @@
     "displayName": "Archetto",
     "englishName": "Archetto",
     "chineseName": "空弦",
-    "russianName": "Archetto"
+    "russianName": "Аркетто"
   },
   "archet": {
     "displayName": "Archetto",
     "englishName": "Archetto",
     "chineseName": "空弦",
-    "russianName": "Archetto"
+    "russianName": "Аркетто"
   },
   "archetto": {
     "displayName": "Archetto",
     "englishName": "Archetto",
     "chineseName": "空弦",
-    "russianName": "Archetto"
+    "russianName": "Аркетто"
   },
   "char_456_ash": {
     "displayName": "Ash",
     "englishName": "Ash",
     "chineseName": "灰烬",
-    "russianName": "Ash"
+    "russianName": "Эш"
   },
   "ash": {
     "displayName": "Ash",
     "englishName": "Ash",
     "chineseName": "灰烬",
-    "russianName": "Ash"
+    "russianName": "Эш"
   },
   "char_611_acnipe": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
     "chineseName": "Stormeye",
-    "russianName": "Stormeye"
+    "russianName": "Штормай"
   },
   "acnipe": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
     "chineseName": "Stormeye",
-    "russianName": "Stormeye"
+    "russianName": "Штормай"
   },
   "char_340_shwaz": {
     "displayName": "Schwarz",
     "englishName": "Schwarz",
     "chineseName": "黑",
-    "russianName": "Schwarz"
+    "russianName": "Шварц"
   },
   "shwaz": {
     "displayName": "Schwarz",
     "englishName": "Schwarz",
     "chineseName": "黑",
-    "russianName": "Schwarz"
+    "russianName": "Шварц"
   },
   "schwarz": {
     "displayName": "Schwarz",
     "englishName": "Schwarz",
     "chineseName": "黑",
-    "russianName": "Schwarz"
+    "russianName": "Шварц"
   },
   "char_4055_bgsnow": {
     "displayName": "Pozëmka",
     "englishName": "Pozëmka",
     "chineseName": "鸿雪",
-    "russianName": "Pozëmka"
+    "russianName": "Позёмка"
   },
   "bgsnow": {
     "displayName": "Pozëmka",
     "englishName": "Pozëmka",
     "chineseName": "鸿雪",
-    "russianName": "Pozëmka"
+    "russianName": "Позёмка"
   },
   "pozmka": {
     "displayName": "Pozëmka",
     "englishName": "Pozëmka",
     "chineseName": "鸿雪",
-    "russianName": "Pozëmka"
+    "russianName": "Позёмка"
   },
   "char_430_fartth": {
     "displayName": "Fartooth",
     "englishName": "Fartooth",
     "chineseName": "远牙",
-    "russianName": "Fartooth"
+    "russianName": "Фартус"
   },
   "fartth": {
     "displayName": "Fartooth",
     "englishName": "Fartooth",
     "chineseName": "远牙",
-    "russianName": "Fartooth"
+    "russianName": "Фартус"
   },
   "fartooth": {
     "displayName": "Fartooth",
     "englishName": "Fartooth",
     "chineseName": "远牙",
-    "russianName": "Fartooth"
+    "russianName": "Фартус"
   },
   "char_4193_lemuen": {
     "displayName": "蕾缪安",
     "englishName": "蕾缪安",
     "chineseName": "蕾缪安",
-    "russianName": "蕾缪安"
+    "russianName": "Лемуэн"
   },
   "lemuen": {
     "displayName": "蕾缪安",
     "englishName": "蕾缪安",
     "chineseName": "蕾缪安",
-    "russianName": "蕾缪安"
+    "russianName": "Лемуэн"
   },
   "char_113_cqbw": {
     "displayName": "W",
@@ -4563,19 +4563,19 @@
     "displayName": "Fiammetta",
     "englishName": "Fiammetta",
     "chineseName": "菲亚梅塔",
-    "russianName": "Fiammetta"
+    "russianName": "Фиамметта"
   },
   "phenxi": {
     "displayName": "Fiammetta",
     "englishName": "Fiammetta",
     "chineseName": "菲亚梅塔",
-    "russianName": "Fiammetta"
+    "russianName": "Фиамметта"
   },
   "fiammetta": {
     "displayName": "Fiammetta",
     "englishName": "Fiammetta",
     "chineseName": "菲亚梅塔",
-    "russianName": "Fiammetta"
+    "russianName": "Фиамметта"
   },
   "char_197_poca": {
     "displayName": "Rosa",
@@ -4599,91 +4599,91 @@
     "displayName": "Typhon",
     "englishName": "Typhon",
     "chineseName": "提丰",
-    "russianName": "Typhon"
+    "russianName": "Тифон"
   },
   "typhon": {
     "displayName": "Typhon",
     "englishName": "Typhon",
     "chineseName": "提丰",
-    "russianName": "Typhon"
+    "russianName": "Тифон"
   },
   "char_391_rosmon": {
     "displayName": "Rosmontis",
     "englishName": "Rosmontis",
     "chineseName": "迷迭香",
-    "russianName": "Rosmontis"
+    "russianName": "Росмонтис"
   },
   "rosmon": {
     "displayName": "Rosmontis",
     "englishName": "Rosmontis",
     "chineseName": "迷迭香",
-    "russianName": "Rosmontis"
+    "russianName": "Росмонтис"
   },
   "rosmontis": {
     "displayName": "Rosmontis",
     "englishName": "Rosmontis",
     "chineseName": "迷迭香",
-    "russianName": "Rosmontis"
+    "russianName": "Росмонтис"
   },
   "char_1035_wisdel": {
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Wiš'adel"
+    "russianName": "Виш'адель"
   },
   "wisdel": {
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Wiš'adel"
+    "russianName": "Виш'адель"
   },
   "wiadel": {
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Wiš'adel"
+    "russianName": "Виш'адель"
   },
   "char_1013_chen2": {
     "displayName": "Ch'en the Holungday",
     "englishName": "Ch'en the Holungday",
     "chineseName": "假日威龙陈",
-    "russianName": "Ch'en the Holungday"
+    "russianName": "Чэнь Праздничная"
   },
   "chen2": {
     "displayName": "Ch'en the Holungday",
     "englishName": "Ch'en the Holungday",
     "chineseName": "假日威龙陈",
-    "russianName": "Ch'en the Holungday"
+    "russianName": "Чэнь Праздничная"
   },
   "chentheholungday": {
     "displayName": "Ch'en the Holungday",
     "englishName": "Ch'en the Holungday",
     "chineseName": "假日威龙陈",
-    "russianName": "Ch'en the Holungday"
+    "russianName": "Чэнь Праздничная"
   },
   "char_4117_ray": {
     "displayName": "Ray",
     "englishName": "Ray",
     "chineseName": "莱伊",
-    "russianName": "Ray"
+    "russianName": "Рэй"
   },
   "ray": {
     "displayName": "Ray",
     "englishName": "Ray",
     "chineseName": "莱伊",
-    "russianName": "Ray"
+    "russianName": "Рэй"
   },
   "char_4138_narant": {
     "displayName": "娜仁图亚",
     "englishName": "娜仁图亚",
     "chineseName": "娜仁图亚",
-    "russianName": "娜仁图亚"
+    "russianName": "Нарантуя"
   },
   "narant": {
     "displayName": "娜仁图亚",
     "englishName": "娜仁图亚",
     "chineseName": "娜仁图亚",
-    "russianName": "娜仁图亚"
+    "russianName": "Нарантуя"
   },
   "char_112_siege": {
     "displayName": "Siege",
@@ -4719,115 +4719,115 @@
     "displayName": "Saga",
     "englishName": "Saga",
     "chineseName": "嵯峨",
-    "russianName": "Saga"
+    "russianName": "Сага"
   },
   "saga": {
     "displayName": "Saga",
     "englishName": "Saga",
     "chineseName": "嵯峨",
-    "russianName": "Saga"
+    "russianName": "Сага"
   },
   "char_4026_vulpis": {
     "displayName": "忍冬",
     "englishName": "忍冬",
     "chineseName": "忍冬",
-    "russianName": "忍冬"
+    "russianName": "Лоницера"
   },
   "vulpis": {
     "displayName": "忍冬",
     "englishName": "忍冬",
     "chineseName": "忍冬",
-    "russianName": "忍冬"
+    "russianName": "Лоницера"
   },
   "char_479_sleach": {
     "displayName": "Saileach",
     "englishName": "Saileach",
     "chineseName": "琴柳",
-    "russianName": "Saileach"
+    "russianName": "Сейлиш"
   },
   "sleach": {
     "displayName": "Saileach",
     "englishName": "Saileach",
     "chineseName": "琴柳",
-    "russianName": "Saileach"
+    "russianName": "Сейлиш"
   },
   "saileach": {
     "displayName": "Saileach",
     "englishName": "Saileach",
     "chineseName": "琴柳",
-    "russianName": "Saileach"
+    "russianName": "Сейлиш"
   },
   "char_420_flamtl": {
     "displayName": "Flametail",
     "englishName": "Flametail",
     "chineseName": "焰尾",
-    "russianName": "Flametail"
+    "russianName": "Флеймтейл"
   },
   "flamtl": {
     "displayName": "Flametail",
     "englishName": "Flametail",
     "chineseName": "焰尾",
-    "russianName": "Flametail"
+    "russianName": "Флеймтейл"
   },
   "flametail": {
     "displayName": "Flametail",
     "englishName": "Flametail",
     "chineseName": "焰尾",
-    "russianName": "Flametail"
+    "russianName": "Флеймтейл"
   },
   "char_608_acpion": {
     "displayName": "郁金香",
     "englishName": "郁金香",
     "chineseName": "郁金香",
-    "russianName": "郁金香"
+    "russianName": "Тюльпан (6★)"
   },
   "acpion": {
     "displayName": "郁金香",
     "englishName": "郁金香",
     "chineseName": "郁金香",
-    "russianName": "郁金香"
+    "russianName": "Тюльпан (6★)"
   },
   "char_427_vigil": {
     "displayName": "Vigil",
     "englishName": "Vigil",
     "chineseName": "伺夜",
-    "russianName": "Vigil"
+    "russianName": "Виджил"
   },
   "vigil": {
     "displayName": "Vigil",
     "englishName": "Vigil",
     "chineseName": "伺夜",
-    "russianName": "Vigil"
+    "russianName": "Виджил"
   },
   "char_249_mlyss": {
     "displayName": "Muelsyse",
     "englishName": "Muelsyse",
     "chineseName": "缪尔赛思",
-    "russianName": "Muelsyse"
+    "russianName": "Мюльсис"
   },
   "mlyss": {
     "displayName": "Muelsyse",
     "englishName": "Muelsyse",
     "chineseName": "缪尔赛思",
-    "russianName": "Muelsyse"
+    "russianName": "Мюльсис"
   },
   "muelsyse": {
     "displayName": "Muelsyse",
     "englishName": "Muelsyse",
     "chineseName": "缪尔赛思",
-    "russianName": "Muelsyse"
+    "russianName": "Мюльсис"
   },
   "char_4087_ines": {
     "displayName": "Ines",
     "englishName": "Ines",
     "chineseName": "伊内丝",
-    "russianName": "Ines"
+    "russianName": "Инес"
   },
   "ines": {
     "displayName": "Ines",
     "englishName": "Ines",
     "chineseName": "伊内丝",
-    "russianName": "Ines"
+    "russianName": "Инес"
   },
   "char_134_ifrit": {
     "displayName": "Ifrit",
@@ -4899,223 +4899,223 @@
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Ho'olheyak"
+    "russianName": "Хо'олхейак"
   },
   "heyak": {
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Ho'olheyak"
+    "russianName": "Хо'олхейак"
   },
   "hoolheyak": {
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Ho'olheyak"
+    "russianName": "Хо'олхейак"
   },
   "char_4133_logos": {
     "displayName": "Logos",
     "englishName": "Logos",
     "chineseName": "逻各斯",
-    "russianName": "Logos"
+    "russianName": "Логос"
   },
   "logos": {
     "displayName": "Logos",
     "englishName": "Logos",
     "chineseName": "逻各斯",
-    "russianName": "Logos"
+    "russianName": "Логос"
   },
   "char_2015_dusk": {
     "displayName": "Dusk",
     "englishName": "Dusk",
     "chineseName": "夕",
-    "russianName": "Dusk"
+    "russianName": "Даск"
   },
   "dusk": {
     "displayName": "Dusk",
     "englishName": "Dusk",
     "chineseName": "夕",
-    "russianName": "Dusk"
+    "russianName": "Даск"
   },
   "char_4141_marcil": {
     "displayName": "玛露西尔",
     "englishName": "玛露西尔",
     "chineseName": "玛露西尔",
-    "russianName": "玛露西尔"
+    "russianName": "Марсиль"
   },
   "marcil": {
     "displayName": "玛露西尔",
     "englishName": "玛露西尔",
     "chineseName": "玛露西尔",
-    "russianName": "玛露西尔"
+    "russianName": "Марсиль"
   },
   "char_612_accast": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
-    "russianName": "Pith"
+    "russianName": "Пит"
   },
   "accast": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
-    "russianName": "Pith"
+    "russianName": "Пит"
   },
   "char_472_pasngr": {
     "displayName": "Passenger",
     "englishName": "Passenger",
     "chineseName": "异客",
-    "russianName": "Passenger"
+    "russianName": "Пассажир"
   },
   "pasngr": {
     "displayName": "Passenger",
     "englishName": "Passenger",
     "chineseName": "异客",
-    "russianName": "Passenger"
+    "russianName": "Пассажир"
   },
   "passenger": {
     "displayName": "Passenger",
     "englishName": "Passenger",
     "chineseName": "异客",
-    "russianName": "Passenger"
+    "russianName": "Пассажир"
   },
   "char_426_billro": {
     "displayName": "Carnelian",
     "englishName": "Carnelian",
     "chineseName": "卡涅利安",
-    "russianName": "Carnelian"
+    "russianName": "Карнелиан"
   },
   "billro": {
     "displayName": "Carnelian",
     "englishName": "Carnelian",
     "chineseName": "卡涅利安",
-    "russianName": "Carnelian"
+    "russianName": "Карнелиан"
   },
   "carnelian": {
     "displayName": "Carnelian",
     "englishName": "Carnelian",
     "chineseName": "卡涅利安",
-    "russianName": "Carnelian"
+    "russianName": "Карнелиан"
   },
   "char_4080_lin": {
     "displayName": "Lin",
     "englishName": "Lin",
     "chineseName": "林",
-    "russianName": "Lin"
+    "russianName": "Линь"
   },
   "lin": {
     "displayName": "Lin",
     "englishName": "Lin",
     "chineseName": "林",
-    "russianName": "Lin"
+    "russianName": "Линь"
   },
   "char_377_gdglow": {
     "displayName": "Goldenglow",
     "englishName": "Goldenglow",
     "chineseName": "澄闪",
-    "russianName": "Goldenglow"
+    "russianName": "Голденглоу"
   },
   "gdglow": {
     "displayName": "Goldenglow",
     "englishName": "Goldenglow",
     "chineseName": "澄闪",
-    "russianName": "Goldenglow"
+    "russianName": "Голденглоу"
   },
   "goldenglow": {
     "displayName": "Goldenglow",
     "englishName": "Goldenglow",
     "chineseName": "澄闪",
-    "russianName": "Goldenglow"
+    "russianName": "Голденглоу"
   },
   "char_1038_whitw2": {
     "displayName": "荒芜拉普兰德",
     "englishName": "荒芜拉普兰德",
     "chineseName": "荒芜拉普兰德",
-    "russianName": "荒芜拉普兰德"
+    "russianName": "Лаппланд Пустошей"
   },
   "whitw2": {
     "displayName": "荒芜拉普兰德",
     "englishName": "荒芜拉普兰德",
     "chineseName": "荒芜拉普兰德",
-    "russianName": "荒芜拉普兰德"
+    "russianName": "Лаппланд Пустошей"
   },
   "char_4046_ebnhlz": {
     "displayName": "Ebenholz",
     "englishName": "Ebenholz",
     "chineseName": "黑键",
-    "russianName": "Ebenholz"
+    "russianName": "Эбенхольц"
   },
   "ebnhlz": {
     "displayName": "Ebenholz",
     "englishName": "Ebenholz",
     "chineseName": "黑键",
-    "russianName": "Ebenholz"
+    "russianName": "Эбенхольц"
   },
   "ebenholz": {
     "displayName": "Ebenholz",
     "englishName": "Ebenholz",
     "chineseName": "黑键",
-    "russianName": "Ebenholz"
+    "russianName": "Эбенхольц"
   },
   "char_4146_nymph": {
     "displayName": "妮芙",
     "englishName": "妮芙",
     "chineseName": "妮芙",
-    "russianName": "妮芙"
+    "russianName": "Нив"
   },
   "nymph": {
     "displayName": "妮芙",
     "englishName": "妮芙",
     "chineseName": "妮芙",
-    "russianName": "妮芙"
+    "russianName": "Нив"
   },
   "char_1040_blaze2": {
     "displayName": "烛煌",
     "englishName": "烛煌",
     "chineseName": "烛煌",
-    "russianName": "烛煌"
+    "russianName": "Чжухуан"
   },
   "blaze2": {
     "displayName": "烛煌",
     "englishName": "烛煌",
     "chineseName": "烛煌",
-    "russianName": "烛煌"
+    "russianName": "Чжухуан"
   },
   "char_4204_mantra": {
     "displayName": "真言",
     "englishName": "真言",
     "chineseName": "真言",
-    "russianName": "真言"
+    "russianName": "Мантра"
   },
   "mantra": {
     "displayName": "真言",
     "englishName": "真言",
     "chineseName": "真言",
-    "russianName": "真言"
+    "russianName": "Мантра"
   },
   "char_450_necras": {
     "displayName": "死芒",
     "englishName": "死芒",
     "chineseName": "死芒",
-    "russianName": "死芒"
+    "russianName": "Смертельный Луч"
   },
   "necras": {
     "displayName": "死芒",
     "englishName": "死芒",
     "chineseName": "死芒",
-    "russianName": "死芒"
+    "russianName": "Смертельный Луч"
   },
   "char_206_gnosis": {
     "displayName": "Gnosis",
     "englishName": "Gnosis",
     "chineseName": "灵知",
-    "russianName": "Gnosis"
+    "russianName": "Гнозис"
   },
   "gnosis": {
     "displayName": "Gnosis",
     "englishName": "Gnosis",
     "chineseName": "灵知",
-    "russianName": "Gnosis"
+    "russianName": "Гнозис"
   },
   "char_291_aglina": {
     "displayName": "Angelina",
@@ -5157,175 +5157,175 @@
     "displayName": "Raidian",
     "englishName": "Raidian",
     "chineseName": "Raidian",
-    "russianName": "Raidian"
+    "russianName": "Райдиан"
   },
   "acsupo": {
     "displayName": "Raidian",
     "englishName": "Raidian",
     "chineseName": "Raidian",
-    "russianName": "Raidian"
+    "russianName": "Райдиан"
   },
   "raidian": {
     "displayName": "Raidian",
     "englishName": "Raidian",
     "chineseName": "Raidian",
-    "russianName": "Raidian"
+    "russianName": "Райдиан"
   },
   "char_248_mgllan": {
     "displayName": "Magallan",
     "englishName": "Magallan",
     "chineseName": "麦哲伦",
-    "russianName": "Magallan"
+    "russianName": "Магеллан"
   },
   "mgllan": {
     "displayName": "Magallan",
     "englishName": "Magallan",
     "chineseName": "麦哲伦",
-    "russianName": "Magallan"
+    "russianName": "Магеллан"
   },
   "magallan": {
     "displayName": "Magallan",
     "englishName": "Magallan",
     "chineseName": "麦哲伦",
-    "russianName": "Magallan"
+    "russianName": "Магеллан"
   },
   "char_4195_radian": {
     "displayName": "电弧",
     "englishName": "电弧",
     "chineseName": "电弧",
-    "russianName": "电弧"
+    "russianName": "Электродуга"
   },
   "radian": {
     "displayName": "电弧",
     "englishName": "电弧",
     "chineseName": "电弧",
-    "russianName": "电弧"
+    "russianName": "Электродуга"
   },
   "char_1012_skadi2": {
     "displayName": "Skadi the Corrupting Heart",
     "englishName": "Skadi the Corrupting Heart",
     "chineseName": "浊心斯卡蒂",
-    "russianName": "Skadi the Corrupting Heart"
+    "russianName": "Скади Испорченное Сердце"
   },
   "skadi2": {
     "displayName": "Skadi the Corrupting Heart",
     "englishName": "Skadi the Corrupting Heart",
     "chineseName": "浊心斯卡蒂",
-    "russianName": "Skadi the Corrupting Heart"
+    "russianName": "Скади Испорченное Сердце"
   },
   "skadithecorruptingheart": {
     "displayName": "Skadi the Corrupting Heart",
     "englishName": "Skadi the Corrupting Heart",
     "chineseName": "浊心斯卡蒂",
-    "russianName": "Skadi the Corrupting Heart"
+    "russianName": "Скади Испорченное Сердце"
   },
   "char_4134_cetsyr": {
     "displayName": "Civilight Eterna",
     "englishName": "Civilight Eterna",
     "chineseName": "魔王",
-    "russianName": "Civilight Eterna"
+    "russianName": "Цивилайт Этерна"
   },
   "cetsyr": {
     "displayName": "Civilight Eterna",
     "englishName": "Civilight Eterna",
     "chineseName": "魔王",
-    "russianName": "Civilight Eterna"
+    "russianName": "Цивилайт Этерна"
   },
   "civilighteterna": {
     "displayName": "Civilight Eterna",
     "englishName": "Civilight Eterna",
     "chineseName": "魔王",
-    "russianName": "Civilight Eterna"
+    "russianName": "Цивилайт Этерна"
   },
   "char_1031_slent2": {
     "displayName": "Silence the Paradigmatic",
     "englishName": "Silence the Paradigmatic",
     "chineseName": "淬羽赫默",
-    "russianName": "Silence the Paradigmatic"
+    "russianName": "Сайленс Парадигмальная"
   },
   "slent2": {
     "displayName": "Silence the Paradigmatic",
     "englishName": "Silence the Paradigmatic",
     "chineseName": "淬羽赫默",
-    "russianName": "Silence the Paradigmatic"
+    "russianName": "Сайленс Парадигмальная"
   },
   "silencetheparadigmatic": {
     "displayName": "Silence the Paradigmatic",
     "englishName": "Silence the Paradigmatic",
     "chineseName": "淬羽赫默",
-    "russianName": "Silence the Paradigmatic"
+    "russianName": "Сайленс Парадигмальная"
   },
   "char_4202_haruka": {
     "displayName": "遥",
     "englishName": "遥",
     "chineseName": "遥",
-    "russianName": "遥"
+    "russianName": "Яо"
   },
   "haruka": {
     "displayName": "遥",
     "englishName": "遥",
     "chineseName": "遥",
-    "russianName": "遥"
+    "russianName": "Яо"
   },
   "char_2023_ling": {
     "displayName": "Ling",
     "englishName": "Ling",
     "chineseName": "令",
-    "russianName": "Ling"
+    "russianName": "Лин"
   },
   "ling": {
     "displayName": "Ling",
     "englishName": "Ling",
     "chineseName": "令",
-    "russianName": "Ling"
+    "russianName": "Лин"
   },
   "char_4072_ironmn": {
     "displayName": "Stainless",
     "englishName": "Stainless",
     "chineseName": "白铁",
-    "russianName": "Stainless"
+    "russianName": "Стейнлесс"
   },
   "ironmn": {
     "displayName": "Stainless",
     "englishName": "Stainless",
     "chineseName": "白铁",
-    "russianName": "Stainless"
+    "russianName": "Стейнлесс"
   },
   "stainless": {
     "displayName": "Stainless",
     "englishName": "Stainless",
     "chineseName": "白铁",
-    "russianName": "Stainless"
+    "russianName": "Стейнлесс"
   },
   "char_245_cello": {
     "displayName": "Virtuosa",
     "englishName": "Virtuosa",
     "chineseName": "塑心",
-    "russianName": "Virtuosa"
+    "russianName": "Виртуоза"
   },
   "cello": {
     "displayName": "Virtuosa",
     "englishName": "Virtuosa",
     "chineseName": "塑心",
-    "russianName": "Virtuosa"
+    "russianName": "Виртуоза"
   },
   "virtuosa": {
     "displayName": "Virtuosa",
     "englishName": "Virtuosa",
     "chineseName": "塑心",
-    "russianName": "Virtuosa"
+    "russianName": "Виртуоза"
   },
   "char_1042_phatm2": {
     "displayName": "酒神",
     "englishName": "酒神",
     "chineseName": "酒神",
-    "russianName": "酒神"
+    "russianName": "Дионис"
   },
   "phatm2": {
     "displayName": "酒神",
     "englishName": "酒神",
     "chineseName": "酒神",
-    "russianName": "酒神"
+    "russianName": "Дионис"
   },
   "char_250_phatom": {
     "displayName": "Phantom",
@@ -5349,253 +5349,253 @@
     "displayName": "Texas the Omertosa",
     "englishName": "Texas the Omertosa",
     "chineseName": "缄默德克萨斯",
-    "russianName": "Texas the Omertosa"
+    "russianName": "Техас Омертоза"
   },
   "texas2": {
     "displayName": "Texas the Omertosa",
     "englishName": "Texas the Omertosa",
     "chineseName": "缄默德克萨斯",
-    "russianName": "Texas the Omertosa"
+    "russianName": "Техас Омертоза"
   },
   "texastheomertosa": {
     "displayName": "Texas the Omertosa",
     "englishName": "Texas the Omertosa",
     "chineseName": "缄默德克萨斯",
-    "russianName": "Texas the Omertosa"
+    "russianName": "Техас Омертоза"
   },
   "char_1029_yato2": {
     "displayName": "Kirin R Yato",
     "englishName": "Kirin R Yato",
     "chineseName": "麒麟R夜刀",
-    "russianName": "Kirin R Yato"
+    "russianName": "Кирин R Ято"
   },
   "yato2": {
     "displayName": "Kirin R Yato",
     "englishName": "Kirin R Yato",
     "chineseName": "麒麟R夜刀",
-    "russianName": "Kirin R Yato"
+    "russianName": "Кирин R Ято"
   },
   "kirinryato": {
     "displayName": "Kirin R Yato",
     "englishName": "Kirin R Yato",
     "chineseName": "麒麟R夜刀",
-    "russianName": "Kirin R Yato"
+    "russianName": "Кирин R Ято"
   },
   "char_1502_crosly": {
     "displayName": "弑君者",
     "englishName": "弑君者",
     "chineseName": "弑君者",
-    "russianName": "弑君者"
+    "russianName": "Краунслеер"
   },
   "crosly": {
     "displayName": "弑君者",
     "englishName": "弑君者",
     "chineseName": "弑君者",
-    "russianName": "弑君者"
+    "russianName": "Краунслеер"
   },
   "char_615_acspec": {
     "displayName": "Misery",
     "englishName": "Misery",
     "chineseName": "Misery",
-    "russianName": "Misery"
+    "russianName": "Мизери"
   },
   "acspec": {
     "displayName": "Misery",
     "englishName": "Misery",
     "chineseName": "Misery",
-    "russianName": "Misery"
+    "russianName": "Мизери"
   },
   "misery": {
     "displayName": "Misery",
     "englishName": "Misery",
     "chineseName": "Misery",
-    "russianName": "Misery"
+    "russianName": "Мизери"
   },
   "char_322_lmlee": {
     "displayName": "Lee",
     "englishName": "Lee",
     "chineseName": "老鲤",
-    "russianName": "Lee"
+    "russianName": "Ли"
   },
   "lmlee": {
     "displayName": "Lee",
     "englishName": "Lee",
     "chineseName": "老鲤",
-    "russianName": "Lee"
+    "russianName": "Ли"
   },
   "lee": {
     "displayName": "Lee",
     "englishName": "Lee",
     "chineseName": "老鲤",
-    "russianName": "Lee"
+    "russianName": "Ли"
   },
   "char_1033_swire2": {
     "displayName": "Swire the Elegant Wit",
     "englishName": "Swire the Elegant Wit",
     "chineseName": "琳琅诗怀雅",
-    "russianName": "Swire the Elegant Wit"
+    "russianName": "Свайр Элегантный Ум"
   },
   "swire2": {
     "displayName": "Swire the Elegant Wit",
     "englishName": "Swire the Elegant Wit",
     "chineseName": "琳琅诗怀雅",
-    "russianName": "Swire the Elegant Wit"
+    "russianName": "Свайр Элегантный Ум"
   },
   "swiretheelegantwit": {
     "displayName": "Swire the Elegant Wit",
     "englishName": "Swire the Elegant Wit",
     "chineseName": "琳琅诗怀雅",
-    "russianName": "Swire the Elegant Wit"
+    "russianName": "Свайр Элегантный Ум"
   },
   "char_400_weedy": {
     "displayName": "Weedy",
     "englishName": "Weedy",
     "chineseName": "温蒂",
-    "russianName": "Weedy"
+    "russianName": "Види"
   },
   "weedy": {
     "displayName": "Weedy",
     "englishName": "Weedy",
     "chineseName": "温蒂",
-    "russianName": "Weedy"
+    "russianName": "Види"
   },
   "char_225_haak": {
     "displayName": "Aak",
     "englishName": "Aak",
     "chineseName": "阿",
-    "russianName": "Aak"
+    "russianName": "Аак"
   },
   "haak": {
     "displayName": "Aak",
     "englishName": "Aak",
     "chineseName": "阿",
-    "russianName": "Aak"
+    "russianName": "Аак"
   },
   "aak": {
     "displayName": "Aak",
     "englishName": "Aak",
     "chineseName": "阿",
-    "russianName": "Aak"
+    "russianName": "Аак"
   },
   "char_1041_angel2": {
     "displayName": "新约能天使",
     "englishName": "新约能天使",
     "chineseName": "新约能天使",
-    "russianName": "新约能天使"
+    "russianName": "Эксузай Нового Завета"
   },
   "angel2": {
     "displayName": "新约能天使",
     "englishName": "新约能天使",
     "chineseName": "新约能天使",
-    "russianName": "新约能天使"
+    "russianName": "Эксузай Нового Завета"
   },
   "char_474_glady": {
     "displayName": "Gladiia",
     "englishName": "Gladiia",
     "chineseName": "歌蕾蒂娅",
-    "russianName": "Gladiia"
+    "russianName": "Гладия"
   },
   "glady": {
     "displayName": "Gladiia",
     "englishName": "Gladiia",
     "chineseName": "歌蕾蒂娅",
-    "russianName": "Gladiia"
+    "russianName": "Гладия"
   },
   "gladiia": {
     "displayName": "Gladiia",
     "englishName": "Gladiia",
     "chineseName": "歌蕾蒂娅",
-    "russianName": "Gladiia"
+    "russianName": "Гладия"
   },
   "char_437_mizuki": {
     "displayName": "Mizuki",
     "englishName": "Mizuki",
     "chineseName": "水月",
-    "russianName": "Mizuki"
+    "russianName": "Мизюки"
   },
   "mizuki": {
     "displayName": "Mizuki",
     "englishName": "Mizuki",
     "chineseName": "水月",
-    "russianName": "Mizuki"
+    "russianName": "Мизюки"
   },
   "char_4132_ascln": {
     "displayName": "Ascalon",
     "englishName": "Ascalon",
     "chineseName": "阿斯卡纶",
-    "russianName": "Ascalon"
+    "russianName": "Аскалон"
   },
   "ascln": {
     "displayName": "Ascalon",
     "englishName": "Ascalon",
     "chineseName": "阿斯卡纶",
-    "russianName": "Ascalon"
+    "russianName": "Аскалон"
   },
   "ascalon": {
     "displayName": "Ascalon",
     "englishName": "Ascalon",
     "chineseName": "阿斯卡纶",
-    "russianName": "Ascalon"
+    "russianName": "Аскалон"
   },
   "char_1023_ghost2": {
     "displayName": "Specter the Unchained",
     "englishName": "Specter the Unchained",
     "chineseName": "归溟幽灵鲨",
-    "russianName": "Specter the Unchained"
+    "russianName": "Спектр Раскованная"
   },
   "ghost2": {
     "displayName": "Specter the Unchained",
     "englishName": "Specter the Unchained",
     "chineseName": "归溟幽灵鲨",
-    "russianName": "Specter the Unchained"
+    "russianName": "Спектр Раскованная"
   },
   "spectertheunchained": {
     "displayName": "Specter the Unchained",
     "englishName": "Specter the Unchained",
     "chineseName": "归溟幽灵鲨",
-    "russianName": "Specter the Unchained"
+    "russianName": "Спектр Раскованная"
   },
   "char_4048_doroth": {
     "displayName": "Dorothy",
     "englishName": "Dorothy",
     "chineseName": "多萝西",
-    "russianName": "Dorothy"
+    "russianName": "Дороти"
   },
   "doroth": {
     "displayName": "Dorothy",
     "englishName": "Dorothy",
     "chineseName": "多萝西",
-    "russianName": "Dorothy"
+    "russianName": "Дороти"
   },
   "dorothy": {
     "displayName": "Dorothy",
     "englishName": "Dorothy",
     "chineseName": "多萝西",
-    "russianName": "Dorothy"
+    "russianName": "Дороти"
   },
   "char_4123_ela": {
     "displayName": "Ela",
     "englishName": "Ela",
     "chineseName": "艾拉",
-    "russianName": "Ela"
+    "russianName": "Эла"
   },
   "ela": {
     "displayName": "Ela",
     "englishName": "Ela",
     "chineseName": "艾拉",
-    "russianName": "Ela"
+    "russianName": "Эла"
   },
   "char_1039_thorn2": {
     "displayName": "引星棘刺",
     "englishName": "引星棘刺",
     "chineseName": "引星棘刺",
-    "russianName": "引星棘刺"
+    "russianName": "Торнс Ведущий Звезды"
   },
   "thorn2": {
     "displayName": "引星棘刺",
     "englishName": "引星棘刺",
     "chineseName": "引星棘刺",
-    "russianName": "引星棘刺"
+    "russianName": "Торнс Ведущий Звезды"
   },
   "char_147_shining": {
     "displayName": "Shining",
@@ -5613,13 +5613,13 @@
     "displayName": "Touch",
     "englishName": "Touch",
     "chineseName": "Touch",
-    "russianName": "Touch"
+    "russianName": "Тач"
   },
   "acmedc": {
     "displayName": "Touch",
     "englishName": "Touch",
     "chineseName": "Touch",
-    "russianName": "Touch"
+    "russianName": "Тач"
   },
   "char_179_cgbird": {
     "displayName": "Nightingale",
@@ -5661,49 +5661,49 @@
     "displayName": "Lumen",
     "englishName": "Lumen",
     "chineseName": "流明",
-    "russianName": "Lumen"
+    "russianName": "Люмен"
   },
   "lumen": {
     "displayName": "Lumen",
     "englishName": "Lumen",
     "chineseName": "流明",
-    "russianName": "Lumen"
+    "russianName": "Люмен"
   },
   "char_1016_agoat2": {
     "displayName": "Eyjafjalla the Hvít Aska",
     "englishName": "Eyjafjalla the Hvít Aska",
     "chineseName": "纯烬艾雅法拉",
-    "russianName": "Eyjafjalla the Hvít Aska"
+    "russianName": "Эйяфьялла Белый Пепел"
   },
   "agoat2": {
     "displayName": "Eyjafjalla the Hvít Aska",
     "englishName": "Eyjafjalla the Hvít Aska",
     "chineseName": "纯烬艾雅法拉",
-    "russianName": "Eyjafjalla the Hvít Aska"
+    "russianName": "Эйяфьялла Белый Пепел"
   },
   "eyjafjallathehvtaska": {
     "displayName": "Eyjafjalla the Hvít Aska",
     "englishName": "Eyjafjalla the Hvít Aska",
     "chineseName": "纯烬艾雅法拉",
-    "russianName": "Eyjafjalla the Hvít Aska"
+    "russianName": "Эйяфьялла Белый Пепел"
   },
   "char_1020_reed2": {
     "displayName": "Reed the Flame Shadow",
     "englishName": "Reed the Flame Shadow",
     "chineseName": "焰影苇草",
-    "russianName": "Reed the Flame Shadow"
+    "russianName": "Рид Тень Пламени"
   },
   "reed2": {
     "displayName": "Reed the Flame Shadow",
     "englishName": "Reed the Flame Shadow",
     "chineseName": "焰影苇草",
-    "russianName": "Reed the Flame Shadow"
+    "russianName": "Рид Тень Пламени"
   },
   "reedtheflameshadow": {
     "displayName": "Reed the Flame Shadow",
     "englishName": "Reed the Flame Shadow",
     "chineseName": "焰影苇草",
-    "russianName": "Reed the Flame Shadow"
+    "russianName": "Рид Тень Пламени"
   },
   "char_4179_monstr": {
     "displayName": "Mon3tr",
@@ -5745,19 +5745,19 @@
     "displayName": "Mechanist",
     "englishName": "Mechanist",
     "chineseName": "Mechanist",
-    "russianName": "Mechanist"
+    "russianName": "Механист"
   },
   "acfend": {
     "displayName": "Mechanist",
     "englishName": "Mechanist",
     "chineseName": "Mechanist",
-    "russianName": "Mechanist"
+    "russianName": "Механист"
   },
   "mechanist": {
     "displayName": "Mechanist",
     "englishName": "Mechanist",
     "chineseName": "Mechanist",
-    "russianName": "Mechanist"
+    "russianName": "Механист"
   },
   "char_202_demkni": {
     "displayName": "Saria",
@@ -5781,43 +5781,43 @@
     "displayName": "Blemishine",
     "englishName": "Blemishine",
     "chineseName": "瑕光",
-    "russianName": "Blemishine"
+    "russianName": "Блемишайн"
   },
   "blemsh": {
     "displayName": "Blemishine",
     "englishName": "Blemishine",
     "chineseName": "瑕光",
-    "russianName": "Blemishine"
+    "russianName": "Блемишайн"
   },
   "blemishine": {
     "displayName": "Blemishine",
     "englishName": "Blemishine",
     "chineseName": "瑕光",
-    "russianName": "Blemishine"
+    "russianName": "Блемишайн"
   },
   "char_2025_shu": {
     "displayName": "Shu",
     "englishName": "Shu",
     "chineseName": "黍",
-    "russianName": "Shu"
+    "russianName": "Шу"
   },
   "shu": {
     "displayName": "Shu",
     "englishName": "Shu",
     "chineseName": "黍",
-    "russianName": "Shu"
+    "russianName": "Шу"
   },
   "char_2014_nian": {
     "displayName": "Nian",
     "englishName": "Nian",
     "chineseName": "年",
-    "russianName": "Nian"
+    "russianName": "Ниан"
   },
   "nian": {
     "displayName": "Nian",
     "englishName": "Nian",
     "chineseName": "年",
-    "russianName": "Nian"
+    "russianName": "Ниан"
   },
   "char_311_mudrok": {
     "displayName": "Mudrock",
@@ -5841,103 +5841,103 @@
     "displayName": "Penance",
     "englishName": "Penance",
     "chineseName": "斥罪",
-    "russianName": "Penance"
+    "russianName": "Пенанс"
   },
   "judge": {
     "displayName": "Penance",
     "englishName": "Penance",
     "chineseName": "斥罪",
-    "russianName": "Penance"
+    "russianName": "Пенанс"
   },
   "penance": {
     "displayName": "Penance",
     "englishName": "Penance",
     "chineseName": "斥罪",
-    "russianName": "Penance"
+    "russianName": "Пенанс"
   },
   "char_416_zumama": {
     "displayName": "Eunectes",
     "englishName": "Eunectes",
     "chineseName": "森蚺",
-    "russianName": "Eunectes"
+    "russianName": "Эвнектес"
   },
   "zumama": {
     "displayName": "Eunectes",
     "englishName": "Eunectes",
     "chineseName": "森蚺",
-    "russianName": "Eunectes"
+    "russianName": "Эвнектес"
   },
   "eunectes": {
     "displayName": "Eunectes",
     "englishName": "Eunectes",
     "chineseName": "森蚺",
-    "russianName": "Eunectes"
+    "russianName": "Эвнектес"
   },
   "char_4039_horn": {
     "displayName": "Horn",
     "englishName": "Horn",
     "chineseName": "号角",
-    "russianName": "Horn"
+    "russianName": "Хорн"
   },
   "horn": {
     "displayName": "Horn",
     "englishName": "Horn",
     "chineseName": "号角",
-    "russianName": "Horn"
+    "russianName": "Хорн"
   },
   "char_1034_jesca2": {
     "displayName": "Jessica the Liberated",
     "englishName": "Jessica the Liberated",
     "chineseName": "涤火杰西卡",
-    "russianName": "Jessica the Liberated"
+    "russianName": "Джессика Освобождённая"
   },
   "jesca2": {
     "displayName": "Jessica the Liberated",
     "englishName": "Jessica the Liberated",
     "chineseName": "涤火杰西卡",
-    "russianName": "Jessica the Liberated"
+    "russianName": "Джессика Освобождённая"
   },
   "jessicatheliberated": {
     "displayName": "Jessica the Liberated",
     "englishName": "Jessica the Liberated",
     "chineseName": "涤火杰西卡",
-    "russianName": "Jessica the Liberated"
+    "russianName": "Джессика Освобождённая"
   },
   "char_4194_rmixer": {
     "displayName": "信仰搅拌机",
     "englishName": "信仰搅拌机",
     "chineseName": "信仰搅拌机",
-    "russianName": "信仰搅拌机"
+    "russianName": "Смеситель Веры"
   },
   "rmixer": {
     "displayName": "信仰搅拌机",
     "englishName": "信仰搅拌机",
     "chineseName": "信仰搅拌机",
-    "russianName": "信仰搅拌机"
+    "russianName": "Смеситель Веры"
   },
   "char_2026_yu": {
     "displayName": "余",
     "englishName": "余",
     "chineseName": "余",
-    "russianName": "余"
+    "russianName": "Юй"
   },
   "yu": {
     "displayName": "余",
     "englishName": "余",
     "chineseName": "余",
-    "russianName": "余"
+    "russianName": "Юй"
   },
   "char_1044_hsgma2": {
     "displayName": "斩业星熊",
     "englishName": "斩业星熊",
     "chineseName": "斩业星熊",
-    "russianName": "斩业星熊"
+    "russianName": "Хошигума Рассекающая Карму"
   },
   "hsgma2": {
     "displayName": "斩业星熊",
     "englishName": "斩业星熊",
     "chineseName": "斩业星熊",
-    "russianName": "斩业星熊"
+    "russianName": "Хошигума Рассекающая Карму"
   },
   "char_264_f12yin": {
     "displayName": "Mountain",
@@ -5961,19 +5961,19 @@
     "displayName": "Chongyue",
     "englishName": "Chongyue",
     "chineseName": "重岳",
-    "russianName": "Chongyue"
+    "russianName": "Чунъюэ"
   },
   "chyue": {
     "displayName": "Chongyue",
     "englishName": "Chongyue",
     "chineseName": "重岳",
-    "russianName": "Chongyue"
+    "russianName": "Чунъюэ"
   },
   "chongyue": {
     "displayName": "Chongyue",
     "englishName": "Chongyue",
     "chineseName": "重岳",
-    "russianName": "Chongyue"
+    "russianName": "Чунъюэ"
   },
   "char_172_svrash": {
     "displayName": "SilverAsh",
@@ -6009,67 +6009,67 @@
     "displayName": "Qiubai",
     "englishName": "Qiubai",
     "chineseName": "仇白",
-    "russianName": "Qiubai"
+    "russianName": "Цюбай"
   },
   "qiubai": {
     "displayName": "Qiubai",
     "englishName": "Qiubai",
     "chineseName": "仇白",
-    "russianName": "Qiubai"
+    "russianName": "Цюбай"
   },
   "char_4182_oblvns": {
     "displayName": "丰川祥子",
     "englishName": "丰川祥子",
     "chineseName": "丰川祥子",
-    "russianName": "丰川祥子"
+    "russianName": "Тогава Сакико"
   },
   "oblvns": {
     "displayName": "丰川祥子",
     "englishName": "丰川祥子",
     "chineseName": "丰川祥子",
-    "russianName": "丰川祥子"
+    "russianName": "Тогава Сакико"
   },
   "char_4088_hodrer": {
     "displayName": "Hoederer",
     "englishName": "Hoederer",
     "chineseName": "赫德雷",
-    "russianName": "Hoederer"
+    "russianName": "Хёдерер"
   },
   "hodrer": {
     "displayName": "Hoederer",
     "englishName": "Hoederer",
     "chineseName": "赫德雷",
-    "russianName": "Hoederer"
+    "russianName": "Хёдерер"
   },
   "hoederer": {
     "displayName": "Hoederer",
     "englishName": "Hoederer",
     "chineseName": "赫德雷",
-    "russianName": "Hoederer"
+    "russianName": "Хёдерер"
   },
   "char_4145_ulpia": {
     "displayName": "乌尔比安",
     "englishName": "乌尔比安",
     "chineseName": "乌尔比安",
-    "russianName": "乌尔比安"
+    "russianName": "Ульпиан"
   },
   "ulpia": {
     "displayName": "乌尔比安",
     "englishName": "乌尔比安",
     "chineseName": "乌尔比安",
-    "russianName": "乌尔比安"
+    "russianName": "Ульпиан"
   },
   "char_4058_pepe": {
     "displayName": "佩佩",
     "englishName": "佩佩",
     "chineseName": "佩佩",
-    "russianName": "佩佩"
+    "russianName": "Пепе"
   },
   "pepe": {
     "displayName": "佩佩",
     "englishName": "佩佩",
     "chineseName": "佩佩",
-    "russianName": "佩佩"
+    "russianName": "Пепе"
   },
   "char_010_chen": {
     "displayName": "Ch'en",
@@ -6087,31 +6087,31 @@
     "displayName": "Irene",
     "englishName": "Irene",
     "chineseName": "艾丽妮",
-    "russianName": "Irene"
+    "russianName": "Ирен"
   },
   "irene": {
     "displayName": "Irene",
     "englishName": "Irene",
     "chineseName": "艾丽妮",
-    "russianName": "Irene"
+    "russianName": "Ирен"
   },
   "char_4116_blkkgt": {
     "displayName": "Degenbrecher",
     "englishName": "Degenbrecher",
     "chineseName": "锏",
-    "russianName": "Degenbrecher"
+    "russianName": "Дегенбрехер"
   },
   "blkkgt": {
     "displayName": "Degenbrecher",
     "englishName": "Degenbrecher",
     "chineseName": "锏",
-    "russianName": "Degenbrecher"
+    "russianName": "Дегенбрехер"
   },
   "degenbrecher": {
     "displayName": "Degenbrecher",
     "englishName": "Degenbrecher",
     "chineseName": "锏",
-    "russianName": "Degenbrecher"
+    "russianName": "Дегенбрехер"
   },
   "char_017_huang": {
     "displayName": "Blaze",
@@ -6135,19 +6135,19 @@
     "displayName": "Gavial the Invincible",
     "englishName": "Gavial the Invincible",
     "chineseName": "百炼嘉维尔",
-    "russianName": "Gavial the Invincible"
+    "russianName": "Гавиал Непобедимая"
   },
   "gvial2": {
     "displayName": "Gavial the Invincible",
     "englishName": "Gavial the Invincible",
     "chineseName": "百炼嘉维尔",
-    "russianName": "Gavial the Invincible"
+    "russianName": "Гавиал Непобедимая"
   },
   "gavialtheinvincible": {
     "displayName": "Gavial the Invincible",
     "englishName": "Gavial the Invincible",
     "chineseName": "百炼嘉维尔",
-    "russianName": "Gavial the Invincible"
+    "russianName": "Гавиал Непобедимая"
   },
   "char_350_surtr": {
     "displayName": "Surtr",
@@ -6165,193 +6165,193 @@
     "displayName": "Viviana",
     "englishName": "Viviana",
     "chineseName": "薇薇安娜",
-    "russianName": "Viviana"
+    "russianName": "Вивиана"
   },
   "vvana": {
     "displayName": "Viviana",
     "englishName": "Viviana",
     "chineseName": "薇薇安娜",
-    "russianName": "Viviana"
+    "russianName": "Вивиана"
   },
   "viviana": {
     "displayName": "Viviana",
     "englishName": "Viviana",
     "chineseName": "薇薇安娜",
-    "russianName": "Viviana"
+    "russianName": "Вивиана"
   },
   "char_1019_siege2": {
     "displayName": "维娜·维多利亚",
     "englishName": "维娜·维多利亚",
     "chineseName": "维娜·维多利亚",
-    "russianName": "维娜·维多利亚"
+    "russianName": "Сидж (Вина Виктория)"
   },
   "siege2": {
     "displayName": "维娜·维多利亚",
     "englishName": "维娜·维多利亚",
     "chineseName": "维娜·维多利亚",
-    "russianName": "维娜·维多利亚"
+    "russianName": "Сидж (Вина Виктория)"
   },
   "char_188_helage": {
     "displayName": "Hellagur",
     "englishName": "Hellagur",
     "chineseName": "赫拉格",
-    "russianName": "Hellagur"
+    "russianName": "Хеллагур"
   },
   "helage": {
     "displayName": "Hellagur",
     "englishName": "Hellagur",
     "chineseName": "赫拉格",
-    "russianName": "Hellagur"
+    "russianName": "Хеллагур"
   },
   "hellagur": {
     "displayName": "Hellagur",
     "englishName": "Hellagur",
     "chineseName": "赫拉格",
-    "russianName": "Hellagur"
+    "russianName": "Хеллагур"
   },
   "char_4121_zuole": {
     "displayName": "Zuo Le",
     "englishName": "Zuo Le",
     "chineseName": "左乐",
-    "russianName": "Zuo Le"
+    "russianName": "Цзо Лэ"
   },
   "zuole": {
     "displayName": "Zuo Le",
     "englishName": "Zuo Le",
     "chineseName": "左乐",
-    "russianName": "Zuo Le"
+    "russianName": "Цзо Лэ"
   },
   "char_485_pallas": {
     "displayName": "Pallas",
     "englishName": "Pallas",
     "chineseName": "帕拉斯",
-    "russianName": "Pallas"
+    "russianName": "Паллада"
   },
   "pallas": {
     "displayName": "Pallas",
     "englishName": "Pallas",
     "chineseName": "帕拉斯",
-    "russianName": "Pallas"
+    "russianName": "Паллада"
   },
   "char_1014_nearl2": {
     "displayName": "Nearl the Radiant Knight",
     "englishName": "Nearl the Radiant Knight",
     "chineseName": "耀骑士临光",
-    "russianName": "Nearl the Radiant Knight"
+    "russianName": "Нирл Сияющий Рыцарь"
   },
   "nearl2": {
     "displayName": "Nearl the Radiant Knight",
     "englishName": "Nearl the Radiant Knight",
     "chineseName": "耀骑士临光",
-    "russianName": "Nearl the Radiant Knight"
+    "russianName": "Нирл Сияющий Рыцарь"
   },
   "nearltheradiantknight": {
     "displayName": "Nearl the Radiant Knight",
     "englishName": "Nearl the Radiant Knight",
     "chineseName": "耀骑士临光",
-    "russianName": "Nearl the Radiant Knight"
+    "russianName": "Нирл Сияющий Рыцарь"
   },
   "char_4011_lessng": {
     "displayName": "Lessing",
     "englishName": "Lessing",
     "chineseName": "止颂",
-    "russianName": "Lessing"
+    "russianName": "Лессинг"
   },
   "lessng": {
     "displayName": "Lessing",
     "englishName": "Lessing",
     "chineseName": "止颂",
-    "russianName": "Lessing"
+    "russianName": "Лессинг"
   },
   "lessing": {
     "displayName": "Lessing",
     "englishName": "Lessing",
     "chineseName": "止颂",
-    "russianName": "Lessing"
+    "russianName": "Лессинг"
   },
   "char_609_acguad": {
     "displayName": "Sharp",
     "englishName": "Sharp",
     "chineseName": "Sharp",
-    "russianName": "Sharp"
+    "russianName": "Шарп"
   },
   "acguad": {
     "displayName": "Sharp",
     "englishName": "Sharp",
     "chineseName": "Sharp",
-    "russianName": "Sharp"
+    "russianName": "Шарп"
   },
   "char_1032_excu2": {
     "displayName": "Executor the Ex Foedere",
     "englishName": "Executor the Ex Foedere",
     "chineseName": "圣约送葬人",
-    "russianName": "Executor the Ex Foedere"
+    "russianName": "Экзекутор Завета"
   },
   "excu2": {
     "displayName": "Executor the Ex Foedere",
     "englishName": "Executor the Ex Foedere",
     "chineseName": "圣约送葬人",
-    "russianName": "Executor the Ex Foedere"
+    "russianName": "Экзекутор Завета"
   },
   "executortheexfoedere": {
     "displayName": "Executor the Ex Foedere",
     "englishName": "Executor the Ex Foedere",
     "chineseName": "圣约送葬人",
-    "russianName": "Executor the Ex Foedere"
+    "russianName": "Экзекутор Завета"
   },
   "char_4010_etlchi": {
     "displayName": "隐德来希",
     "englishName": "隐德来希",
     "chineseName": "隐德来希",
-    "russianName": "隐德来希"
+    "russianName": "Энтелехия"
   },
   "etlchi": {
     "displayName": "隐德来希",
     "englishName": "隐德来希",
     "chineseName": "隐德来希",
-    "russianName": "隐德来希"
+    "russianName": "Энтелехия"
   },
   "char_4064_mlynar": {
     "displayName": "Młynar",
     "englishName": "Młynar",
     "chineseName": "玛恩纳",
-    "russianName": "Młynar"
+    "russianName": "Млынар"
   },
   "mlynar": {
     "displayName": "Młynar",
     "englishName": "Młynar",
     "chineseName": "玛恩纳",
-    "russianName": "Młynar"
+    "russianName": "Млынар"
   },
   "mynar": {
     "displayName": "Młynar",
     "englishName": "Młynar",
     "chineseName": "玛恩纳",
-    "russianName": "Młynar"
+    "russianName": "Млынар"
   },
   "char_1043_leizi2": {
     "displayName": "司霆惊蛰",
     "englishName": "司霆惊蛰",
     "chineseName": "司霆惊蛰",
-    "russianName": "司霆惊蛰"
+    "russianName": "Лэйцзы Повелительница Грома"
   },
   "leizi2": {
     "displayName": "司霆惊蛰",
     "englishName": "司霆惊蛰",
     "chineseName": "司霆惊蛰",
-    "russianName": "司霆惊蛰"
+    "russianName": "Лэйцзы Повелительница Грома"
   },
   "char_230_savage": {
     "displayName": "Savage",
     "englishName": "Savage",
     "chineseName": "暴行",
-    "russianName": "Savage"
+    "russianName": "Сэвидж"
   },
   "savage": {
     "displayName": "Savage",
     "englishName": "Savage",
     "chineseName": "暴行",
-    "russianName": "Savage"
+    "russianName": "Сэвидж"
   },
   "char_282_catap": {
     "displayName": "Catapult",
@@ -6393,67 +6393,67 @@
     "displayName": "Beehunter",
     "englishName": "Beehunter",
     "chineseName": "猎蜂",
-    "russianName": "Beehunter"
+    "russianName": "Бихантер"
   },
   "brownb": {
     "displayName": "Beehunter",
     "englishName": "Beehunter",
     "chineseName": "猎蜂",
-    "russianName": "Beehunter"
+    "russianName": "Бихантер"
   },
   "beehunter": {
     "displayName": "Beehunter",
     "englishName": "Beehunter",
     "chineseName": "猎蜂",
-    "russianName": "Beehunter"
+    "russianName": "Бихантер"
   },
   "char_347_jaksel": {
     "displayName": "Jackie",
     "englishName": "Jackie",
     "chineseName": "杰克",
-    "russianName": "Jackie"
+    "russianName": "Джеки"
   },
   "jaksel": {
     "displayName": "Jackie",
     "englishName": "Jackie",
     "chineseName": "杰克",
-    "russianName": "Jackie"
+    "russianName": "Джеки"
   },
   "jackie": {
     "displayName": "Jackie",
     "englishName": "Jackie",
     "chineseName": "杰克",
-    "russianName": "Jackie"
+    "russianName": "Джеки"
   },
   "char_164_nightm": {
     "displayName": "Nightmare",
     "englishName": "Nightmare",
     "chineseName": "夜魔",
-    "russianName": "Nightmare"
+    "russianName": "Найтмер"
   },
   "nightm": {
     "displayName": "Nightmare",
     "englishName": "Nightmare",
     "chineseName": "夜魔",
-    "russianName": "Nightmare"
+    "russianName": "Найтмер"
   },
   "nightmare": {
     "displayName": "Nightmare",
     "englishName": "Nightmare",
     "chineseName": "夜魔",
-    "russianName": "Nightmare"
+    "russianName": "Найтмер"
   },
   "char_220_grani": {
     "displayName": "Grani",
     "englishName": "Grani",
     "chineseName": "格拉尼",
-    "russianName": "Grani"
+    "russianName": "Грани"
   },
   "grani": {
     "displayName": "Grani",
     "englishName": "Grani",
     "chineseName": "格拉尼",
-    "russianName": "Grani"
+    "russianName": "Грани"
   },
   "char_263_skadi": {
     "displayName": "Skadi",

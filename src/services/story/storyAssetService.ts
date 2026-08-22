@@ -6,22 +6,16 @@ import {
   CharacterFaceItem, 
   CharacterEntry 
 } from './storyTypes';
-import localAudioMusic from '../../data/audio_music.json';
-import localAudioSound from '../../data/audio_sound.json';
 
-const rawMusicMap = (localAudioMusic as any).default || localAudioMusic;
 export let activeAudioMusic: Record<string, string> = { 
   'tense_intro': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_intro.mp3',
   'tense_loop': 'https://torappu.prts.wiki/assets/audio/music/beta2_180603/m_dia_escape_loop.mp3',
-  ...rawMusicMap
 };
 
-const rawSoundMap = (localAudioSound as any).default || localAudioSound;
 export let activeAudioSound: Record<string, string> = { 
   'd_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
   's_d_avg_stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
   'stinkbomb': 'https://torappu.prts.wiki/assets/audio/avg/d_avg_stinkbomb.mp3',
-  ...rawSoundMap
 };
 
 let audioMapsPromise: Promise<void> | null = null;
@@ -30,93 +24,14 @@ export async function fetchLatestAudioMaps(): Promise<void> {
   if (audioMapsPromise) return audioMapsPromise;
 
   audioMapsPromise = (async () => {
-    let musicLoadedSuccessfully = false;
-    let soundLoadedSuccessfully = false;
-
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
-
-      const musicUrls = [
-        'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/audio_music.json',
-        'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_music.json'
-      ];
-      const soundUrls = [
-        'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/audio_sound.json',
-        'https://raw.githubusercontent.com/neponum/zoot-data/main/audio_sound.json'
-      ];
-
-      const fetchWithFallback = async (urls: string[]) => {
-        for (const url of urls) {
-          try {
-            const directRes = await fetch(url, { signal: controller.signal });
-            if (directRes.ok) return directRes;
-          } catch {
-            // fallback
-          }
-        }
-        for (const url of urls) {
-          try {
-            const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, { signal: controller.signal });
-            if (proxyRes && proxyRes.ok) return proxyRes;
-          } catch {
-            // fallback
-          }
-        }
-        return null;
-      };
-
-      const [musicRes, soundRes] = await Promise.all([
-        fetchWithFallback(musicUrls),
-        fetchWithFallback(soundUrls)
-      ]);
-
-      clearTimeout(timeoutId);
-
-      if (musicRes && musicRes.ok) {
-        try {
-          const musicData = (await musicRes.json()) as Record<string, string>;
-          if (musicData && typeof musicData === 'object') {
-            activeAudioMusic = { ...activeAudioMusic, ...musicData };
-            musicLoadedSuccessfully = true;
-          }
-        } catch {
-          // fallback to dynamic import below
-        }
-      }
-      
-      if (soundRes && soundRes.ok) {
-        try {
-          const soundData = (await soundRes.json()) as Record<string, string>;
-          if (soundData && typeof soundData === 'object') {
-            activeAudioSound = { ...activeAudioSound, ...soundData };
-            soundLoadedSuccessfully = true;
-          }
-        } catch {
-          // fallback to dynamic import below
-        }
+      const cached = await CacheService.getCachedJson<{ music: Record<string, string>; sound: Record<string, string> }>('arknights_audio_maps_v1');
+      if (cached && cached.music && cached.sound) {
+        activeAudioMusic = { ...activeAudioMusic, ...cached.music };
+        activeAudioSound = { ...activeAudioSound, ...cached.sound };
       }
     } catch {
-      // Use dynamic imports below
-    }
-
-    // Lazy load the local JSONs ONLY if GitHub CDN and proxy failed to load them
-    if (!musicLoadedSuccessfully) {
-      try {
-        const localMusic = await import('../../data/audio_music.json').then(m => m.default || m);
-        activeAudioMusic = { ...localMusic, ...activeAudioMusic };
-      } catch (err) {
-        console.warn('Failed to dynamically load local audio_music.json:', err);
-      }
-    }
-
-    if (!soundLoadedSuccessfully) {
-      try {
-        const localSound = await import('../../data/audio_sound.json').then(m => m.default || m);
-        activeAudioSound = { ...localSound, ...activeAudioSound };
-      } catch (err) {
-        console.warn('Failed to dynamically load local audio_sound.json:', err);
-      }
+      // Ignore cache lookup error
     }
   })();
 
@@ -239,8 +154,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
 
   if (
     url.includes('torappu.prts.wiki') ||
-    url.includes('prts.wiki') ||
-    url.includes('banyat.com')
+    url.includes('prts.wiki')
   ) {
     // Play audio files directly since torappu.prts.wiki has open CORS headers (Access-Control-Allow-Origin: *)
     // and our cloud run server-side datacenter IPs are blocked by prts.wiki's firewall/DDoS protection.
@@ -290,8 +204,46 @@ function buildNormalizedCharMap(charData: CharacterDataMap): Map<string, Charact
 }
 
 /**
- * Robust fetcher for character asset definitions with guaranteed local fallback
- * to eliminate JSON parse stream termination warnings.
+ * Helper to fetch latest character data from remote sources (GitHub CDN / PRTS Wiki).
+ */
+async function fetchRemoteCharacterData(): Promise<CharacterDataMap | null> {
+  const remoteUrls = [
+    'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/character.json',
+    'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json',
+    'https://torappu.prts.wiki/assets/avg/character.json'
+  ];
+
+  for (const url of remoteUrls) {
+    try {
+      const fetchUrl = url.includes('prts.wiki') 
+        ? `/api/proxy?url=${encodeURIComponent(url)}`
+        : url;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const text = await response.text();
+        const trimmed = text.trim();
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+          const parsed = JSON.parse(trimmed) as CharacterDataMap;
+          if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch {
+      // Continue to next remote URL
+    }
+  }
+  return null;
+}
+
+/**
+ * Robust fetcher for character asset definitions with client-side CacheService persistence.
+ * Character data is fetched dynamically from remote sources (GitHub / PRTS Wiki) and updated on the client.
  */
 export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (cachedCharacterData && Object.keys(cachedCharacterData).length > 0) {
@@ -301,76 +253,37 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (characterDataPromise) return characterDataPromise;
 
   characterDataPromise = (async (): Promise<CharacterDataMap> => {
-    // 1. First check free jsDelivr & GitHub Raw CDN (0 Vercel Bandwidth cost, cached, ultra-fast)
-    const githubUrls = [
-      'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/character.json',
-      'https://fastly.jsdelivr.net/gh/neponum/Zoot-Archive@main/public/character.json',
-      'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json',
-      'https://raw.githubusercontent.com/neponum/Zoot-Archive/main/public/character.json'
-    ];
+    const CACHE_KEY = 'arknights_character_json_v1';
 
-    for (const githubUrl of githubUrls) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        const response = await fetch(githubUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (response.ok) {
-          const text = await response.text();
-          const trimmed = text.trim();
-          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-            const parsed = JSON.parse(trimmed) as CharacterDataMap;
-            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-              cachedCharacterData = parsed;
-              cachedNormalizedCharMap = buildNormalizedCharMap(parsed);
-              return parsed;
-            }
-          }
-        }
-      } catch {
-        // Continue to next URL
-      }
-    }
-
-    // 2. Secondary: fetch from wiki proxy with size & termination validation (0 Vercel static asset cost)
+    // 1. Try loading client-side persisted cache from CacheService (IndexedDB / Cache API)
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      const wikiUrl = 'https://torappu.prts.wiki/assets/avg/character.json';
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(wikiUrl)}`;
+      const localCached = await CacheService.getCachedJson<CharacterDataMap>(CACHE_KEY);
+      if (localCached && typeof localCached === 'object' && Object.keys(localCached).length > 0) {
+        cachedCharacterData = localCached;
+        cachedNormalizedCharMap = buildNormalizedCharMap(localCached);
 
-      const response = await fetch(proxyUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const text = await response.text();
-        const trimmed = text.trim();
-        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-          const parsed = JSON.parse(trimmed) as CharacterDataMap;
-          if (parsed && typeof parsed === 'object') {
-            cachedCharacterData = parsed;
-            cachedNormalizedCharMap = buildNormalizedCharMap(parsed);
-            return parsed;
+        // Non-blocking background refresh from remote to stay updated
+        fetchRemoteCharacterData().then((remoteData) => {
+          if (remoteData && Object.keys(remoteData).length > 0) {
+            cachedCharacterData = remoteData;
+            cachedNormalizedCharMap = buildNormalizedCharMap(remoteData);
+            CacheService.cacheJson(CACHE_KEY, remoteData).catch(() => {});
           }
-        }
+        }).catch(() => {});
+
+        return localCached;
       }
     } catch {
-      // Continue to local fallback if all else fails
+      // Ignore cache lookup error and proceed to remote fetch
     }
 
-    // 3. Ultimate Fallback: check local bundled /character.json (reliable fallback, but costs Vercel bandwidth)
-    try {
-      const localResponse = await fetch('/character.json');
-      if (localResponse.ok) {
-        const localData = (await localResponse.json()) as CharacterDataMap;
-        if (localData && typeof localData === 'object' && Object.keys(localData).length > 0) {
-          cachedCharacterData = localData;
-          cachedNormalizedCharMap = buildNormalizedCharMap(localData);
-          return localData;
-        }
-      }
-    } catch {
-      // Silently fall back to empty map if all fail
+    // 2. If no client cache exists, fetch from remote sources (GitHub / PRTS Wiki)
+    const remoteData = await fetchRemoteCharacterData();
+    if (remoteData && Object.keys(remoteData).length > 0) {
+      cachedCharacterData = remoteData;
+      cachedNormalizedCharMap = buildNormalizedCharMap(remoteData);
+      CacheService.cacheJson(CACHE_KEY, remoteData).catch(() => {});
+      return remoteData;
     }
 
     cachedCharacterData = {};
@@ -773,6 +686,17 @@ async function resolveVisualAssetUrl(name: string, preferredType: 'background' |
   return uniqueCandidates[0];
 }
 
+let persistAudioTimeout: any = null;
+function saveAudioMapsToCache() {
+  if (persistAudioTimeout) clearTimeout(persistAudioTimeout);
+  persistAudioTimeout = setTimeout(() => {
+    CacheService.cacheJson('arknights_audio_maps_v1', {
+      music: activeAudioMusic,
+      sound: activeAudioSound
+    }).catch(() => {});
+  }, 2000);
+}
+
 async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
   const cacheKey = `${type}:${name}`;
   if (resolvedAudioCache[cacheKey]) return resolvedAudioCache[cacheKey];
@@ -883,6 +807,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       const found = checkResults.find(r => r.exists);
       if (found) {
         activeAudioMusic[cleanAudioName] = found.url;
+        saveAudioMapsToCache();
         return found.url;
       }
       
@@ -934,10 +859,11 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
         })
       );
       
-      const found = checkResults.find(r => r.exists);
-      if (found) {
-        activeAudioSound[cleanAudioName] = found.url;
-        return found.url;
+      const foundSound = checkResults.find(r => r.exists);
+      if (foundSound) {
+        activeAudioSound[cleanAudioName] = foundSound.url;
+        saveAudioMapsToCache();
+        return foundSound.url;
       }
       
       activeAudioSound[cleanAudioName] = '';
