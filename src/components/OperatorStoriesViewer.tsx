@@ -11,7 +11,8 @@ import {
   BookOpen, 
   FileText,
   X,
-  Languages
+  Languages,
+  Mic
 } from 'lucide-react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { getOperatorsList, EnrichedOperator } from '../services/operatorService';
@@ -585,10 +586,16 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                       {op.displayName}
                     </h3>
 
-                    {/* Dossier Badge Indicator */}
-                    <div className="flex items-center gap-1 text-[8px] font-mono text-white/40 pt-0.5">
-                      <FileText className="w-2.5 h-2.5 text-blue-400/70" />
-                      <span>{isRussian ? 'ДОСЬЕ И АРХИВЫ' : 'DOSSIER ARCHIVE'}</span>
+                    {/* Dossier & Voice Badge Indicators */}
+                    <div className="flex items-center justify-between text-[8px] font-mono text-white/40 pt-0.5">
+                      <div className="flex items-center gap-1">
+                        <FileText className="w-2.5 h-2.5 text-blue-400/70" />
+                        <span>{isRussian ? 'ДОСЬЕ' : 'DOSSIER'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-blue-400/70">
+                        <Mic className="w-2.5 h-2.5" />
+                        <span>{isRussian ? 'ГОЛОС' : 'VOICE'}</span>
+                      </div>
                     </div>
                   </div>
 

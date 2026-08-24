@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Language, StoryChapter, StoryEpisode, OperatorHandbookSection } from '../types';
 import { EnrichedOperator, ParsedDossierSection, parseOperatorHandbook, fetchOperatorHandbookAsync } from '../services/operatorService';
 import { setLanguage, checkScriptExists } from '../services/storyService';
+import { OperatorVoicePlayer } from './OperatorVoicePlayer';
 import { 
   X, 
   ArrowLeft,
@@ -21,7 +22,9 @@ import {
   Copy,
   Check,
   Edit3,
-  Link2
+  Link2,
+  Mic,
+  Volume2
 } from 'lucide-react';
 
 interface OperatorDossierModalProps {
@@ -52,7 +55,7 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
   readChapters,
   isFullPage = false
 }) => {
-  const [activeTab, setActiveTab] = useState<'DOSSIER' | 'STORIES'>('DOSSIER');
+  const [activeTab, setActiveTab] = useState<'DOSSIER' | 'VOICES' | 'STORIES'>('DOSSIER');
   const [selectedSectionIdx, setSelectedSectionIdx] = useState<number>(0);
   const [imgFailed, setImgFailed] = useState(false);
   const [modalLang, setModalLang] = useState<Language>(uiLang || 'ru_RU');
@@ -374,24 +377,43 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
               </div>
             </div>
 
-            {/* Play Paradox Stories Button */}
-            {operator.hasStories && operator.storyEpisode && (
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 mt-4">
               <button
-                onClick={() => setActiveTab('STORIES')}
-                className="mt-4 w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-mono font-black text-xs uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                onClick={() => setActiveTab('VOICES')}
+                className={`w-full py-2 px-3 border rounded-sm font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  activeTab === 'VOICES'
+                    ? 'bg-blue-600/30 border-blue-500/60 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]'
+                    : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 hover:border-blue-500/40 text-white/90 hover:text-white'
+                }`}
               >
-                <Play className="w-3.5 h-3.5 fill-white" />
-                <span>
-                  {isRussian 
-                    ? `ИСТОРИИ ОПЕРАТИВНИКА (${operator.chapters?.length || 0})` 
-                    : `OPERATOR STORIES (${operator.chapters?.length || 0})`}
-                </span>
+                <Mic className="w-3.5 h-3.5 text-blue-400" />
+                <span>{isRussian ? 'ГОЛОСОВЫЕ РЕПЛИКИ' : 'VOICE LINES'}</span>
               </button>
-            )}
+
+              {/* Play Paradox Stories Button */}
+              {operator.hasStories && operator.storyEpisode && (
+                <button
+                  onClick={() => setActiveTab('STORIES')}
+                  className={`w-full py-2 px-3 border rounded-sm font-mono font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] ${
+                    activeTab === 'STORIES'
+                      ? 'bg-blue-500 text-white border-blue-400'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white border-transparent'
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>
+                    {isRussian 
+                      ? `ИСТОРИИ ОПЕРАТИВНИКА (${operator.chapters?.length || 0})` 
+                      : `OPERATOR STORIES (${operator.chapters?.length || 0})`}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Tabs, Language Selector, Dossier Body & Stories */}
+        {/* RIGHT COLUMN: Tabs, Language Selector, Dossier Body, Voices & Stories */}
         <div className="flex-1 flex flex-col bg-zinc-950 overflow-hidden relative">
           
           {/* Top Control Bar: Tabs */}
@@ -409,6 +431,18 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>{isRussian ? 'ЛИЧНОЕ ДЕЛО И ДОСЬЕ' : 'HANDBOOK & DOSSIER'}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('VOICES')}
+                className={`px-3 py-1.5 rounded-sm text-xs font-mono font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                  activeTab === 'VOICES'
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/50 shadow-sm'
+                    : 'text-white/50 hover:text-white hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>{isRussian ? 'ГОЛОСОВЫЕ РЕПЛИКИ' : 'VOICE LINES'}</span>
               </button>
 
               {operator.hasStories && (
@@ -573,7 +607,18 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: OPERATOR STORIES / PARADOX SIMULATIONS */}
+          {/* TAB 2: VOICE LINES */}
+          {activeTab === 'VOICES' && (
+            <OperatorVoicePlayer
+              operatorId={operator.id}
+              operatorName={operator.displayName}
+              avatarUrl={operator.avatarUrl}
+              uiLang={modalLang}
+              onLanguageChange={setModalLang}
+            />
+          )}
+
+          {/* TAB 3: OPERATOR STORIES / PARADOX SIMULATIONS */}
           {activeTab === 'STORIES' && (
             <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
               <div className="max-w-2xl space-y-4">

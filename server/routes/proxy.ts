@@ -17,6 +17,7 @@ const ALLOWED_PREFIXES = [
   'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/',
   'https://raw.githubusercontent.com/neponum/zoot-data/main/',
   'https://raw.githubusercontent.com/fexli/ArknightsResource/main/',
+  'https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/',
   'https://torappu.prts.wiki/',
   'https://prts.wiki/',
   'https://monster-siren.hypergryph.com/',
@@ -180,14 +181,48 @@ router.get('/', proxyLimiter, async (req, res) => {
         }
       } else {
         response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 3, 10000, 300);
-        if (response.status === 404 && isTorappu && safeUrl !== safeUrl.toLowerCase()) {
-          try {
-            const lowerRes = await fetchWithRetry(safeUrl.toLowerCase(), { method: req.method, headers }, 2, 8000, 200);
-            if (lowerRes.ok) {
-              response = lowerRes;
+        
+        // Torappu PRTS audio and asset fallback resolution
+        if (response.status === 404 && isTorappu) {
+          const alternativeUrls: string[] = [];
+
+          // 1. Lowercase target
+          if (safeUrl !== safeUrl.toLowerCase()) {
+            alternativeUrls.push(safeUrl.toLowerCase());
+          }
+
+          // 2. Extension swap: .mp3 <-> .wav
+          if (safeUrl.endsWith('.mp3')) {
+            alternativeUrls.push(safeUrl.replace(/\.mp3$/, '.wav'));
+            alternativeUrls.push(safeUrl.toLowerCase().replace(/\.mp3$/, '.wav'));
+          } else if (safeUrl.endsWith('.wav')) {
+            alternativeUrls.push(safeUrl.replace(/\.wav$/, '.mp3'));
+            alternativeUrls.push(safeUrl.toLowerCase().replace(/\.wav$/, '.mp3'));
+          }
+
+          // 3. Folder swap for JP/CN voice: voice <-> voice_cn
+          if (safeUrl.includes('/assets/audio/voice/')) {
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice/', '/assets/audio/voice_cn/'));
+            alternativeUrls.push(safeUrl.toLowerCase().replace('/assets/audio/voice/', '/assets/audio/voice_cn/'));
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice/', '/assets/audio/voice_cn/').replace(/\.mp3$/, '.wav'));
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice/', '/assets/audio/voice_cn/').replace(/\.wav$/, '.mp3'));
+          } else if (safeUrl.includes('/assets/audio/voice_cn/')) {
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice_cn/', '/assets/audio/voice/'));
+            alternativeUrls.push(safeUrl.toLowerCase().replace('/assets/audio/voice_cn/', '/assets/audio/voice/'));
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice_cn/', '/assets/audio/voice/').replace(/\.mp3$/, '.wav'));
+            alternativeUrls.push(safeUrl.replace('/assets/audio/voice_cn/', '/assets/audio/voice/').replace(/\.wav$/, '.mp3'));
+          }
+
+          for (const altUrl of alternativeUrls) {
+            try {
+              const altRes = await fetchWithRetry(altUrl, { method: req.method, headers }, 2, 6000, 150);
+              if (altRes.ok) {
+                response = altRes;
+                break;
+              }
+            } catch {
+              // try next
             }
-          } catch {
-            // keep original response
           }
         }
       }

@@ -32,6 +32,9 @@ try {
     'Friston-3': 'Фристон-3',
     'PhonoR-0': 'ФоноR-0',
     'CONFESS-47': 'CONFESS-47',
+    'Rhodes Island Recon': 'Разведгруппа Родоса',
+    '罗德岛隐秘队': 'Разведгруппа Родоса',
+    'GALLUS²': 'GALLUS²',
 
     // 2-star
     'Yato': 'Ято',
@@ -135,6 +138,8 @@ try {
     '云迹': 'Юньцзи',
     'Beehunter': 'Бихантер',
     'Jackie': 'Джеки',
+    'Akkord': 'Аккорд',
+    '协律': 'Аккорд',
 
     // 5-star
     'Ptilopsis': 'Птилопсис',
@@ -213,6 +218,7 @@ try {
     'Beeswax': 'Бизвакс',
     'Leonhardt': 'Леонхардт',
     'Santalla': 'Сантала',
+    '寒檀': 'Сантала',
     'Mint': 'Минт',
     'Iris': 'Айрис',
     'Harmonie': 'Гармония',
@@ -321,6 +327,40 @@ try {
     'Nightmare': 'Найтмер',
     'Grani': 'Грани',
     'Savage': 'Сэвидж',
+    'Perfumer the Distilled': 'Парфюмер Эссенция',
+    '撷英调香师': 'Парфюмер Эссенция',
+    'Zinogre S Catapult': 'Катапульта Зиногр S',
+    '雷狼龙S空爆': 'Катапульта Зиногр S',
+    'Hadiya': 'Хадия',
+    '哈蒂娅': 'Хадия',
+    'Ripresa': 'Рипреза',
+    '复奏': 'Рипреза',
+    'Varkáris': 'Варкарис',
+    '摆渡人': 'Варкарис',
+    'Snow Hunter': 'Снежная Охотница',
+    '雪猎': 'Снежная Охотница',
+    'Skybox': 'Скайбокс',
+    '天空盒': 'Скайбокс',
+    'Cairn': 'Кэрн',
+    '响石': 'Кэрн',
+    'Ju': 'Цзюй',
+    '矩': 'Цзюй',
+    'Taraxacum': 'Тараксакум',
+    '风絮': 'Тараксакум',
+    'Ботани': 'Ботани',
+    'Botany': 'Ботани',
+    '伯塔尼': 'Ботани',
+    'Укусик': 'Укусик',
+    'Turdus': 'Укусик',
+    '乌啾': 'Укусик',
+    'Crackborne': 'Крэкборн',
+    '裂响': 'Крэкборн',
+    'Pedro': 'Педро',
+    '佩德洛': 'Педро',
+    'Timeslot': 'Таймслот',
+    '时隙': 'Таймслот',
+    'Jacinta': 'Хасинта',
+    '嘉辛塔': 'Хасинта',
 
     // 6-star
     'Exusiai': 'Эксузай',
@@ -369,6 +409,39 @@ try {
     '死芒': 'Смертельный Луч',
     'Gnosis': 'Гнозис',
     'Angelina': 'Анджелина',
+    'Angelina the Mellow Wish': 'Анджелина Исполняющая Желания',
+    '予愿安洁莉娜': 'Анджелина Исполняющая Желания',
+    'SilverAsh the Reignfrost': 'Сильвераш Владыка Мороза',
+    '凛御银灰': 'Сильвераш Владыка Мороза',
+    'Pramanix the Prerita': 'Праманикс Священный Голос',
+    '圣聆初雪': 'Праманикс Священный Голос',
+    'Astgenne the Lightchaser': 'Астгенн Ловец Света',
+    '溯光星源': 'Астгенн Ловец Света',
+    'Violet Mizutsune Orchid': 'Орхидея Пламенная Мидзуцунэ',
+    '焰狐龙梓兰': 'Орхидея Пламенная Мидзуцунэ',
+    "Ch'en the Dawnstreak": 'Чэнь Рассветный Клинок',
+    '赤刃明霄陈': 'Чэнь Рассветный Клинок',
+    'Zima the Raging Tide': 'Зима Бушующий Прилив',
+    '怒潮凛冬': 'Зима Бушующий Прилив',
+    "Kal'tsit·Esperanta": 'Кальцит Эсперанта',
+    '凯尔希·思衡托': 'Кальцит Эсперанта',
+    'Wang': 'Ван',
+    '望': 'Ван',
+    'Bellone': 'Беллоне',
+    '贝洛内': 'Беллоне',
+    'Titi': 'Тити',
+    '缇缇': 'Тити',
+    'Nasti': 'Насти',
+    '娜斯提': 'Насти',
+    'Вий': 'Вий',
+    'Viy': 'Вий',
+    '维伊': 'Вий',
+    'Closure': 'Кложер',
+    '可露希尔': 'Кложер',
+    'Aphrissa': 'Африсса',
+    '谬因': 'Африсса',
+    'Thumpy': 'Тампи',
+    '珊比': 'Тампи',
     'Suzuran': 'Судзуран',
     'Raidian': 'Райдиан',
     'Magallan': 'Магеллан',
@@ -476,6 +549,40 @@ try {
     if (charNameKey) map[charNameKey] = entry;
     const cleanEn = nameEn.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (cleanEn) map[cleanEn] = entry;
+  }
+
+  // Add popular Russian alias lookups for seamless search
+  const extraAliases = [
+    // Snegurochka aliases
+    { key: 'снегурочка', targetId: 'char_1046_sbell2' },
+    { key: 'снегурка', targetId: 'char_1046_sbell2' },
+    { key: 'снежная охотница', targetId: 'char_4211_snhunt' },
+    // Angelina alter aliases
+    { key: 'анджелина альтер', targetId: 'char_1015_aglna2' },
+    { key: 'ангелина альтер', targetId: 'char_1015_aglna2' },
+    { key: 'анджелина', targetId: 'char_291_aglina' },
+    // SilverAsh alter
+    { key: 'сильвераш альтер', targetId: 'char_1045_svash2' },
+    { key: 'сильвер альтер', targetId: 'char_1045_svash2' },
+    // Zima alter
+    { key: 'зима альтер', targetId: 'char_1051_headb2' },
+    // Kal'tsit alter
+    { key: 'кальцит альтер', targetId: 'char_1052_kalts2' },
+    { key: 'кельси альтер', targetId: 'char_1052_kalts2' },
+    // Ch'en alter 2
+    { key: 'чэнь альтер', targetId: 'char_1050_chen3' },
+    // Closure
+    { key: 'кложер', targetId: 'char_4228_closur' },
+    { key: 'керусил', targetId: 'char_4228_closur' },
+    { key: 'косилка', targetId: 'char_4228_closur' },
+    // Viy
+    { key: 'вий', targetId: 'char_4226_veen' }
+  ];
+
+  for (const alias of extraAliases) {
+    if (map[alias.targetId]) {
+      map[alias.key] = map[alias.targetId];
+    }
   }
 
   fs.writeFileSync(outputPath, JSON.stringify(map, null, 2), 'utf8');

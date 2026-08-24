@@ -31,8 +31,8 @@ let rawDatabasePromise: Promise<OperatorData[]> | null = null;
 let cachedByLang: Record<string, EnrichedOperator[]> = {};
 
 const GITHUB_HANDBOOK_URLS: Record<string, string> = {
-  zh_CN: 'https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/json/gamedata/zh_CN/gamedata/excel/handbook_info_table.json',
-  en_US: 'https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/json/gamedata/en_US/gamedata/excel/handbook_info_table.json',
+  zh_CN: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/handbook_info_table.json',
+  en_US: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/en_US/gamedata/excel/handbook_info_table.json',
 };
 
 const TITLE_TRANSLATIONS: Record<string, string> = {
@@ -64,11 +64,17 @@ export async function fetchHandbookTable(langKey: 'zh_CN' | 'en_US'): Promise<an
   }
 
   const url = GITHUB_HANDBOOK_URLS[langKey] || GITHUB_HANDBOOK_URLS.en_US;
+  const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
 
-  handbookFetchPromises[langKey] = fetch(url)
+  handbookFetchPromises[langKey] = fetch(proxiedUrl)
     .then(res => {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return res.json();
+    })
+    .catch(async () => {
+      const direct = await fetch(url);
+      if (!direct.ok) throw new Error(`HTTP error ${direct.status}`);
+      return direct.json();
     })
     .then(data => {
       const dict = data.handbookDict || {};

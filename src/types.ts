@@ -236,3 +236,40 @@ export interface OperatorData {
   storyEpisode?: StoryEpisode;
 }
 
+export interface OperatorVoiceLine {
+  charWordId: string;
+  charId: string;
+  wordKey: string;
+  voiceId: string;
+  voiceTitle: string;
+  voiceTitleEn: string;
+  voiceTitleZh: string;
+  voiceTitleRu: string;
+  voiceText: string;
+  voiceTextJa?: string;
+  voiceTextEn: string;
+  voiceTextZh: string;
+  voiceAsset: string;
+  category: 'talk' | 'combat' | 'management' | 'other';
+  audioUrls?: Record<string, string>;
+  audioUrl: string;
+  unlockType?: string;
+  lockDescription?: string | null;
+}
+
+export interface OperatorCvInfo {
+  langType: string;
+  langLabel: string;
+  cvNames: string[];
+  wordkey?: string;
+  voicePath?: string | null;
+}
+
+export interface OperatorVoiceData {
+  charId: string;
+  lines: OperatorVoiceLine[];
+  cvList: OperatorCvInfo[];
+  availableLangs?: string[];
+  wordKeys: string[];
+}
+
