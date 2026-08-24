@@ -1122,6 +1122,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       );
     }
 
+    if (shakeTimeoutRef.current) {
+      clearTimeout(shakeTimeoutRef.current);
+      shakeTimeoutRef.current = null;
+    }
+    dispatch({ type: 'SET_SHAKE', payload: { isShaking: false, config: null } });
+
     // 3. update react state
     dispatch({ 
       type: 'RESTORE_STATE', 
@@ -1373,6 +1379,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     );
   }
 
+  const isAnyModalOpen = showSettings || showBackConfirm || showLog || showBugReport;
+  const shouldShake = isShaking && !isAnyModalOpen && (settings.shakeIntensity ?? 1) > 0;
+
   return (
     <div 
       ref={containerRef}
@@ -1385,14 +1394,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       onContextMenu={(e) => e.preventDefault()}
     >
       <motion.div 
-        animate={shakeConfig ? {
-          x: [-shakeConfig.x * settings.shakeIntensity, shakeConfig.x * settings.shakeIntensity, -shakeConfig.x * settings.shakeIntensity, shakeConfig.x * settings.shakeIntensity, 0],
-          y: [-shakeConfig.y * settings.shakeIntensity, shakeConfig.y * settings.shakeIntensity, -shakeConfig.y * settings.shakeIntensity, shakeConfig.y * settings.shakeIntensity, 0],
-        } : isShaking ? {
-          x: [-5 * settings.shakeIntensity, 5 * settings.shakeIntensity, -5 * settings.shakeIntensity, 5 * settings.shakeIntensity, 0],
-          y: [-2 * settings.shakeIntensity, 2 * settings.shakeIntensity, -2 * settings.shakeIntensity, 2 * settings.shakeIntensity, 0],
-        } : { x: 0, y: 0 }}
-        transition={(shakeConfig || isShaking) ? {
+        animate={shouldShake ? (shakeConfig ? {
+          x: [-shakeConfig.x * (settings.shakeIntensity ?? 1), shakeConfig.x * (settings.shakeIntensity ?? 1), -shakeConfig.x * (settings.shakeIntensity ?? 1), shakeConfig.x * (settings.shakeIntensity ?? 1), 0],
+          y: [-shakeConfig.y * (settings.shakeIntensity ?? 1), shakeConfig.y * (settings.shakeIntensity ?? 1), -shakeConfig.y * (settings.shakeIntensity ?? 1), shakeConfig.y * (settings.shakeIntensity ?? 1), 0],
+        } : {
+          x: [-5 * (settings.shakeIntensity ?? 1), 5 * (settings.shakeIntensity ?? 1), -5 * (settings.shakeIntensity ?? 1), 5 * (settings.shakeIntensity ?? 1), 0],
+          y: [-2 * (settings.shakeIntensity ?? 1), 2 * (settings.shakeIntensity ?? 1), -2 * (settings.shakeIntensity ?? 1), 2 * (settings.shakeIntensity ?? 1), 0],
+        }) : { x: 0, y: 0 }}
+        transition={shouldShake ? {
           duration: shakeConfig ? (1 / Math.max(shakeConfig.vibrato, 1)) * 5 : 0.1,
           repeat: Infinity,
         } : { duration: 0.2 }}
@@ -1503,47 +1512,48 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           t={t}
           className="z-[60]"
         />
-
-        <BugReportModal
-          show={showBugReport}
-          onClose={() => setShowBugReport(false)}
-          context={{
-            chapter: storyTxt || 'Unknown',
-            line: currentIndexRef.current,
-            history: processedHistory,
-            translator: translator
-          }}
-        />
-
-        <LogModal 
-          show={showLog}
-          history={processedHistory}
-          fullScript={fullScriptText}
-          onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
-          onJumpToLine={jumpToLine}
-          t={t}
-        />
-
-        <SettingsModal 
-          show={showSettings}
-          settings={settings}
-          onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
-          onClose={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
-          t={t}
-        />
-
-        <BackConfirmation 
-          show={showBackConfirm}
-          onConfirm={() => {
-            audioManager.stopAll();
-            onBack();
-          }}
-          onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}
-          t={t}
-        />
-
-        <OrientationOverlay />
       </motion.div>
+
+      {/* Modals placed outside motion.div to prevent modal shake and ensure crisp, stable dialogs */}
+      <BugReportModal
+        show={showBugReport}
+        onClose={() => setShowBugReport(false)}
+        context={{
+          chapter: storyTxt || 'Unknown',
+          line: currentIndexRef.current,
+          history: processedHistory,
+          translator: translator
+        }}
+      />
+
+      <LogModal 
+        show={showLog}
+        history={processedHistory}
+        fullScript={fullScriptText}
+        onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
+        onJumpToLine={jumpToLine}
+        t={t}
+      />
+
+      <SettingsModal 
+        show={showSettings}
+        settings={settings}
+        onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
+        onClose={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
+        t={t}
+      />
+
+      <BackConfirmation 
+        show={showBackConfirm}
+        onConfirm={() => {
+          audioManager.stopAll();
+          onBack();
+        }}
+        onCancel={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false })}
+        t={t}
+      />
+
+      <OrientationOverlay />
     </div>
   );
 };

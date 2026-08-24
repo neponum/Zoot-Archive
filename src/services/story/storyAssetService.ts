@@ -509,14 +509,14 @@ export type AssetType = 'background' | 'character' | 'image' | 'music' | 'sound'
 
 export async function getImageUrl(type: AssetType, name: string): Promise<string> {
   if (!name) return '';
-  const cacheKey = `${type}-${name}`;
+  const normalizedKey = `${type}-${name.trim().toLowerCase()}`;
   
-  if (urlCache.has(cacheKey)) {
-    return urlCache.get(cacheKey)!;
+  if (urlCache.has(normalizedKey)) {
+    return urlCache.get(normalizedKey)!;
   }
   
-  if (pendingUrlPromises.has(cacheKey)) {
-    return pendingUrlPromises.get(cacheKey)!;
+  if (pendingUrlPromises.has(normalizedKey)) {
+    return pendingUrlPromises.get(normalizedKey)!;
   }
   
   const promise = (async () => {
@@ -532,10 +532,10 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
     return wrapUrlWithProxy(rawUrl);
   })();
   
-  pendingUrlPromises.set(cacheKey, promise);
+  pendingUrlPromises.set(normalizedKey, promise);
   const finalUrl = await promise;
-  urlCache.set(cacheKey, finalUrl);
-  pendingUrlPromises.delete(cacheKey);
+  urlCache.set(normalizedKey, finalUrl);
+  pendingUrlPromises.delete(normalizedKey);
   return finalUrl;
 }
 
@@ -630,47 +630,52 @@ export async function checkImageExists(url: string): Promise<boolean> {
 async function resolveVisualAssetUrl(name: string, preferredType: 'background' | 'image'): Promise<string> {
   const cleanName = name.trim().replace(/\.png$/i, '');
   const lowerName = cleanName.toLowerCase();
-  const noAvgName = cleanName.replace(/^avg_/i, '');
-  const withAvgName = lowerName.startsWith('avg_') ? cleanName : `avg_${cleanName}`;
-  const noBgName = cleanName.replace(/^bg_/i, '');
-  const withBgName = lowerName.startsWith('bg_') ? cleanName : `bg_${cleanName}`;
+  const lowerNoAvg = lowerName.replace(/^avg_/i, '');
+  const lowerNoBg = lowerName.replace(/^bg_/i, '');
+  const lowerWithBg = lowerName.startsWith('bg_') ? lowerName : `bg_${lowerName}`;
+  const lowerWithAvg = lowerName.startsWith('avg_') ? lowerName : `avg_${lowerName}`;
 
-  // PRTS wiki only has: background/, characters/, images/
+  const noAvgName = cleanName.replace(/^avg_/i, '');
+  const noBgName = cleanName.replace(/^bg_/i, '');
+  const withBgName = cleanName.toLowerCase().startsWith('bg_') ? cleanName : `bg_${cleanName}`;
+  const withAvgName = cleanName.toLowerCase().startsWith('avg_') ? cleanName : `avg_${cleanName}`;
+
+  // PRTS wiki has: background/, characters/, images/
+  // Lowercase paths MUST come first because almost all Arknights server assets are strictly lowercase (e.g. bg_nobled.png)
   const rawCandidates: string[] = [];
 
   if (preferredType === 'image') {
     rawCandidates.push(
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerWithAvg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoAvg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoBg)}.png`,
       `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`,
       `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(withAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerWithBg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerNoBg)}.png`,
       `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noAvgName)}.png`,
       `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(withBgName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(withAvgName)}.png`
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`
     );
   } else {
     rawCandidates.push(
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerWithBg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerNoBg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerNoAvg)}.png`,
       `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(cleanName)}.png`,
       `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(withBgName)}.png`,
       `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noBgName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(noAvgName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerWithAvg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoAvg)}.png`,
+      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoBg)}.png`,
       `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(cleanName)}.png`,
       `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(noAvgName)}.png`,
       `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(withAvgName)}.png`
-    );
-  }
-
-  // Also append lowercase variants if different
-  if (lowerName !== cleanName) {
-    const lowerNoAvg = lowerName.replace(/^avg_/i, '');
-    const lowerNoBg = lowerName.replace(/^bg_/i, '');
-    const lowerWithBg = lowerName.startsWith('bg_') ? lowerName : `bg_${lowerName}`;
-    rawCandidates.push(
-      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/images/${encodeURIComponent(lowerNoAvg)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerName)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerWithBg)}.png`,
-      `https://torappu.prts.wiki/assets/avg/background/${encodeURIComponent(lowerNoBg)}.png`
     );
   }
 
@@ -705,36 +710,44 @@ function saveAudioMapsToCache() {
 }
 
 async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
-  const cacheKey = `${type}:${name}`;
-  if (resolvedAudioCache[cacheKey]) return resolvedAudioCache[cacheKey];
+  const normalizedKey = `${type}:${name.trim().toLowerCase()}`;
+  if (resolvedAudioCache[normalizedKey]) return resolvedAudioCache[normalizedKey];
 
   switch (type) {
     case 'background': {
       const res = await resolveVisualAssetUrl(name, 'background');
-      resolvedAudioCache[cacheKey] = res;
+      resolvedAudioCache[normalizedKey] = res;
       return res;
     }
     case 'image': {
       const res = await resolveVisualAssetUrl(name, 'image');
-      resolvedAudioCache[cacheKey] = res;
+      resolvedAudioCache[normalizedKey] = res;
       return res;
     }
     case 'character': {
       const parts = name.split('/');
-      const encodedPath = parts.map(encodeURIComponent).join('/');
+      const encodedPath = parts.map(p => encodeURIComponent(p.toLowerCase())).join('/');
       
       if (parts.length === 1) {
         const baseNameMatch = name.match(/^([^#$]+)/);
-        const baseName = baseNameMatch ? baseNameMatch[1] : name;
-        return `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name)}.png`;
+        const rawBaseName = baseNameMatch ? baseNameMatch[1] : name;
+        const baseName = rawBaseName.toLowerCase();
+        const lowName = name.toLowerCase();
+        
+        const candidate1 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(lowName)}.png`;
+        const candidate2 = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(rawBaseName)}/${encodeURIComponent(name)}.png`;
+        if (await checkImageExists(candidate1)) return candidate1;
+        if (await checkImageExists(candidate2)) return candidate2;
+        return candidate1;
       }
       
       return `https://torappu.prts.wiki/assets/avg/characters/${encodedPath}.png`;
     }
     case 'character_body': {
       const parts = name.split('/');
-      const encodedPath = parts.map(encodeURIComponent).join('/');
-      const baseName = parts[0].split('$')[0];
+      const baseName = parts[0].split('$')[0].toLowerCase();
+      const rawBaseName = parts[0].split('$')[0];
+      const encodedPath = parts.map(p => encodeURIComponent(p.toLowerCase())).join('/');
       
       let urlBase: string;
       if (parts.length > 1) {
@@ -745,15 +758,19 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       
       if (name.includes('$') || parts.length > 1) return urlBase;
       
-      const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(name + '$1')}.png`;
+      const urlWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(baseName + '$1')}.png`;
       if (await checkImageExists(urlWithDollar)) return urlWithDollar;
-
       if (await checkImageExists(urlBase)) return urlBase;
       
+      const urlOrigWithDollar = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(rawBaseName)}/${encodeURIComponent(rawBaseName + '$1')}.png`;
+      if (await checkImageExists(urlOrigWithDollar)) return urlOrigWithDollar;
+
       return urlWithDollar;
     }
     case 'character_face': {
-      const [baseName, expression] = name.split('/');
+      const [rawBase, rawExp] = name.split('/');
+      const baseName = (rawBase || '').toLowerCase();
+      const expression = (rawExp || '').toLowerCase();
       
       const urlBase = `https://torappu.prts.wiki/assets/avg/characters/${encodeURIComponent(baseName)}/${encodeURIComponent(expression)}.png`;
       if (await checkImageExists(urlBase)) return urlBase;
@@ -766,7 +783,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
     case 'music': {
       const parts = name.split('/');
       const baseNameOnly = parts[parts.length - 1];
-      const cleanAudioName = baseNameOnly.replace(/^\$/, '').toLowerCase();
+      const cleanAudioName = baseNameOnly.replace(/^\$/, '').replace(/\.(mp3|wav|ogg|flac|m4a)$/i, '').toLowerCase();
       
       if (cleanAudioName in activeAudioMusic) {
         return activeAudioMusic[cleanAudioName];
@@ -780,9 +797,10 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
         baseNames.push(`m_avg_${cleanAudioName}`);
         baseNames.push(`m_sys_${cleanAudioName}`);
         baseNames.push(`m_bat_${cleanAudioName}`);
+        baseNames.push(`m_dia_${cleanAudioName}`);
       }
       
-      const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player'];
+      const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player', 'beta2_180603'];
       const candidates: string[] = [];
       
       if (parts.length > 1) {
@@ -824,7 +842,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
     case 'sound': {
       const parts = name.split('/');
       const baseNameOnly = parts[parts.length - 1];
-      const cleanAudioName = baseNameOnly.replace(/^\$/, '').toLowerCase();
+      const cleanAudioName = baseNameOnly.replace(/^\$/, '').replace(/\.(mp3|wav|ogg|flac|m4a)$/i, '').toLowerCase();
       
       if (cleanAudioName in activeAudioSound) {
         return activeAudioSound[cleanAudioName];
@@ -833,8 +851,14 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       const baseNames = [cleanAudioName];
       if (cleanAudioName.startsWith('s_')) {
         baseNames.push(cleanAudioName.substring(2));
+      } else if (cleanAudioName.startsWith('d_')) {
+        baseNames.push(cleanAudioName.substring(2));
       } else {
         baseNames.push(`s_${cleanAudioName}`);
+        baseNames.push(`d_${cleanAudioName}`);
+        baseNames.push(`s_avg_${cleanAudioName}`);
+        baseNames.push(`d_avg_${cleanAudioName}`);
+        baseNames.push(`s_b_${cleanAudioName}`);
       }
       
       const folders = ['sound/avg', 'sound', 'avg', 'battle', 'general', 'ambience', 'music', 'player'];
@@ -877,7 +901,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       return '';
     }
     case 'voice': {
-      const cleanAudioName = name.replace(/^\$/, '');
+      const cleanAudioName = name.replace(/^\$/, '').replace(/\.(mp3|wav|ogg|flac|m4a)$/i, '').toLowerCase();
       return `https://torappu.prts.wiki/assets/audio/voice/${encodeURIComponent(cleanAudioName)}.mp3`;
     }
     default:

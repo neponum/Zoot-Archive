@@ -342,12 +342,17 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, imageUrl: action.payload.url, imageTween: action.payload.tween || null };
     case 'SET_CHARACTER_CUTIN':
       return { ...state, characterCutin: action.payload };
-    case 'SET_SHAKE':
+    case 'SET_SHAKE': {
+      const isShaking = action.payload.isShaking !== undefined ? action.payload.isShaking : state.isShaking;
+      const shakeConfig = action.payload.config !== undefined 
+        ? action.payload.config 
+        : (isShaking ? state.shakeConfig : null);
       return {
         ...state,
-        shakeConfig: action.payload.config !== undefined ? action.payload.config : state.shakeConfig,
-        isShaking: action.payload.isShaking !== undefined ? action.payload.isShaking : state.isShaking
+        shakeConfig,
+        isShaking
       };
+    }
     case 'SET_FLASH':
       return { ...state, isFlashing: action.payload };
     case 'SET_CAMERA_EFFECT':

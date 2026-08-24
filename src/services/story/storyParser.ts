@@ -506,7 +506,12 @@ export class StoryParser {
         };
 
       case 'camerashake': {
-        const parsedDur = this.parseTimeParam(params.duration, params.time, params.fadetime);
+        const rawDur = params.duration ?? params.time ?? params.fadetime;
+        let parsedDur: number | undefined = undefined;
+        if (rawDur !== undefined && rawDur !== null && rawDur !== '') {
+          const n = parseFloat(rawDur);
+          if (!isNaN(n)) parsedDur = n;
+        }
         const parsedX = params.xstrength !== undefined ? parseFloat(params.xstrength) : undefined;
         const parsedY = params.ystrength !== undefined ? parseFloat(params.ystrength) : undefined;
         const parsedVibrato = params.vibrato !== undefined ? parseFloat(params.vibrato) : undefined;

@@ -180,9 +180,44 @@ router.get('/', proxyLimiter, async (req, res) => {
         }
       } else {
         response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 3, 10000, 300);
+        if (response.status === 404 && isTorappu && safeUrl !== safeUrl.toLowerCase()) {
+          try {
+            const lowerRes = await fetchWithRetry(safeUrl.toLowerCase(), { method: req.method, headers }, 2, 8000, 200);
+            if (lowerRes.ok) {
+              response = lowerRes;
+            }
+          } catch {
+            // keep original response
+          }
+        }
       }
     } catch (fetchErr: any) {
-      if (isImage || isTorappu) {
+      if (isTorappu && safeUrl !== safeUrl.toLowerCase()) {
+        try {
+          response = await fetchWithRetry(safeUrl.toLowerCase(), { method: req.method, headers }, 2, 8000, 200);
+          if (response.ok) {
+            // Handled
+          } else {
+            throw new Error("Lowercase attempt failed");
+          }
+        } catch {
+          if (isImage || isTorappu) {
+            const fallbackUrl = `https://images.weserv.nl/?url=${encodeURIComponent(safeUrl.toLowerCase())}`;
+            try {
+              response = await fetchWithRetry(fallbackUrl, {
+                method: req.method,
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+              }, 1, 6000);
+            } catch {
+              return res.status(404).json({ error: "Asset not found" });
+            }
+          } else {
+            return res.status(404).json({ error: "Resource not found" });
+          }
+        }
+      } else if (isImage || isTorappu) {
         const fallbackUrl = `https://images.weserv.nl/?url=${encodeURIComponent(safeUrl)}`;
         try {
           response = await fetchWithRetry(fallbackUrl, {
