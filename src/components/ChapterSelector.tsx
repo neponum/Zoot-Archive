@@ -1324,10 +1324,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         setActiveTab('STORY');
                         navigate('/story');
                       }}
-                      onOpenArchive={() => {
-                        setActiveTab('NONE');
-                        navigate('/records');
-                      }}
                       onOpenVote={() => {
                         setActiveTab('VOTE');
                         navigate('/music');

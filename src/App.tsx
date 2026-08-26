@@ -223,7 +223,7 @@ function AppContent() {
                 </div>
               } 
             />
-            {/* Fallback for old routes (/records, /progress, etc.) */}
+            {/* Fallback for other unmatched routes */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </motion.div>

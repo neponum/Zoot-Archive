@@ -6,7 +6,7 @@ import {
   Trash2, Play, BookOpen, AlertTriangle, User, Award, Layers, 
   Database, RefreshCw, Check, ArrowRight, Heart, Star, Compass,
   Languages, Github, AlertCircle, Volume2, Type, RotateCcw, History,
-  Newspaper, Send, ExternalLink, MessageSquare
+  Newspaper, Send, ExternalLink, MessageSquare, Lock
 } from 'lucide-react';
 import { getLanguage, fetchChapterList, wrapUrlWithProxy } from '../services/storyService';
 import { Language, StoryEpisode } from '../types';
@@ -1052,26 +1052,23 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     </div>
                   </button>
 
-                  {/* ARCHIVE (DISABLED) */}
-                  <button
-                    disabled
-                    aria-disabled="true"
-                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/50 border border-white/10 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed opacity-50 transition-all duration-300"
+                  {/* ARCHIVE (LOCKED) */}
+                  <div
+                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/60 border border-white/5 opacity-50 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed"
+                    title={lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'Раздел в разработке' : 'Under development'}
                   >
                     <div className="flex-1 px-3 md:px-4 flex flex-col justify-center relative z-10 h-full overflow-hidden">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white/60 uppercase tracking-wider font-mono truncate">
+                        <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white/50 uppercase tracking-wider font-mono truncate">
                           {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVE'}
                         </span>
-                        <span className="shrink-0 text-[7.5px] sm:text-[8.5px] font-mono px-1 py-0.5 bg-blue-950/60 border border-blue-500/30 text-blue-400 font-bold uppercase rounded-sm tracking-wider">
-                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'СКОРО' : 'SOON'}
-                        </span>
+                        <Lock className="w-3 h-3 text-white/30 shrink-0" />
                       </div>
                       <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/30 uppercase tracking-widest font-mono mt-0.5 truncate">
-                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// МАТЕРИАЛЫ' : '// EXTRA'}
+                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// В РАЗРАБОТКЕ' : '// COMING SOON'}
                       </span>
                     </div>
-                  </button>
+                  </div>
                 </div>
 
               </div>

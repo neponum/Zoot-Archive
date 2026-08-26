@@ -13,4 +13,4 @@ Clean-param: ref
 User-agent: Googlebot
 Allow: /
 
-Sitemap: https://ais-pre-75ywmlyovzisk3gngkmozf-306937923026.europe-west2.run.app/sitemap.xml
+Sitemap: https://zoot-archive.vercel.app/sitemap.xml
