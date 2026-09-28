@@ -21,6 +21,7 @@ export interface CssTransformBoxProps {
   scaleYFrom?: number;
   duration?: number;
   ease?: string;
+  unit?: '%' | 'px';
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -37,6 +38,7 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
   scaleYFrom,
   duration = 0,
   ease = "easeInOut",
+  unit = '%',
   className = "",
   style = {},
   children
@@ -49,12 +51,12 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
     const node = containerRef.current;
     if (!node) return;
 
-    const last = lastTargetRef.current;
+    const prev = { ...lastTargetRef.current };
     const targetChanged = 
-      last.x !== x || 
-      last.y !== y || 
-      last.scaleX !== scaleX || 
-      last.scaleY !== scaleY;
+      prev.x !== x || 
+      prev.y !== y || 
+      prev.scaleX !== scaleX || 
+      prev.scaleY !== scaleY;
 
     const fromProvided = 
       xFrom !== undefined || 
@@ -63,18 +65,18 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
       scaleYFrom !== undefined;
 
     const cssEase = getCssEase(ease);
-    const targetTransform = `translate3d(${x}px, ${y}px, 0px) scale(${scaleX}, ${scaleY})`;
+    const targetTransform = `translate3d(${x}${unit}, ${y}${unit}, 0px) scale(${scaleX}, ${scaleY})`;
 
     if (isFirstRender.current) {
       isFirstRender.current = false;
       lastTargetRef.current = { x, y, scaleX, scaleY };
 
       if (fromProvided && duration > 0) {
-        const startX = xFrom ?? x;
-        const startY = yFrom ?? y;
-        const startScaleX = scaleXFrom ?? scaleX;
-        const startScaleY = scaleYFrom ?? scaleY;
-        const startTransform = `translate3d(${startX}px, ${startY}px, 0px) scale(${startScaleX}, ${startScaleY})`;
+        const startX = xFrom !== undefined ? xFrom : 0;
+        const startY = yFrom !== undefined ? yFrom : 0;
+        const startScaleX = scaleXFrom !== undefined ? scaleXFrom : 1;
+        const startScaleY = scaleYFrom !== undefined ? scaleYFrom : 1;
+        const startTransform = `translate3d(${startX}${unit}, ${startY}${unit}, 0px) scale(${startScaleX}, ${startScaleY})`;
 
         node.style.transition = 'none';
         node.style.transform = startTransform;
@@ -101,12 +103,16 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
 
       let startTransform: string;
       if (fromProvided) {
-        startTransform = `translate3d(${xFrom ?? x}px, ${yFrom ?? y}px, 0px) scale(${scaleXFrom ?? scaleX}, ${scaleYFrom ?? scaleY})`;
+        const startX = xFrom !== undefined ? xFrom : prev.x;
+        const startY = yFrom !== undefined ? yFrom : prev.y;
+        const startScaleX = scaleXFrom !== undefined ? scaleXFrom : prev.scaleX;
+        const startScaleY = scaleYFrom !== undefined ? scaleYFrom : prev.scaleY;
+        startTransform = `translate3d(${startX}${unit}, ${startY}${unit}, 0px) scale(${startScaleX}, ${startScaleY})`;
       } else {
         const computed = window.getComputedStyle(node).transform;
         startTransform = (computed && computed !== 'none') 
           ? computed 
-          : `translate3d(${last.x}px, ${last.y}px, 0px) scale(${last.scaleX}, ${last.scaleY})`;
+          : `translate3d(${prev.x}${unit}, ${prev.y}${unit}, 0px) scale(${prev.scaleX}, ${prev.scaleY})`;
       }
 
       node.style.transition = 'none';
@@ -123,7 +129,7 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
       });
       return () => cancelAnimationFrame(animationFrame);
     }
-  }, [x, y, scaleX, scaleY, xFrom, yFrom, scaleXFrom, scaleYFrom, duration, ease]);
+  }, [x, y, scaleX, scaleY, xFrom, yFrom, scaleXFrom, scaleYFrom, duration, ease, unit]);
 
   return (
     <div 

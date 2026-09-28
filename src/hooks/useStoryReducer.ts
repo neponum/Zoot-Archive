@@ -109,6 +109,14 @@ export type StoryAction =
   | { type: 'RESET_STATE' };
 
 const getInitialSettings = () => {
+  let initialNick = '';
+  try {
+    const savedDocName = localStorage.getItem('ak-doc-name');
+    if (savedDocName && savedDocName !== 'NUM' && savedDocName.trim() !== '') {
+      initialNick = savedDocName.trim();
+    }
+  } catch {}
+
   const defaultSettings = {
     fontSize: 100, // Percentage
     bgmVolume: 1.0,
@@ -117,7 +125,7 @@ const getInitialSettings = () => {
     textSpeed: 30, // ms per character
     autoDelay: 2000, // ms delay after typing
     fontFamily: 'sans-serif',
-    nickname: '{@nickname}',
+    nickname: initialNick,
     shakeIntensity: 1.0,
     skipSpeed: 4,
   };
@@ -125,7 +133,11 @@ const getInitialSettings = () => {
   try {
     const saved = localStorage.getItem('ak-story-settings');
     if (saved) {
-      return { ...defaultSettings, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      if (parsed.nickname === '{@nickname}') {
+        parsed.nickname = initialNick;
+      }
+      return { ...defaultSettings, ...parsed };
     }
   } catch (e) {
     console.error('Failed to load settings', e);

@@ -130,15 +130,19 @@ export function resolveStoryVariablesInText(
   if (!text) return text;
   let result = text;
 
-  const nickname = options?.customNickname || (options?.lang === 'ru_RU' ? 'Доктор' : options?.lang === 'zh_CN' ? '博士' : 'Doctor');
-
-  // Replace Doctor nickname tags
-  result = result.replace(/\{@nickname(?::[^}]+)?\}/gi, nickname);
-  result = result.replace(/\{@player_name(?::[^}]+)?\}/gi, nickname);
+  // Replace Doctor nickname tags ONLY if customNickname was explicitly provided in options.
+  // If not provided, keep {@nickname} and {@player_name} tags intact so that reactive
+  // viewers can dynamically substitute user preferences without requiring re-parsing.
+  if (options?.customNickname) {
+    result = result.replace(/\{[@\$]?(?:nickname|player_name)(?::[^}]+)?\}/gi, options.customNickname);
+  }
 
   // Replace variable interpolations like {$var_name} or {var_name}
   result = result.replace(/\{(\$?[a-zA-Z0-9_]+)\}/g, (match, varName) => {
     const cleanKey = varName.startsWith('$') ? varName.substring(1) : varName;
+    if (cleanKey.toLowerCase() === 'nickname' || cleanKey.toLowerCase() === 'player_name') {
+      return match;
+    }
     if (options?.customVars && cleanKey in options.customVars) {
       return options.customVars[cleanKey];
     }

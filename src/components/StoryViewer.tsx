@@ -5,7 +5,7 @@ import { audioManager } from '../services/audioManager';
 import { CacheService } from '../services/cacheService';
 import { StoryLine, StoryChapter } from '../types';
 import { UI_STRINGS } from '../translations';
-import { BackgroundLayer } from './story/BackgroundLayer';
+import { BackgroundLayer, normalizeCoordX, normalizeCoordY } from './story/BackgroundLayer';
 import { CssTransformBox } from './story/CssTransformBox';
 import { CharacterLayer } from './story/CharacterLayer';
 import { CharacterCutinLayer } from './story/CharacterCutinLayer';
@@ -134,20 +134,46 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showBugReport, setShowBugReport] = React.useState(false);
 
+  // Effective nickname resolution: checks settings, localStorage, and language default
+  const effectiveNickname = useMemo(() => {
+    if (settings.nickname && settings.nickname !== '{@nickname}' && settings.nickname.trim() !== '') {
+      return settings.nickname.trim();
+    }
+    const savedDocName = typeof localStorage !== 'undefined' ? localStorage.getItem('ak-doc-name') : null;
+    if (savedDocName && savedDocName !== 'NUM' && savedDocName.trim() !== '') {
+      return savedDocName.trim();
+    }
+    const lang = getLanguage();
+    return lang === 'ru_RU' ? 'Доктор' : lang === 'zh_CN' ? '博士' : lang === 'ja_JP' ? 'ドクター' : 'Doctor';
+  }, [settings.nickname]);
+
   // Replacement logic for user nickname
   const replaceNickname = useCallback((text: string | null | undefined): string => {
     if (!text) return '';
-    return text.replace(/{@nickname}/g, settings.nickname || '{@nickname}');
-  }, [settings.nickname]);
+    let result = text;
+    // Replace all variations of Arknights player nickname tags ({nickname}, {@nickname}, {$nickname}, {@player_name}, etc.)
+    result = result.replace(/\{[@\$]?(?:nickname|player_name)(?::[^}]+)?\}/gi, effectiveNickname);
+    // If user specified custom name, also replace literal "Dr. Doctor" or "Доктор Doctor"
+    if (effectiveNickname !== 'Doctor' && effectiveNickname !== 'Доктор' && effectiveNickname !== '博士' && effectiveNickname !== 'ドクター') {
+      result = result.replace(/\bDr\.\s*Doctor\b/g, `Dr. ${effectiveNickname}`);
+      result = result.replace(/\bДоктор\s+Doctor\b/g, `Доктор ${effectiveNickname}`);
+    }
+    return result;
+  }, [effectiveNickname]);
 
   const processedCurrentText = useMemo(() => replaceNickname(currentText), [currentText, replaceNickname]);
-  const processedHistory = useMemo(() => history.map(h => ({ ...h, text: replaceNickname(h.text) })), [history, replaceNickname]);
+  const processedSpeaker = useMemo(() => replaceNickname(currentSpeaker), [currentSpeaker, replaceNickname]);
+  const processedHistory = useMemo(() => history.map(h => ({ 
+    ...h, 
+    speaker: replaceNickname(h.speaker),
+    text: replaceNickname(h.text) 
+  })), [history, replaceNickname]);
   const fullScriptText = useMemo(() => {
     return lines
       .map((l, i) => ({ ...l, originalIndex: i }))
       .filter(l => (l.type === 'subtitle' || l.type === 'dialogue') && l.text)
       .map(l => ({
-        speaker: l.characterName || null,
+        speaker: replaceNickname(l.characterName || null),
         text: replaceNickname(l.text) || '',
         lineIndex: l.originalIndex
       }));
@@ -186,6 +212,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Settings persistence
   useEffect(() => {
     localStorage.setItem('ak-story-settings', JSON.stringify(settings));
+    if (settings.nickname && settings.nickname !== '{@nickname}') {
+      localStorage.setItem('ak-doc-name', settings.nickname.trim());
+    }
   }, [settings]);
 
   // Sync ref with state for callbacks
@@ -1408,12 +1437,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         className="relative w-full max-w-[177.78dvh] aspect-video bg-black shadow-2xl overflow-hidden @container"
       >
         <CssTransformBox
-          x={cameraTransform?.x ?? 0}
-          y={cameraTransform?.y ?? 0}
+          x={normalizeCoordX(cameraTransform?.x ?? 0)}
+          y={normalizeCoordY(cameraTransform?.y ?? 0)}
           scaleX={cameraTransform?.scale ?? 1}
           scaleY={cameraTransform?.scale ?? 1}
           duration={cameraTransform?.duration !== undefined ? cameraTransform.duration : 1.0}
           ease={cameraTransform?.ease || "easeInOut"}
+          unit="%"
           className="absolute inset-0 origin-center pointer-events-none"
         >
           <BackgroundLayer 
@@ -1451,7 +1481,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         <DialogueUI 
           showUI={showUI && !isCinematic}
           currentIndex={currentIndex}
-          currentSpeaker={currentSpeaker}
+          currentSpeaker={processedSpeaker}
           currentText={processedCurrentText}
           dialogueKey={state.dialogueKey}
           isSkipping={isSkipping}

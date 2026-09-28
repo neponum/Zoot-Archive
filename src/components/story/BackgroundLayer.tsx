@@ -11,6 +11,31 @@ interface BackgroundLayerProps {
   bgTween: any;
 }
 
+export const normalizeCoordX = (x?: number, scaleX: number = 1): number => {
+  if (x === undefined || isNaN(x)) return 0;
+  const rawPercent = (x / 1920) * 100;
+  if (scaleX > 1) {
+    // When zoomed in, maximum pan is the overflow margin
+    const maxBound = ((scaleX - 1) / 2) * 100;
+    return Math.max(-maxBound, Math.min(maxBound, rawPercent));
+  }
+  // When scale <= 1, prevent extreme values (> 35%) from pushing image out of screen
+  return Math.max(-35, Math.min(35, rawPercent));
+};
+
+export const normalizeCoordY = (y?: number, scaleY: number = 1): number => {
+  if (y === undefined || isNaN(y)) return 0;
+  // Invert Y because in Arknights Unity AVG +Y is up, in CSS translateY +Y is down
+  const rawPercent = (-y / 1080) * 100;
+  if (scaleY > 1) {
+    // When zoomed in, maximum pan is the overflow margin
+    const maxBound = ((scaleY - 1) / 2) * 100;
+    return Math.max(-maxBound, Math.min(maxBound, rawPercent));
+  }
+  // When scale <= 1, prevent extreme values (> 35%) from pushing image out of screen
+  return Math.max(-35, Math.min(35, rawPercent));
+};
+
 export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
   bgUrl,
   imageUrl,
@@ -19,37 +44,26 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
 }) => {
   const bgScaleX = bgTween ? (bgTween.xScaleTo !== undefined ? bgTween.xScaleTo : (bgTween.xScale ?? 1)) : 1;
   const bgScaleY = bgTween ? (bgTween.yScaleTo !== undefined ? bgTween.yScaleTo : (bgTween.yScale ?? 1)) : 1;
-  const bgX = bgTween ? (bgTween.xTo !== undefined ? bgTween.xTo : (bgTween.x ?? 0)) : 0;
-  const bgY = bgTween ? (bgTween.yTo !== undefined ? bgTween.yTo : (bgTween.y ?? 0)) : 0;
+  const rawBgX = bgTween ? (bgTween.xTo !== undefined ? bgTween.xTo : (bgTween.x ?? 0)) : 0;
+  const rawBgY = bgTween ? (bgTween.yTo !== undefined ? bgTween.yTo : (bgTween.y ?? 0)) : 0;
+  const bgX = normalizeCoordX(rawBgX, bgScaleX);
+  const bgY = normalizeCoordY(rawBgY, bgScaleY);
   const bgScaleXFrom = bgTween?.xScaleFrom;
   const bgScaleYFrom = bgTween?.yScaleFrom;
-  const bgXFrom = bgTween?.xFrom;
-  const bgYFrom = bgTween?.yFrom;
+  const bgXFrom = bgTween?.xFrom !== undefined ? normalizeCoordX(bgTween.xFrom, bgScaleXFrom ?? bgScaleX) : undefined;
+  const bgYFrom = bgTween?.yFrom !== undefined ? normalizeCoordY(bgTween.yFrom, bgScaleYFrom ?? bgScaleY) : undefined;
   const bgDuration = bgTween?.duration !== undefined ? bgTween.duration : 1.0;
   const bgEase = bgTween?.ease || "easeInOut";
 
-  const isImageTween = imageTween?.type === 'imagetween' || (imageTween?.xScaleTo !== undefined || imageTween?.xTo !== undefined || imageTween?.xScaleFrom !== undefined);
-
-  // Determine if the CG is undergoing panning / position displacement
-  const hasPan = Boolean(
-    (imageTween?.x !== undefined && imageTween.x !== 0) ||
-    (imageTween?.y !== undefined && imageTween.y !== 0) ||
-    (imageTween?.xTo !== undefined && imageTween.xTo !== 0) ||
-    (imageTween?.yTo !== undefined && imageTween.yTo !== 0) ||
-    (imageTween?.xFrom !== undefined && imageTween.xFrom !== 0) ||
-    (imageTween?.yFrom !== undefined && imageTween.yFrom !== 0)
-  );
+  const isImageTween = imageTween?.type === 'imagetween' || (imageTween?.xScaleTo !== undefined || imageTween?.xTo !== undefined || imageTween?.xScaleFrom !== undefined || imageTween?.yTo !== undefined || imageTween?.yFrom !== undefined);
 
   // In Arknights, 0.4 is the base 1.0 (100% screen cover) scale for high-res 2.5x CG textures.
   // We normalize scale <= 0.65 by multiplying by 2.5 so that 0.4 becomes 1.0 full screen.
   const normalizeScale = (scale: number | undefined): number => {
-    if (scale === undefined) return hasPan ? 1.25 : 1;
+    if (scale === undefined) return 1;
     let s = scale;
     if (s > 0 && s <= 0.65) {
       s = s * 2.5; // 0.4 -> 1.0, 0.5 -> 1.25, etc.
-    }
-    if (hasPan && s < 1.2) {
-      s = 1.25;
     }
     return s;
   };
@@ -59,12 +73,14 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
 
   const imgScaleX = normalizeScale(rawScaleX);
   const imgScaleY = normalizeScale(rawScaleY);
-  const imgX = imageTween ? (imageTween.xTo !== undefined ? imageTween.xTo : (imageTween.x ?? 0)) : 0;
-  const imgY = imageTween ? (imageTween.yTo !== undefined ? imageTween.yTo : (imageTween.y ?? 0)) : 0;
+  const rawImgX = imageTween ? (imageTween.xTo !== undefined ? imageTween.xTo : (imageTween.x ?? 0)) : 0;
+  const rawImgY = imageTween ? (imageTween.yTo !== undefined ? imageTween.yTo : (imageTween.y ?? 0)) : 0;
+  const imgX = normalizeCoordX(rawImgX, imgScaleX);
+  const imgY = normalizeCoordY(rawImgY, imgScaleY);
   const imgScaleXFrom = imageTween?.xScaleFrom !== undefined ? normalizeScale(imageTween.xScaleFrom) : undefined;
   const imgScaleYFrom = imageTween?.yScaleFrom !== undefined ? normalizeScale(imageTween.yScaleFrom) : undefined;
-  const imgXFrom = imageTween?.xFrom;
-  const imgYFrom = imageTween?.yFrom;
+  const imgXFrom = imageTween?.xFrom !== undefined ? normalizeCoordX(imageTween.xFrom, imgScaleXFrom ?? imgScaleX) : undefined;
+  const imgYFrom = imageTween?.yFrom !== undefined ? normalizeCoordY(imageTween.yFrom, imgScaleYFrom ?? imgScaleY) : undefined;
   const imgDuration = isImageTween ? (imageTween?.duration !== undefined ? imageTween.duration : 1.0) : 0;
   const imgEase = imageTween?.ease || "easeInOut";
   const imageFadeDuration = !isImageTween && imageTween?.duration !== undefined ? imageTween.duration : 0.4;

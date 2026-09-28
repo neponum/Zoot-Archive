@@ -291,13 +291,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       textSpeed: 30,
       autoDelay: 2000,
       fontFamily: 'sans-serif',
-      nickname: '{@nickname}',
+      nickname: '',
       shakeIntensity: 1.0,
       skipSpeed: 4,
     };
     try {
       const saved = localStorage.getItem('ak-story-settings');
-      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.nickname === '{@nickname}') parsed.nickname = '';
+        return { ...defaultSettings, ...parsed };
+      }
+      return defaultSettings;
     } catch {
       return defaultSettings;
     }
@@ -307,6 +312,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     setSettings(prev => {
       const next = { ...prev, ...updated };
       localStorage.setItem('ak-story-settings', JSON.stringify(next));
+      if (updated.nickname) {
+        setDocName(updated.nickname);
+        localStorage.setItem('ak-doc-name', updated.nickname);
+      }
       return next;
     });
   };
@@ -331,7 +340,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       textSpeed: 30,
       autoDelay: 2000,
       fontFamily: 'sans-serif',
-      nickname: '{@nickname}',
+      nickname: '',
       shakeIntensity: 1.0,
       skipSpeed: 4
     };
@@ -341,7 +350,20 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   // Doctor profile states
-  const [docName, setDocName] = useState(() => localStorage.getItem('ak-doc-name') || 'NUM');
+  const [docName, setDocName] = useState(() => {
+    const savedDoc = localStorage.getItem('ak-doc-name');
+    if (savedDoc && savedDoc !== 'NUM') return savedDoc;
+    try {
+      const savedSettings = localStorage.getItem('ak-story-settings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.nickname && parsed.nickname !== '{@nickname}' && parsed.nickname.trim() !== '') {
+          return parsed.nickname.trim();
+        }
+      }
+    } catch {}
+    return savedDoc || 'NUM';
+  });
   const [isEditingName, setIsEditingName] = useState(false);
   const [docLevel, setDocLevel] = useState(() => parseInt(localStorage.getItem('ak-doc-level') || '83'));
   
@@ -485,6 +507,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   // Persist doctor details
   useEffect(() => {
     localStorage.setItem('ak-doc-name', docName);
+    try {
+      const saved = localStorage.getItem('ak-story-settings');
+      const current = saved ? JSON.parse(saved) : {};
+      if (current.nickname !== docName && docName !== 'NUM') {
+        current.nickname = docName;
+        localStorage.setItem('ak-story-settings', JSON.stringify(current));
+        setSettings(prev => ({ ...prev, nickname: docName }));
+      }
+    } catch {}
   }, [docName]);
   
   useEffect(() => {

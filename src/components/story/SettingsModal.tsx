@@ -49,6 +49,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleNicknameChange = (value: string) => {
     onUpdateSettings({ nickname: value });
+    try {
+      localStorage.setItem('ak-doc-name', value);
+    } catch {}
   };
 
   const resetSettings = () => {
@@ -60,7 +63,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       textSpeed: 30,
       autoDelay: 2000,
       fontFamily: 'sans-serif',
-      nickname: '{@nickname}',
+      nickname: '',
       shakeIntensity: 1.0
     };
     onUpdateSettings(defaultSettings);
@@ -143,13 +146,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <input
                     type="text"
-                    value={settings.nickname}
+                    value={settings.nickname === '{@nickname}' ? '' : settings.nickname}
                     onChange={(e) => handleNicknameChange(e.target.value)}
                     placeholder={t.enter_nickname || "Введите ваше имя..."}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
                   />
                   <p className="text-xs text-white/40 italic">
-                    {t.nickname_hint || 'Это имя будет отображаться в диалогах вместо {@nickname}'}
+                    {t.nickname_hint || 'Это имя будет отображаться в диалогах вместо Доктора'}
                   </p>
                 </div>
               </section>
