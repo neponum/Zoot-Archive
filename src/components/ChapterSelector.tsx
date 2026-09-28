@@ -658,9 +658,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
   const prevViewModeRef = useRef(viewMode);
 
   useEffect(() => {
-    if (prevViewModeRef.current === 'ALL' && viewMode !== 'ALL') {
-      setSortOrder('asc');
-      localStorage.setItem('ak-sort-order', 'asc');
+    if (prevViewModeRef.current !== viewMode) {
+      if (prevViewModeRef.current === 'ALL' && viewMode !== 'ALL') {
+        setSortOrder('asc');
+        localStorage.setItem('ak-sort-order', 'asc');
+      }
+      setSearchQuery('');
     }
     prevViewModeRef.current = viewMode;
   }, [viewMode]);
@@ -1195,70 +1198,81 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
 
                 {/* Top Right: Search, Sort, Lang & Mode Group */}
                 <div className="flex items-center gap-3 pointer-events-auto">
-                  {viewMode === 'ALL' && !isMobile && (
+                  {!isMobile && (
                     <>
                       {/* Search Bar */}
                       <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/60 transition-colors" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/60 transition-colors pointer-events-none" />
                         <input 
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="SEARCH..."
-                          className="w-36 bg-black/60 border border-white/10 rounded-sm h-9 pl-8 pr-3 text-[9px] font-black tracking-widest text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 focus:w-48 transition-all uppercase backdrop-blur-md"
+                          placeholder={uiLang === 'ru_RU' ? 'ПОИСК...' : 'SEARCH...'}
+                          className="w-36 bg-black/60 border border-white/10 rounded-sm h-9 pl-8 pr-7 text-[9px] font-black tracking-widest text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 focus:w-48 transition-all uppercase backdrop-blur-md"
                         />
-                      </div>
-
-                      {/* Sort Selector */}
-                      <div className="relative shrink-0">
-                        <button 
-                          onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
-                          className={`h-9 px-3 border transition-all rounded-sm bg-black/60 backdrop-blur-md flex items-center gap-2 text-white/60 hover:text-white hover:bg-white/5 ${isSortMenuOpen ? 'border-white text-white bg-white/10' : 'border-white/10'}`}
-                          title="Sort Order"
-                        >
-                          <SlidersHorizontal className="w-3.5 h-3.5 text-white/40" />
-                          <span className="text-[8px] font-black tracking-widest uppercase">
-                            {sortOrder === 'textLength' ? (uiLang === 'ru_RU' ? 'По тексту' : 'Text Vol') :
-                             sortOrder === 'desc' ? (uiLang === 'ru_RU' ? 'Новые' : 'Newest') :
-                             (uiLang === 'ru_RU' ? 'Старые' : 'Oldest')}
-                          </span>
-                        </button>
-                        
-                        {isSortMenuOpen && (
-                          <div className="absolute top-11 right-0 w-48 bg-[#0a0a0a] border border-white/10 shadow-2xl p-2 z-[60] rounded-sm">
-                            <button
-                              onClick={() => {
-                                setSortOrder('textLength');
-                                setIsSortMenuOpen(false);
-                              }}
-                              className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'textLength' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
-                            >
-                              {uiLang === 'ru_RU' ? 'По количеству текста' : 'By text quantity'}
-                              {sortOrder === 'textLength' && <Check className="w-3 h-3" />}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSortOrder('desc');
-                                setIsSortMenuOpen(false);
-                              }}
-                              className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'desc' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
-                            >
-                              {uiLang === 'ru_RU' ? 'Сначала новые' : 'Newest First'}
-                              {sortOrder === 'desc' && <Check className="w-3 h-3" />}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSortOrder('asc');
-                                setIsSortMenuOpen(false);
-                              }}
-                              className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'asc' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
-                            >
-                              {uiLang === 'ru_RU' ? 'Сначала старые' : 'Oldest First'}
-                              {sortOrder === 'asc' && <Check className="w-3 h-3" />}
-                            </button>
-                          </div>
+                        {searchQuery && (
+                          <button 
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-0.5 cursor-pointer"
+                            title={uiLang === 'ru_RU' ? 'Очистить' : 'Clear'}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
+
+                      {/* Sort Selector - only for ALL mode */}
+                      {viewMode === 'ALL' && (
+                        <div className="relative shrink-0">
+                          <button 
+                            onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
+                            className={`h-9 px-3 border transition-all rounded-sm bg-black/60 backdrop-blur-md flex items-center gap-2 text-white/60 hover:text-white hover:bg-white/5 ${isSortMenuOpen ? 'border-white text-white bg-white/10' : 'border-white/10'}`}
+                            title="Sort Order"
+                          >
+                            <SlidersHorizontal className="w-3.5 h-3.5 text-white/40" />
+                            <span className="text-[8px] font-black tracking-widest uppercase">
+                              {sortOrder === 'textLength' ? (uiLang === 'ru_RU' ? 'По тексту' : 'Text Vol') :
+                               sortOrder === 'desc' ? (uiLang === 'ru_RU' ? 'Новые' : 'Newest') :
+                               (uiLang === 'ru_RU' ? 'Старые' : 'Oldest')}
+                            </span>
+                          </button>
+                          
+                          {isSortMenuOpen && (
+                            <div className="absolute top-11 right-0 w-48 bg-[#0a0a0a] border border-white/10 shadow-2xl p-2 z-[60] rounded-sm">
+                              <button
+                                onClick={() => {
+                                  setSortOrder('textLength');
+                                  setIsSortMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'textLength' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                              >
+                                {uiLang === 'ru_RU' ? 'По количеству текста' : 'By text quantity'}
+                                {sortOrder === 'textLength' && <Check className="w-3 h-3" />}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSortOrder('desc');
+                                  setIsSortMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'desc' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                              >
+                                {uiLang === 'ru_RU' ? 'Сначала новые' : 'Newest First'}
+                                {sortOrder === 'desc' && <Check className="w-3 h-3" />}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSortOrder('asc');
+                                  setIsSortMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${sortOrder === 'asc' ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                              >
+                                {uiLang === 'ru_RU' ? 'Сначала старые' : 'Oldest First'}
+                                {sortOrder === 'asc' && <Check className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -1413,6 +1427,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                 key={line.id}
                                 onClick={() => {
                                   setSelectedStoryLine(line.id);
+                                  setSearchQuery('');
                                   if (isMobile) setShowEpisodesOnMobile(true);
                                 }}
                                 className={`group relative w-full flex items-center gap-4 py-4 pl-10 pr-6 transition-all duration-300 text-left outline-none ${isSelected ? 'text-white' : 'text-white/40 hover:text-white/80'}`}
@@ -1459,6 +1474,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                 key={year.value}
                                 onClick={() => {
                                   setSelectedYear(year.value);
+                                  setSearchQuery('');
                                   if (isMobile) setShowEpisodesOnMobile(true);
                                 }}
                                 className={`group relative w-full flex items-center gap-4 py-5 pl-10 pr-6 transition-all duration-300 text-left outline-none ${isSelected ? 'text-white' : 'text-white/40 hover:text-white/80'}`}
@@ -1559,10 +1575,35 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                       )
                     ) : (
                       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-transparent">
-                        <AlertCircle className="w-12 h-12 text-white/10 mb-4" />
-                        <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">
-                          No records found in this category
-                        </span>
+                        {searchQuery ? (
+                          <>
+                            <Search className="w-10 h-10 text-white/20 mb-3" />
+                            <span className="text-[11px] font-black text-white/60 uppercase tracking-[0.2em] mb-1 text-center max-w-md">
+                              {uiLang === 'ru_RU' 
+                                ? `По запросу «${searchQuery}» ничего не найдено` 
+                                : `No stories found for "${searchQuery}"`}
+                            </span>
+                            <span className="text-[9px] text-white/30 tracking-widest uppercase mb-4 text-center">
+                              {uiLang === 'ru_RU' 
+                                ? 'В текущей категории нет совпадений' 
+                                : 'No matching stories in this category'}
+                            </span>
+                            <button
+                              onClick={() => setSearchQuery('')}
+                              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-sm text-xs font-mono font-bold tracking-wider uppercase transition-all cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>{uiLang === 'ru_RU' ? 'Сбросить поиск' : 'Clear search'}</span>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-12 h-12 text-white/10 mb-4" />
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">
+                              {uiLang === 'ru_RU' ? 'В этой категории пока нет записей' : 'No records found in this category'}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
 
@@ -1574,6 +1615,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                           setViewMode('STORYLINE');
                           setSelectedStoryLine('is');
                           setSelectedEpisode(null);
+                          setSearchQuery('');
                           if (isMobile) setShowEpisodesOnMobile(true);
                         }}
                         className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${
@@ -1601,6 +1643,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                           setViewMode('STORYLINE');
                           setSelectedStoryLine('ra');
                           setSelectedEpisode(null);
+                          setSearchQuery('');
                           if (isMobile) setShowEpisodesOnMobile(true);
                         }}
                         className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${
@@ -1628,6 +1671,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                           setViewMode('STORYLINE');
                           setSelectedStoryLine('side_content');
                           setSelectedEpisode(null);
+                          setSearchQuery('');
                           if (isMobile) setShowEpisodesOnMobile(true);
                         }}
                         className={`group flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1 md:py-1.5 rounded-sm border transition-all cursor-pointer select-none shrink-0 ${

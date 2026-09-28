@@ -1898,7 +1898,7 @@
   "raidian": {
     "displayName": "Raidian",
     "englishName": "Raidian",
-    "chineseName": "Raidian",
+    "chineseName": "电弧",
     "russianName": "Райдиан"
   },
   "char_420_flamtl": {
@@ -2036,7 +2036,7 @@
   "mechanist": {
     "displayName": "Mechanist",
     "englishName": "Mechanist",
-    "chineseName": "Mechanist",
+    "chineseName": "机械师",
     "russianName": "Механист"
   },
   "char_4235_thumpy": {
@@ -2206,120 +2206,6 @@
     "englishName": "Pallas",
     "chineseName": "帕拉斯",
     "russianName": "Паллада"
-  },
-  "char_608_acpion": {
-    "displayName": "Tulip",
-    "englishName": "Tulip",
-    "chineseName": "郁金香",
-    "russianName": "Тюльпан"
-  },
-  "acpion": {
-    "displayName": "Tulip",
-    "englishName": "Tulip",
-    "chineseName": "郁金香",
-    "russianName": "Тюльпан"
-  },
-  "tulip": {
-    "displayName": "Tulip",
-    "englishName": "Tulip",
-    "chineseName": "郁金香",
-    "russianName": "Тюльпан"
-  },
-  "char_609_acguad": {
-    "displayName": "Sharp",
-    "englishName": "Sharp",
-    "chineseName": "Sharp",
-    "russianName": "Шарп"
-  },
-  "acguad": {
-    "displayName": "Sharp",
-    "englishName": "Sharp",
-    "chineseName": "Sharp",
-    "russianName": "Шарп"
-  },
-  "sharp": {
-    "displayName": "Sharp",
-    "englishName": "Sharp",
-    "chineseName": "Sharp",
-    "russianName": "Шарп"
-  },
-  "char_610_acfend": {
-    "displayName": "Mechanist",
-    "englishName": "Mechanist",
-    "chineseName": "Mechanist",
-    "russianName": "Механист"
-  },
-  "acfend": {
-    "displayName": "Mechanist",
-    "englishName": "Mechanist",
-    "chineseName": "Mechanist",
-    "russianName": "Механист"
-  },
-  "char_611_acnipe": {
-    "displayName": "Stormeye",
-    "englishName": "Stormeye",
-    "chineseName": "Stormeye",
-    "russianName": "Штормай"
-  },
-  "acnipe": {
-    "displayName": "Stormeye",
-    "englishName": "Stormeye",
-    "chineseName": "Stormeye",
-    "russianName": "Штормай"
-  },
-  "stormeye": {
-    "displayName": "Stormeye",
-    "englishName": "Stormeye",
-    "chineseName": "Stormeye",
-    "russianName": "Штормай"
-  },
-  "char_612_accast": {
-    "displayName": "Pith",
-    "englishName": "Pith",
-    "chineseName": "Pith",
-    "russianName": "Пит"
-  },
-  "accast": {
-    "displayName": "Pith",
-    "englishName": "Pith",
-    "chineseName": "Pith",
-    "russianName": "Пит"
-  },
-  "pith": {
-    "displayName": "Pith",
-    "englishName": "Pith",
-    "chineseName": "Pith",
-    "russianName": "Пит"
-  },
-  "char_613_acmedc": {
-    "displayName": "Touch",
-    "englishName": "Touch",
-    "chineseName": "Touch",
-    "russianName": "Тач"
-  },
-  "acmedc": {
-    "displayName": "Touch",
-    "englishName": "Touch",
-    "chineseName": "Touch",
-    "russianName": "Тач"
-  },
-  "touch": {
-    "displayName": "Touch",
-    "englishName": "Touch",
-    "chineseName": "Touch",
-    "russianName": "Тач"
-  },
-  "char_614_acsupo": {
-    "displayName": "Raidian",
-    "englishName": "Raidian",
-    "chineseName": "Raidian",
-    "russianName": "Райдиан"
-  },
-  "acsupo": {
-    "displayName": "Raidian",
-    "englishName": "Raidian",
-    "chineseName": "Raidian",
-    "russianName": "Райдиан"
   },
   "char_615_acspec": {
     "displayName": "Misery",
@@ -5489,6 +5375,12 @@
     "chineseName": "Sharp",
     "russianName": "Шарп"
   },
+  "sharp": {
+    "displayName": "Sharp",
+    "englishName": "Sharp",
+    "chineseName": "Sharp",
+    "russianName": "Шарп"
+  },
   "char_509_acast": {
     "displayName": "Pith",
     "englishName": "Pith",
@@ -5496,6 +5388,12 @@
     "russianName": "Пит"
   },
   "acast": {
+    "displayName": "Pith",
+    "englishName": "Pith",
+    "chineseName": "Pith",
+    "russianName": "Пит"
+  },
+  "pith": {
     "displayName": "Pith",
     "englishName": "Pith",
     "chineseName": "Pith",
@@ -5513,6 +5411,12 @@
     "chineseName": "Touch",
     "russianName": "Тач"
   },
+  "touch": {
+    "displayName": "Touch",
+    "englishName": "Touch",
+    "chineseName": "Touch",
+    "russianName": "Тач"
+  },
   "char_511_asnipe": {
     "displayName": "Stormeye",
     "englishName": "Stormeye",
@@ -5525,17 +5429,11 @@
     "chineseName": "Stormeye",
     "russianName": "Штормай"
   },
-  "char_512_aprot": {
-    "displayName": "Shalem",
-    "englishName": "Shalem",
-    "chineseName": "暮落",
-    "russianName": "Шалем"
-  },
-  "aprot": {
-    "displayName": "Shalem",
-    "englishName": "Shalem",
-    "chineseName": "暮落",
-    "russianName": "Шалем"
+  "stormeye": {
+    "displayName": "Stormeye",
+    "englishName": "Stormeye",
+    "chineseName": "Stormeye",
+    "russianName": "Штормай"
   },
   "char_513_apionr": {
     "displayName": "Tulip",
@@ -5544,6 +5442,12 @@
     "russianName": "Тюльпан"
   },
   "apionr": {
+    "displayName": "Tulip",
+    "englishName": "Tulip",
+    "chineseName": "郁金香",
+    "russianName": "Тюльпан"
+  },
+  "tulip": {
     "displayName": "Tulip",
     "englishName": "Tulip",
     "chineseName": "郁金香",
@@ -6575,60 +6479,6 @@
     "chineseName": "预备干员-近卫",
     "russianName": "Резервный оперативник (Гвардеец)"
   },
-  "char_602_cdfend": {
-    "displayName": "Reserve Operator - Defender",
-    "englishName": "Reserve Operator - Defender",
-    "chineseName": "预备干员-重装",
-    "russianName": "Резервный оперативник (Защитник)"
-  },
-  "cdfend": {
-    "displayName": "Reserve Operator - Defender",
-    "englishName": "Reserve Operator - Defender",
-    "chineseName": "预备干员-重装",
-    "russianName": "Резервный оперативник (Защитник)"
-  },
-  "reserveoperatordefender": {
-    "displayName": "Reserve Operator - Defender",
-    "englishName": "Reserve Operator - Defender",
-    "chineseName": "预备干员-重装",
-    "russianName": "Резервный оперативник (Защитник)"
-  },
-  "char_603_csnipe": {
-    "displayName": "Reserve Operator - Sniper",
-    "englishName": "Reserve Operator - Sniper",
-    "chineseName": "预备干员-狙击",
-    "russianName": "Резервный оперативник (Снайпер)"
-  },
-  "csnipe": {
-    "displayName": "Reserve Operator - Sniper",
-    "englishName": "Reserve Operator - Sniper",
-    "chineseName": "预备干员-狙击",
-    "russianName": "Резервный оперативник (Снайпер)"
-  },
-  "reserveoperatorsniper": {
-    "displayName": "Reserve Operator - Sniper",
-    "englishName": "Reserve Operator - Sniper",
-    "chineseName": "预备干员-狙击",
-    "russianName": "Резервный оперативник (Снайпер)"
-  },
-  "char_604_ccast": {
-    "displayName": "Reserve Operator - Caster",
-    "englishName": "Reserve Operator - Caster",
-    "chineseName": "预备干员-术师",
-    "russianName": "Резервный оперативник (Кастер)"
-  },
-  "ccast": {
-    "displayName": "Reserve Operator - Caster",
-    "englishName": "Reserve Operator - Caster",
-    "chineseName": "预备干员-术师",
-    "russianName": "Резервный оперативник (Кастер)"
-  },
-  "reserveoperatorcaster": {
-    "displayName": "Reserve Operator - Caster",
-    "englishName": "Reserve Operator - Caster",
-    "chineseName": "预备干员-术师",
-    "russianName": "Резервный оперативник (Кастер)"
-  },
   "char_605_cmedic": {
     "displayName": "Reserve Operator - Medic",
     "englishName": "Reserve Operator - Medic",
@@ -6977,6 +6827,12 @@
     "chineseName": "预备干员-术师",
     "russianName": "Резервный оперативник (Кастер)"
   },
+  "reserveoperatorcaster": {
+    "displayName": "Reserve Operator - Caster",
+    "englishName": "Reserve Operator - Caster",
+    "chineseName": "预备干员-术师",
+    "russianName": "Резервный оперативник (Кастер)"
+  },
   "char_506_rmedic": {
     "displayName": "Reserve Operator - Logistics",
     "englishName": "Reserve Operator - Logistics",
@@ -7007,6 +6863,12 @@
     "chineseName": "预备干员-狙击",
     "russianName": "Резервный оперативник (Снайпер)"
   },
+  "reserveoperatorsniper": {
+    "displayName": "Reserve Operator - Sniper",
+    "englishName": "Reserve Operator - Sniper",
+    "chineseName": "预备干员-狙击",
+    "russianName": "Резервный оперативник (Снайпер)"
+  },
   "char_514_rdfend": {
     "displayName": "Reserve Operator - Defender",
     "englishName": "Reserve Operator - Defender",
@@ -7014,6 +6876,12 @@
     "russianName": "Резервный оперативник (Защитник)"
   },
   "rdfend": {
+    "displayName": "Reserve Operator - Defender",
+    "englishName": "Reserve Operator - Defender",
+    "chineseName": "预备干员-重装",
+    "russianName": "Резервный оперативник (Защитник)"
+  },
+  "reserveoperatordefender": {
     "displayName": "Reserve Operator - Defender",
     "englishName": "Reserve Operator - Defender",
     "chineseName": "预备干员-重装",
