@@ -106,6 +106,13 @@ export class Lexer {
         this.pos++;
         this.col++;
       }
+      // Safety: guarantee forward progress on unexpected characters inside a tag (e.g. '[' in "[[Sticker(...)]]").
+      // Without this the lexer would return an empty token forever and hang the parser.
+      if (id === '' && this.pos < this.input.length) {
+        id = this.input[this.pos];
+        this.pos++;
+        this.col++;
+      }
       return { type: TokenType.IDENTIFIER, value: id, line: this.line, col: startCol };
     }
   }

@@ -31,8 +31,8 @@ interface TranslationInterfaceProps {
 }
 
 // Constants
-// Discord Webhook URL for submissions (configured via environment variables)
-const SUBMISSION_WEBHOOK_URL = import.meta.env.VITE_SUBMISSION_WEBHOOK_URL || '';
+// Discord submissions are proxied via /api/submit (server-side webhook).
+// submissionEnabled (fetched from /api/submit/status) gates the submit UI.
 
 const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
   { id: 'zh_CN', label: '简体中文', isOfficial: true },
@@ -516,6 +516,20 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [originalScriptText, setOriginalScriptText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submissionEnabled, setSubmissionEnabled] = useState(false);
+
+  // Submissions go through the server (/api/submit) so the Discord webhook URL
+  // is never exposed in the client bundle. The server reports whether it is configured.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/submit/status')
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: { enabled?: boolean } | null) => {
+        if (!cancelled && data) setSubmissionEnabled(!!data.enabled);
+      })
+      .catch(() => { /* submissions stay disabled */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const [isTranslatingAll, setIsTranslatingAll] = useState(false);
   const [translatingBlockIds, setTranslatingBlockIds] = useState<Set<string>>(new Set());
@@ -3219,7 +3233,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
   };
 
   const handleSubmitToDiscord = async () => {
-    if (!SUBMISSION_WEBHOOK_URL) return;
+    if (!submissionEnabled) return;
 
     if (discordUser && activeProfile !== discordUser.username) {
       alert(`Отправка перевода возможна только под вашим Discord-именем (${discordUser.username}).\n\nПожалуйста, переименуйте текущий профиль или переключитесь на нужный перед отправкой.`);
@@ -3360,7 +3374,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
         formData.append('payload_json', JSON.stringify(payload));
         formData.append('file0', item.file);
 
-        const response = await fetch(SUBMISSION_WEBHOOK_URL, {
+        const response = await fetch('/api/submit', {
           method: 'POST',
           body: formData
         });
@@ -4042,7 +4056,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                           Мы используем процесс проверки сообществом для обеспечения высокого качества. Пожалуйста, присоединяйтесь к нашему Discord-серверу для отправки экспортированного файла:
                         </p>
                         
-                        {SUBMISSION_WEBHOOK_URL ? (
+                        {submissionEnabled ? (
                           <div className="flex flex-col gap-2">
                             {!discordUser ? (
                               <button 

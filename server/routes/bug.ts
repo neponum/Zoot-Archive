@@ -72,7 +72,7 @@ router.post('/', async (req: Request, res: Response) => {
 
   const cleanTranslator = typeof context.translator === 'string' ? context.translator.trim().slice(0, 100) : 'Переводчик';
 
-  const webhookUrl = process.env.DISCORD_BUG_WEBHOOK_URL || process.env.VITE_SUBMISSION_WEBHOOK_URL;
+  const webhookUrl = process.env.DISCORD_BUG_WEBHOOK_URL || process.env.DISCORD_SUBMISSION_WEBHOOK_URL || process.env.VITE_SUBMISSION_WEBHOOK_URL;
   if (!webhookUrl) {
     return res.status(500).json({ error: "Webhook URL not configured" });
   }

@@ -75,8 +75,10 @@ This architecture ensures that all API routes (`/api/*`) and OAuth callbacks (`/
 
 ### Production Mode (`npm run build` -> `npm start`)
 1. `vite build` bundles the frontend into the `dist/` folder.
-2. `esbuild` bundles `server.ts` and its dependencies into `dist/server.cjs`.
-3. `node dist/server.cjs` serves compiled static files from `dist/` and acts as fallback for client-side HTML5 SPA routing (`app.get('*', ...)`).
+2. `esbuild` bundles `server.ts` and its dependencies into `dist-server/server.cjs`.
+3. `node dist-server/server.cjs` serves compiled static files from `dist/` and acts as fallback for client-side HTML5 SPA routing (`app.get('*', ...)`).
+
+> Security note: the server bundle is intentionally written to `dist-server/`, **outside** the `dist/` directory that `@vercel/static-build` publishes. Never move it back into `dist/` — it would expose server source code (and its source map) as public static assets.
 
 ---
 

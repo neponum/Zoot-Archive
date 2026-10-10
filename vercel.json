@@ -19,6 +19,16 @@
       "permanent": true
     },
     {
+      "source": "/server.cjs",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/server.cjs.map",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/src/(.*)",
       "destination": "/",
       "permanent": true

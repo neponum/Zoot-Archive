@@ -10,6 +10,7 @@ import proxyRoutes from "./server/routes/proxy.js";
 import bugRoutes from "./server/routes/bug.js";
 import translateRoutes from "./server/routes/translate.js";
 import voteRoutes from "./server/routes/vote.js";
+import submitRoutes from "./server/routes/submit.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
@@ -63,6 +64,7 @@ async function startServer() {
   app.use("/api/bug-report", bugRoutes);
   app.use("/api/translate", translateRoutes);
   app.use("/api/vote", voteRoutes);
+  app.use("/api/submit", submitRoutes);
 
   // Vite middleware for development (or static serving for production)
   const distPath = path.join(process.cwd(), 'dist');

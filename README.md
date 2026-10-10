@@ -116,7 +116,7 @@ npm start
 | `VITE_DISCORD_CLIENT_ID` | Client ID Discord-приложения для авторизации участников | Нет (для OAuth) |
 | `DISCORD_CLIENT_SECRET` | Client Secret Discord-приложения | Нет (для OAuth) |
 | `VITE_DISCORD_GUILD_ID` | ID Discord-сервера сообщества | Нет |
-| `VITE_SUBMISSION_WEBHOOK_URL`| URL вебхука для отправки переводов на модерацию в Discord | Нет |
+| `DISCORD_SUBMISSION_WEBHOOK_URL`| URL вебхука для отправки переводов на модерацию в Discord (используется только сервером через `/api/submit`) | Нет |
 | `DISCORD_BUG_WEBHOOK_URL` | URL вебхука Discord для автоматических отчетов об ошибках | Нет |
 
 ---
@@ -124,8 +124,8 @@ npm start
 ### 📜 Доступные npm-скрипты
 
 - `npm run dev` — Запуск dev-сервера Express + Vite (`server.ts`) на порту 3000.
-- `npm run build` — Сборка фронтенда Vite и бандлинг бэкенда в `dist/server.cjs`.
-- `npm start` — Запуск скомпилированного продакшен-сервера (`node dist/server.cjs`).
+- `npm run build` — Сборка фронтенда Vite и бандлинг бэкенда в `dist-server/server.cjs`.
+- `npm start` — Запуск скомпилированного продакшен-сервера (`node dist-server/server.cjs`).
 - `npm run lint` — Проверка TypeScript (`tsc --noEmit`).
 - `npm run validate:data` — Валидация целостности всех JSON-баз данных в `src/data/`.
 - `npm run sync:operators` — Синхронизация карты имен и ID оперативников (`operator_names_map.json`).
@@ -222,7 +222,7 @@ npm start
 | `VITE_DISCORD_CLIENT_ID` | Discord Application Client ID for OAuth login | Optional |
 | `DISCORD_CLIENT_SECRET` | Discord Application Client Secret | Optional |
 | `VITE_DISCORD_GUILD_ID` | Discord Community Server ID | Optional |
-| `VITE_SUBMISSION_WEBHOOK_URL`| Discord webhook URL for receiving story translations | Optional |
+| `DISCORD_SUBMISSION_WEBHOOK_URL`| Discord webhook URL for receiving story translations (server-side only via `/api/submit`) | Optional |
 | `DISCORD_BUG_WEBHOOK_URL` | Discord webhook URL for automated bug reports | Optional |
 
 ---
@@ -230,8 +230,8 @@ npm start
 ### 📜 Developer Scripts
 
 - `npm run dev` — Starts full-stack dev server (`server.ts` running Express + Vite middlewares).
-- `npm run build` — Builds frontend client and bundles backend to `dist/server.cjs`.
-- `npm start` — Executes production server bundle (`node dist/server.cjs`).
+- `npm run build` — Builds frontend client and bundles backend to `dist-server/server.cjs`.
+- `npm start` — Executes production server bundle (`node dist-server/server.cjs`).
 - `npm run lint` — Performs strict TypeScript check (`tsc --noEmit`).
 - `npm run validate:data` — Validates JSON databases in `src/data/` for syntax and schema integrity.
 - `npm run sync:operators` — Re-generates `src/data/operator_names_map.json` from the operators dataset.
