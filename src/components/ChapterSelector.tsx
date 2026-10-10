@@ -10,7 +10,7 @@ import { UI_STRINGS } from '../translations';
 import { VotingInterface } from './VotingInterface';
 import { OperatorStoriesViewer } from './OperatorStoriesViewer';
 import { STORY_LINES_DATA, STORY_LINE_FILTERS } from '../config/storylines';
-import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorLabel, sortTranslators, getDefaultTranslator } from '../config/translationsRegistry';
+import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators, getDefaultTranslator } from '../config/translationsRegistry';
 import { QRCodeSVG } from 'qrcode.react';
 import { MainMenu } from './MainMenu';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -211,13 +211,8 @@ const EpisodeGrid = React.memo(({
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
                         {translatorDiscovery[episode.id] && (
-                          <span className="text-[7px] font-black text-blue-400 tracking-tighter uppercase px-1 bg-blue-500/10 rounded-sm flex items-center gap-1">
-                            <span>{translatorDiscovery[episode.id]}</span>
-                            {isAITranslator(translatorDiscovery[episode.id]) && (
-                              <span className="text-[6.5px] font-bold tracking-normal text-purple-300 bg-purple-500/20 px-1 rounded border border-purple-500/30">
-                                Нейроперевод
-                              </span>
-                            )}
+                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-blue-400 bg-blue-500/10'}`}>
+                            <span>{getTranslatorDisplayName(translatorDiscovery[episode.id])}</span>
                           </span>
                         )}
                       </div>
@@ -461,13 +456,8 @@ const EpisodeHorizontalList = React.memo(({
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
                         {translatorDiscovery[episode.id] && (
-                          <span className="text-[7px] font-black text-blue-400 tracking-tighter uppercase px-1 bg-blue-500/10 rounded-sm flex items-center gap-1">
-                            <span>{translatorDiscovery[episode.id]}</span>
-                            {isAITranslator(translatorDiscovery[episode.id]) && (
-                              <span className="text-[6.5px] font-bold tracking-normal text-purple-300 bg-purple-500/20 px-1 rounded border border-purple-500/30">
-                                Нейроперевод
-                              </span>
-                            )}
+                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-blue-400 bg-blue-500/10'}`}>
+                            <span>{getTranslatorDisplayName(translatorDiscovery[episode.id])}</span>
                           </span>
                         )}
                       </div>
@@ -1802,13 +1792,8 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         <div className="mt-2 flex items-center gap-4">
                           <div className="text-sm text-white/50 flex items-center gap-2">
                             <span className="font-bold uppercase tracking-widest text-[10px] bg-white/10 px-2 py-0.5 rounded-sm">{t.translation}</span>
-                            <span className="font-medium flex items-center gap-1.5">
-                              {selectedTranslator || translators[0]}
-                              {isAITranslator(selectedTranslator || translators[0]) && (
-                                <span className="text-[8px] font-black uppercase tracking-wider text-purple-300 bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.5 rounded-sm">
-                                  Нейроперевод
-                                </span>
-                              )}
+                            <span className={`font-medium flex items-center gap-1.5 ${isAITranslator(selectedTranslator || translators[0]) ? 'text-purple-300' : ''}`}>
+                              {getTranslatorDisplayName(selectedTranslator || translators[0])}
                             </span>
                           </div>
                           
@@ -1843,12 +1828,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                       >
                                         <div className="flex flex-col">
                                           <div className="flex items-center gap-1.5">
-                                            <span>{translatorName}</span>
-                                            {isAITranslator(translatorName) && (
-                                              <span className="text-[7px] font-black uppercase tracking-wider text-purple-300 bg-purple-500/20 px-1 py-0.2 rounded border border-purple-500/30">
-                                                Нейроперевод
-                                              </span>
-                                            )}
+                                            <span className={isAITranslator(translatorName) ? 'text-purple-300' : undefined}>
+                                              {getTranslatorDisplayName(translatorName)}
+                                            </span>
                                           </div>
                                           {translatorDiscovery[selectedEpisode.id] === translatorName && (
                                             <span className="text-[7px] text-blue-500/60 lowercase italic tracking-normal">{t.translation} found</span>
@@ -1945,12 +1927,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                       {t.translated} 
                                       {selectedTranslator && (
                                         <span className="opacity-75 font-medium tracking-normal text-[7px] bg-white/10 px-1 py-0.5 rounded-sm flex items-center gap-1">
-                                          <span>({selectedTranslator})</span>
-                                          {isAITranslator(selectedTranslator) && (
-                                            <span className="text-[6.5px] font-extrabold text-purple-300 bg-purple-500/20 px-1 rounded border border-purple-500/30">
-                                              Нейроперевод
-                                            </span>
-                                          )}
+                                          <span>({getTranslatorDisplayName(selectedTranslator)})</span>
                                         </span>
                                       )}
                                    </span>

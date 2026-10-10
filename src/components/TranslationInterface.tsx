@@ -5,7 +5,7 @@ import { fetchChapterList, fetchStoryScript, checkScriptExists } from '../servic
 import { CacheService } from '../services/cacheService';
 import { DbService } from '../services/dbService';
 import { authService } from '../services/authService';
-import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorLabel, sortTranslators } from '../config/translationsRegistry';
+import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators } from '../config/translationsRegistry';
 import { GoogleGenAI, Type } from "@google/genai";
 import Papa from 'papaparse';
 import { LogModal } from './story/LogModal';
@@ -3543,12 +3543,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                     {isImportingTranslator === t ? (
                       <Loader2 className="w-2.5 h-2.5 animate-spin text-[#4ade80]" />
                     ) : null}
-                    <span>{t}</span>
-                    {isAITranslator(t) && (
-                      <span className="text-[6.5px] font-bold text-purple-300 bg-purple-500/20 px-1 rounded border border-purple-500/30">
-                        Нейроперевод
-                      </span>
-                    )}
+                    <span className={isAITranslator(t) ? 'text-purple-300' : ''}>{getTranslatorDisplayName(t)}</span>
                   </button>
                 ))}
               </div>
