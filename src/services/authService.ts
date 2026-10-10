@@ -22,6 +22,7 @@ class AuthService {
   private token: string | null = null;
   private isChecking: boolean = false;
   private hasInitialized: boolean = false;
+  private authWindow: Window | null = null;
 
   constructor() {
     this.loadFromStorage();
@@ -67,8 +68,12 @@ class AuthService {
   }
 
   private initWindowListeners(): void {
-    // 1. Listen for OAuth callback postMessage
+    // 1. Listen for OAuth callback postMessage.
+    // Only same-origin messages sent by our own OAuth popup are trusted —
+    // otherwise any page could inject a forged token (session fixation).
     window.addEventListener('message', (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (this.authWindow && event.source !== this.authWindow) return;
       if (event.data?.type === 'DISCORD_AUTH_SUCCESS') {
         if (typeof event.data.token === 'string' && event.data.token) {
           this.setToken(event.data.token);
@@ -77,13 +82,10 @@ class AuthService {
       }
     });
 
-    // 2. Check URL for direct redirect OAuth parameters
-    if (window.location.search.includes('auth=success') || window.location.search.includes('discord_token')) {
-      const params = new URLSearchParams(window.location.search);
-      const directToken = params.get('discord_token');
-      if (directToken) {
-        this.setToken(directToken);
-      }
+    // 2. Callback fallback for flows without a popup window:
+    // the server sets the auth cookie, the token never travels via the URL
+    // (URL query strings leak into logs/analytics/referrers).
+    if (window.location.search.includes('auth=success')) {
       // Clean query params from URL without page reload
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
@@ -183,14 +185,16 @@ class AuthService {
     const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
     const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
 
-    const authWindow = window.open(
+    this.authWindow = window.open(
       '/api/auth/discord/redirect',
       'discord_auth',
       `width=${width},height=${height},left=${left},top=${top}`
     );
 
-    if (!authWindow) {
-      alert('Всплывающее окно было заблокировано браузером.\n\nПожалуйста, разрешите всплывающие окна для этого сайта в настройках браузера.');
+    if (!this.authWindow) {
+      // Popup blocked (browser policy or sandboxed iframe) — fall back to a
+      // full-page redirect; the auth cookie works across the redirect.
+      window.location.href = '/api/auth/discord/redirect';
     }
   }
 

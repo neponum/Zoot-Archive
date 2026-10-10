@@ -175,6 +175,9 @@ router.get('/callback', async (req: Request, res: Response) => {
     setDiscordAuthCookie(res, req, tokens.access_token);
 
     const safeToken = JSON.stringify(tokens.access_token);
+    // Only send the token to our own origin — never use the wildcard target.
+    // protocol/host are already resolved above for redirectUri.
+    const targetOrigin = JSON.stringify(`${protocol}://${host}`);
 
     res.send(`
       <!DOCTYPE html>
@@ -200,7 +203,7 @@ router.get('/callback', async (req: Request, res: Response) => {
                   window.opener.postMessage({ 
                     type: 'DISCORD_AUTH_SUCCESS', 
                     token: token 
-                  }, '*');
+                  }, ${targetOrigin});
                 } catch (e) {}
                 setTimeout(function() {
                   window.close();
