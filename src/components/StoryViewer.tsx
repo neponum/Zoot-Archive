@@ -91,6 +91,40 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     characterSlotsRef.current = characterSlots;
   }, [characterSlots]);
 
+  // A slot that fades out must be removed once its animation ends, otherwise it stays
+  // in state as an invisible sprite (and would block a re-entry of the same character).
+  const characterExitTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const prevCharacterSlotsRef = useRef(characterSlots);
+
+  useEffect(() => {
+    const prevSlots = prevCharacterSlotsRef.current;
+    prevCharacterSlotsRef.current = characterSlots;
+
+    Object.entries(characterSlots).forEach(([slot, slotData]) => {
+      const pendingTimer = characterExitTimersRef.current.get(slot);
+      if (slotData?.isExiting && prevSlots[slot] !== slotData) {
+        // Fade-out (re)started for this slot: (re)arm the removal timer
+        if (pendingTimer) clearTimeout(pendingTimer);
+        characterExitTimersRef.current.set(slot, setTimeout(() => {
+          characterExitTimersRef.current.delete(slot);
+          // Guard against a re-entry that happened in the same tick as the timer
+          if (characterSlotsRef.current[slot]?.isExiting) {
+            dispatch({ type: 'CLEAR_CHARACTER_SLOTS', payload: { slot, duration: 0 } });
+          }
+        }, Math.ceil((slotData.animation?.duration ?? 0) * 1000) + 100));
+      } else if (!slotData?.isExiting && pendingTimer) {
+        // Character re-entered (or the slot was cleared) before the fade finished
+        clearTimeout(pendingTimer);
+        characterExitTimersRef.current.delete(slot);
+      }
+    });
+  }, [characterSlots]);
+
+  useEffect(() => () => {
+    characterExitTimersRef.current.forEach(timer => clearTimeout(timer));
+    characterExitTimersRef.current.clear();
+  }, []);
+
   const bgUrlRef = useRef<string | null>(null);
   const currentBgRef = useRef<string | null>(null);
   const imageUrlRef = useRef<string | null>(null);
@@ -405,7 +439,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     aFrom: line.aFrom,
                     aTo: line.aTo,
                     duration: line.duration
-                  } : existingSlot?.animation
+                  } : (existingSlot && !existingSlot.isExiting ? existingSlot.animation : undefined)
                 };
               });
               dispatch({ type: 'UPDATE_CHARACTER_SLOTS', payload: slotUpdates });
@@ -993,8 +1027,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 initb: line.initb,
                 inita: line.inita,
                 duration: line.duration ?? 0,
-                ease: line.ease
-              } 
+                ease: line.ease,
+                tweenId: `${index}-${Date.now()}`
+              }
             });
             if (index !== lastDispatchedIndex) {
                dispatch({ type: 'SET_INDEX', payload: index });

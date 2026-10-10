@@ -7,7 +7,7 @@ import { parseTags } from '../../lib/textUtils';
 interface CinematicEffectsLayerProps {
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string, duration: number, amount: number } | null;
-  blocker: { a: number, r: number, g: number, b: number, duration: number, initr?: number; initg?: number; initb?: number; inita?: number, ease?: string } | null;
+  blocker: { a: number, r: number, g: number, b: number, duration: number, initr?: number; initg?: number; initb?: number; inita?: number, ease?: string, tweenId?: string } | null;
   activeAnimText: StoryLine | null;
 }
 
@@ -39,9 +39,10 @@ export const CinematicEffectsLayer: React.FC<CinematicEffectsLayerProps> = ({
     <>
       {/* Blocker Layer */}
       {blockerProps && (
-        <motion.div 
-          // Re-mount only if initial colors are provided to ensure a "snap"
-          key={blocker?.initr !== undefined ? `snap-${blocker.initr}-${blocker.initg}-${blocker.initb}-${blocker.inita}-${Date.now()}` : 'continuous'}
+        <motion.div
+          // Re-mount only when a new blocker command arrives (identified by its tweenId) so the
+          // "snap" from the initial colour is preserved without remounting on every re-render.
+          key={blocker?.initr !== undefined ? `snap-${blocker.initr}-${blocker.initg}-${blocker.initb}-${blocker.inita}-${blocker.tweenId ?? ''}` : 'continuous'}
           initial={blockerProps.initial ? { backgroundColor: blockerProps.initial } : false}
           animate={{ backgroundColor: blockerProps.target }}
           transition={{ 

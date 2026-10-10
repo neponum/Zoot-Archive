@@ -21,6 +21,55 @@ export const StickerLayer: React.FC<StickerLayerProps> = ({
   fontFamily = 'sans-serif',
   onTypewriterFinished
 }) => {
+  // Only stickers that still have to type something can hold the current line back
+  const typingStickers = React.useMemo(
+    () => stickers.filter(s => !s.isExiting && !!s.text && s.text.trim().length > 0),
+    [stickers]
+  );
+
+  const getStickerText = React.useCallback((sticker: StoryLine) => sticker.text?.replace(/\\n/g, '\n') || '', []);
+  const getStickerKey = React.useCallback(
+    (sticker: StoryLine) => sticker._instanceId || `${sticker.id ?? ''}|${getStickerText(sticker)}`,
+    [getStickerText]
+  );
+
+  // sticker instance key -> text that instance has already fully typed
+  const typedStickerTextsRef = React.useRef<Map<string, string>>(new Map());
+
+  const areAllTyped = React.useCallback(() => (
+    typingStickers.every(s => typedStickerTextsRef.current.get(getStickerKey(s)) === getStickerText(s))
+  ), [typingStickers, getStickerKey, getStickerText]);
+
+  const handleStickerTyped = React.useCallback((sticker: StoryLine) => {
+    const text = getStickerText(sticker);
+    const key = getStickerKey(sticker);
+    if (typedStickerTextsRef.current.get(key) === text) return;
+
+    const visibleKeys = new Set(typingStickers.map(getStickerKey));
+    typedStickerTextsRef.current.forEach((_, trackedKey) => {
+      if (!visibleKeys.has(trackedKey)) typedStickerTextsRef.current.delete(trackedKey);
+    });
+
+    typedStickerTextsRef.current.set(key, text);
+
+    // The line only counts as typed once every visible sticker finished typing
+    if (areAllTyped()) onTypewriterFinished?.();
+  }, [typingStickers, getStickerKey, getStickerText, areAllTyped, onTypewriterFinished]);
+
+  // Safety net: when the set of visible stickers changes (e.g. one of them got cleared
+  // while typing) the line must not stay blocked if the rest is already typed.
+  const typingStickersSignature = React.useMemo(
+    () => typingStickers.map(getStickerKey).join('||'),
+    [typingStickers, getStickerKey]
+  );
+  const lastTypingSignatureRef = React.useRef(typingStickersSignature);
+
+  React.useEffect(() => {
+    if (lastTypingSignatureRef.current === typingStickersSignature) return;
+    lastTypingSignatureRef.current = typingStickersSignature;
+    if (typingStickers.length > 0 && areAllTyped()) onTypewriterFinished?.();
+  }, [typingStickersSignature, typingStickers.length, areAllTyped, onTypewriterFinished]);
+
   return (
     <div className="absolute inset-0 z-40 pointer-events-none">
       <AnimatePresence>
@@ -53,10 +102,10 @@ export const StickerLayer: React.FC<StickerLayerProps> = ({
                 }}
               >
                 <MemoizedTypewriter 
-                  text={sticker.text?.replace(/\\n/g, '\n') || ''}
+                  text={getStickerText(sticker)}
                   speed={typewriterSpeed}
                   skip={isSkipping || shouldSkipTypewriter}
-                  onFinished={onTypewriterFinished}
+                  onFinished={() => handleStickerTyped(sticker)}
                 />
               </div>
             </motion.div>

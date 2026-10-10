@@ -19,6 +19,10 @@ export interface CharacterSlotData {
     aTo?: number;
     duration?: number;
   };
+  // True while the slot plays its fade-out animation: the sprite is still rendered
+  // (fading to aTo=0) but is on its way out and must not block a re-entry of the
+  // same character in the same scene.
+  isExiting?: boolean;
 }
 
 export interface StoryState {
@@ -44,7 +48,7 @@ export interface StoryState {
   cameraEffect: { effect: string; duration: number; amount: number } | null;
   cameraTransform: { x: number; y: number; scale: number; duration?: number; ease?: string } | null;
   characterCutin: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null;
-  blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; } | null;
+  blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; tweenId?: string } | null;
   isAuto: boolean;
   isSkipping: boolean;
   showUI: boolean;
@@ -89,7 +93,7 @@ export type StoryAction =
   | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
   | { type: 'SET_CAMERA_TRANSFORM'; payload: { x?: number; y?: number; scale?: number; duration?: number; ease?: string } | null }
-  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; } | null }
+  | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; tweenId?: string } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
   | { type: 'ADD_STICKER'; payload: StoryLine }
   | { type: 'CLEAR_STICKERS' }
@@ -210,13 +214,17 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
     case 'UPDATE_CHARACTER_SLOT': {
       const { slot, data } = action.payload;
       const nextSlots = { ...state.characterSlots };
-      
-      // If character is already in this slot and no animation, skip update to avoid re-renders
-      if (!data.animation && 
-          nextSlots[slot]?.name === data.name && 
-          nextSlots[slot]?.url === data.url && 
-          nextSlots[slot]?.faceUrl === data.faceUrl && 
-          nextSlots[slot]?.focus === data.focus) {
+      const existingSlot = nextSlots[slot];
+
+      // If character is already in this slot and no animation, skip update to avoid re-renders.
+      // Exiting slots are never skipped: the same character may walk back in right after
+      // its fade-out, and skipping would leave the sprite stuck at opacity 0.
+      if (!data.animation &&
+          !existingSlot?.isExiting &&
+          existingSlot?.name === data.name &&
+          existingSlot?.url === data.url &&
+          existingSlot?.faceUrl === data.faceUrl &&
+          existingSlot?.focus === data.focus) {
         return state;
       }
 
@@ -237,10 +245,11 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       let hasChanges = false;
 
       Object.entries(updates).forEach(([slot, data]) => {
-        if (data.animation || 
-            nextSlots[slot]?.name !== data.name || 
-            nextSlots[slot]?.url !== data.url || 
-            nextSlots[slot]?.faceUrl !== data.faceUrl || 
+        if (data.animation ||
+            nextSlots[slot]?.isExiting ||
+            nextSlots[slot]?.name !== data.name ||
+            nextSlots[slot]?.url !== data.url ||
+            nextSlots[slot]?.faceUrl !== data.faceUrl ||
             nextSlots[slot]?.focus !== data.focus) {
           
           // Logic for slot clearing when center is used
@@ -273,7 +282,10 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
         const nextSlots = { ...state.characterSlots };
         const doFade = (s: string) => {
           if (nextSlots[s]?.url) {
-            nextSlots[s] = { ...nextSlots[s], animation: { ...(nextSlots[s].animation || {}), aTo: 0, duration } };
+            // Keep name/url so the fade-out is actually visible. The slot is flagged as
+            // exiting so it is removed once the animation ends and never deduplicated away
+            // when the same character re-enters the scene.
+            nextSlots[s] = { ...nextSlots[s], isExiting: true, animation: { ...(nextSlots[s].animation || {}), aTo: 0, duration } };
           }
         };
         
