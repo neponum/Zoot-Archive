@@ -47,11 +47,9 @@ router.get('/', async (req: Request, res: Response) => {
 
     return res.json({
       episodeVotes: voteData.episodeVotes,
-      songVotes: voteData.songVotes,
       userVote: {
         voterId,
         episodeId: voteData.userVote.episodeId,
-        songCid: voteData.userVote.songCid,
         isDiscordUser: !!discordUser,
         isDiscordMember: discordUser ? discordUser.isMember : false
       }
@@ -65,7 +63,7 @@ router.get('/', async (req: Request, res: Response) => {
 // POST vote
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { episodeId, songCid } = req.body as VotePayload;
+    const { episodeId } = req.body as VotePayload;
 
     // Verify user is authenticated with Discord and in the correct server
     const discordUser = await verifyDiscordUser(req);
@@ -77,16 +75,14 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const voterId = `discord_${discordUser.id}`;
-    const voteData = await voteStorage.applyVote(voterId, { episodeId, songCid });
+    const voteData = await voteStorage.applyVote(voterId, { episodeId });
 
     return res.json({
       success: true,
       episodeVotes: voteData.episodeVotes,
-      songVotes: voteData.songVotes,
       userVote: {
         voterId,
-        episodeId: voteData.userVote.episodeId,
-        songCid: voteData.userVote.songCid
+        episodeId: voteData.userVote.episodeId
       }
     });
   } catch (error) {

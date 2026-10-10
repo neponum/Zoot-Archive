@@ -5,17 +5,16 @@ import { authService } from '../services/authService';
 import { 
   Award, 
   Music, 
-  Play, 
-  Pause, 
-  Vote, 
-  Loader2, 
+  Play,
+  Pause,
+  Loader2,
   AlertCircle, 
   Check, 
   Sparkles, 
   Volume2, 
   VolumeX,
   Volume1,
-  ArrowLeft, 
+  ArrowLeft,
   RotateCcw, 
   Trophy,
   Activity,
@@ -129,10 +128,8 @@ function parseLrc(lrcText: string): LyricLine[] {
 
 interface VotingResults {
   episodeVotes: Record<string, number>;
-  songVotes: Record<string, number>;
   userVote: {
     episodeId: string | null;
-    songCid: string | null;
   };
 }
 
@@ -160,8 +157,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   // Real-time voting tallies from database
   const [votes, setVotes] = useState<VotingResults>({
     episodeVotes: {},
-    songVotes: {},
-    userVote: { episodeId: null, songCid: null }
+    userVote: { episodeId: null }
   });
 
   // Music portal states
@@ -317,18 +313,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
       (s.artists && s.artists.some(a => a.toLowerCase().includes(q)));
   });
 
-  // Automatically pause/stop audio playback if the voted song changes or if active album filter changes
-  useEffect(() => {
-    if (playingSongCid && votes.userVote?.songCid === playingSongCid) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      setPlayingSongCid(null);
-      setPlayingSongDetail(null);
-    }
-  }, [votes.userVote?.songCid]);
-
   // Sync Playlists to localStorage
   useEffect(() => {
     localStorage.setItem('ak-music-playlists-v1', JSON.stringify(playlists));
@@ -413,7 +397,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
         credentials: 'include',
       });
       if (response.ok) {
-        const data = await response.json();
+        const data: VotingResults = await response.json();
         setVotes(data);
       }
     } catch (e) {
@@ -686,23 +670,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
 
   const handleSelectMusicOption = async (selectedSong: any, matchId: string) => {
     setMusicUserWinners(prev => ({ ...prev, [matchId]: selectedSong.cid }));
-    
-    // Record vote to database
-    try {
-      const headers = authService.getAuthHeaders({ 'Content-Type': 'application/json' });
-      const response = await fetch('/api/vote', {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ songCid: selectedSong.cid })
-      });
-      if (response.ok) {
-        const freshVotes = await response.json();
-        setVotes(freshVotes);
-      }
-    } catch (err) {
-      console.error('Failed to commit song vote:', err);
-    }
 
     const currentMatchup = musicMatchups[currentMusicIndex];
     if (!currentMatchup) return;
@@ -985,54 +952,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     }
   };
 
-  // 7b. Direct Song Voting
-  const handleDirectVoteSong = async (songCid: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    
-    if (!discordUser) {
-      handleDiscordLogin();
-      return;
-    }
-    if (!isDiscordMember) {
-      alert(isRu 
-        ? 'Голосовать могут только подтверждённые участники нашего Discord сервера.'
-        : 'Only verified Discord server members are eligible to cast votes.'
-      );
-      return;
-    }
-
-    const isCurrentlyVoted = votes.userVote?.songCid === songCid;
-    const targetCid = isCurrentlyVoted ? null : songCid;
-
-    // Immediately stop audio if voting on the song currently being previewed
-    if (playingSongCid === songCid) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      setPlayingSongCid(null);
-      setPlayingSongDetail(null);
-    }
-
-    try {
-      const response = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songCid: targetCid })
-      });
-      if (response.ok) {
-        const freshVotes = await response.json();
-        setVotes(freshVotes);
-      } else {
-        const errJson = await response.json().catch(() => ({}));
-        alert(errJson.error || (isRu ? 'Не удалось проголосовать' : 'Failed to cast vote'));
-      }
-    } catch (err) {
-      console.error('Failed to commit song vote:', err);
-      alert(isRu ? 'Ошибка сети при голосовании' : 'Network error during voting');
-    }
-  };
-  
   // 7c. Direct Track and Album Downloads with Cover Image
   const downloadSingleTrack = async (song: SongData, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -1292,7 +1211,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
 
   // 9. Computations & Standings
   const totalEpisodeVotes = (Object.values(votes.episodeVotes) as number[]).reduce((a, b) => a + b, 0);
-  const totalSongVotes = (Object.values(votes.songVotes) as number[]).reduce((a, b) => a + b, 0);
 
   const globalLeaderboardEpisodes = [...episodesList]
     .map(ep => ({
@@ -1303,23 +1221,9 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     }))
     .sort((a, b) => b.count - a.count);
 
-  const globalLeaderboardSongs = [...songs]
-    .map(song => ({
-      cid: song.cid,
-      name: song.name,
-      coverUrl: getSongCoverUrl(song),
-      count: votes.songVotes[song.cid] || 0
-    }))
-    .sort((a, b) => b.count - a.count)
-    .filter(s => s.count > 0 || songs.length <= 15); // filter active ones to look neat
-
   // Get user winners to display on results
   const userWinningEpisodes = Object.values(episodeUserWinners).map(id => 
     episodesList.find(ep => ep.id === id)
-  ).filter(Boolean);
-
-  const userWinningSongs = Object.values(musicUserWinners).map(cid => 
-    songs.find(s => s.cid === cid)
   ).filter(Boolean);
 
   return (
@@ -1424,8 +1328,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
               }
 
               const isPlaying = playingSongCid === activeSong.cid;
-              const isVoted = votes.userVote?.songCid === activeSong.cid;
-              const votesCount = votes.songVotes[activeSong.cid] || 0;
               const artistName = getSongArtist(activeSong);
               
               const formatTime = (secs: number) => {
@@ -1469,15 +1371,9 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[7.5px] font-mono text-blue-400 border border-blue-400/20 px-1.5 py-0.5 rounded-xs tracking-widest uppercase font-black">
-                          {isPlaying ? (isRu ? 'ВОСПРОИЗВЕДЕНИЕ' : 'NOW PLAYING') : (isRu ? 'ГОТОВ К ВОСПРОИЗВЕДЕНИЮ' : 'PLAYER STANDBY')}
-                        </span>
-                        {isVoted && (
-                          <span className="text-[7.5px] font-mono text-amber-400 border border-amber-400/20 px-1.5 py-0.5 rounded-xs tracking-widest uppercase font-black flex items-center gap-1">
-                            <Heart className="w-2 h-2 fill-amber-400" />
-                            {isRu ? 'ВАШ ВЫБОР' : 'YOUR VOTE'}
-                          </span>
-                        )}
-                      </div>
+                        {isPlaying ? (isRu ? 'ВОСПРОИЗВЕДЕНИЕ' : 'NOW PLAYING') : (isRu ? 'ГОТОВ К ВОСПРОИЗВЕДЕНИЮ' : 'PLAYER STANDBY')}
+                      </span>
+                    </div>
                       
                       <h3 className="text-sm md:text-base font-black uppercase text-white tracking-wider truncate">
                         {activeSong.name}
@@ -1545,27 +1441,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                             {audioError}
                           </span>
                         )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => handleDirectVoteSong(activeSong.cid, e)}
-                          className={`px-4 py-2 rounded-sm text-[9px] font-black tracking-widest uppercase border transition-all duration-300 flex items-center gap-2 cursor-pointer ${
-                            isVoted 
-                              ? 'bg-amber-500/10 border-amber-500 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)] hover:bg-amber-500/20' 
-                              : 'bg-zinc-950/60 border-white/10 hover:border-blue-500 text-white hover:bg-blue-500/5'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${isVoted ? 'fill-amber-400 text-amber-400' : 'text-white/60'}`} />
-                          {isVoted 
-                            ? (isRu ? 'УЖЕ ОТДАН ГОЛОС' : 'VOTED') 
-                            : (isRu ? 'ПРОГОЛОСОВАТЬ' : 'CAST VOTE')}
-                        </button>
-
-                        <div className="flex flex-col items-end shrink-0 border-l border-white/5 pl-3">
-                          <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest">{isRu ? 'ГОЛОСОВ ТРЕКА' : 'TRACK VOTES'}</span>
-                          <span className="text-xs font-mono font-black text-blue-400">{votesCount}</span>
-                        </div>
                       </div>
                     </div>
 
@@ -2067,9 +1942,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                             <div className="flex flex-col gap-1 max-h-[550px] overflow-y-auto no-scrollbar pr-1">
                               {filteredSongs.map((song) => {
                                 const isPlaying = playingSongCid === song.cid;
-                                const isVoted = votes.userVote?.songCid === song.cid;
                                 const isFav = isSongFavorite(song.cid);
-                                const votesCount = votes.songVotes[song.cid] || 0;
                                 const artist = getSongArtist(song);
                                 const isDownloadingSingle = downloadingSongCid === song.cid;
 
@@ -2143,24 +2016,18 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                         <ListPlus className="w-3.5 h-3.5" />
                                       </button>
 
-                                      {/* Direct Vote & Favorite Heart button */}
+                                      {/* Favorite Heart button */}
                                       <button
-                                        onClick={(e) => handleDirectVoteSong(song.cid, e)}
+                                        onClick={(e) => toggleFavoriteTrack(song.cid, e)}
                                         className={`w-7 h-7 rounded-sm border flex items-center justify-center transition-all cursor-pointer ${
-                                          isVoted || isFav
+                                          isFav
                                             ? 'bg-amber-500/15 border-amber-500 text-amber-400' 
-                                            : 'bg-zinc-950 border-white/5 hover:border-blue-500/50 text-white/40 hover:text-white'
+                                            : 'bg-zinc-950 border-white/5 hover:border-amber-500/50 text-white/40 hover:text-white'
                                         }`}
-                                        title={isRu ? 'Проголосовать и добавить в избранное' : 'Vote & Favorite'}
+                                        title={isRu ? 'В избранное' : 'Favorite'}
                                       >
-                                        <Heart className={`w-3.5 h-3.5 ${(isVoted || isFav) ? 'fill-amber-400' : ''}`} />
+                                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-400' : ''}`} />
                                       </button>
-
-                                      <div className="w-12 text-right">
-                                        <span className="text-[9px] font-mono font-black text-white/60 tracking-wider">
-                                          {votesCount}
-                                        </span>
-                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -2204,52 +2071,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                 </div>
 
                 <div className="bg-zinc-950/85 border border-white/10 p-5 rounded-sm flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="border-b border-white/10 pb-3 mb-4 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-blue-400" />
-                        <span className="text-[9px] font-black tracking-widest text-white uppercase">{isRu ? 'ЛИДЕРЫ МЕСЯЦА' : 'MONTH LEADERBOARD'}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[7.5px] font-mono font-bold tracking-widest uppercase">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {isRu ? 'ОНЛАЙН' : 'ONLINE'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      {globalLeaderboardSongs.slice(0, 5).map((item, idx) => {
-                        return (
-                          <div key={item.cid} className="flex items-center justify-between text-[9px] font-bold">
-                            <div className="flex items-center gap-2 min-w-0 mr-2">
-                              <span className="text-[8px] font-mono text-white/20">
-                                {String(idx + 1).padStart(2, '0')}
-                              </span>
-                              {item.coverUrl && (
-                                <img 
-                                  src={item.coverUrl} 
-                                  alt=""
-                                  className="w-3.5 h-3.5 object-cover border border-white/5 rounded-xs shrink-0"
-                                  referrerPolicy="no-referrer"
-                                />
-                              )}
-                              <span className="uppercase tracking-wide truncate text-white/80 text-[8.5px]">
-                                {item.name}
-                              </span>
-                            </div>
-                            <span className="font-mono text-blue-400 text-[8.5px] pl-1 shrink-0">
-                              {item.count}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {globalLeaderboardSongs.length === 0 && (
-                        <span className="text-[8px] font-bold text-white/25 uppercase tracking-widest text-center py-6">
-                          {isRu ? 'Нет проголосовавших треков' : 'No votes registered yet'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
                   <button
                     onClick={() => setCurrentView('RESULTS')}
                     className="w-full mt-5 py-2 border border-white/10 hover:border-blue-500/50 bg-transparent text-white/70 hover:text-white text-[8px] font-black tracking-widest uppercase rounded-sm transition-all text-center cursor-pointer"
@@ -2765,7 +2586,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
             </div>
 
             {/* Main Leaderboard Grid */}
-            <div className={`grid grid-cols-1 ${initialMode ? 'grid-cols-1 max-w-3xl mx-auto' : 'lg:grid-cols-2'} gap-8 items-stretch`}>
+            <div className="grid grid-cols-1 max-w-3xl mx-auto gap-8 items-stretch">
               
               {/* Episodes Global Standings */}
               {initialMode !== 'MUSIC_ONLY' && (
@@ -2798,69 +2619,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                 <span className="text-[9px] font-mono text-white/20">
                                   {String(idx + 1).padStart(2, '0')}
                                 </span>
-                                <span className="uppercase tracking-wide truncate text-white/90">
-                                  {item.name}
-                                </span>
-                              </div>
-                              <span className="font-mono text-white/60 tracking-wider text-[9px] pl-2 shrink-0">
-                                {item.count} ({percentage.toFixed(1)}%)
-                              </span>
-                            </div>
-
-                            {/* Progress Line */}
-                            <div className="h-1.5 bg-zinc-900 border border-white/5 overflow-hidden rounded-full">
-                              <div 
-                                className="h-full bg-blue-500/80 group-hover:bg-blue-500 transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Music Global Standings */}
-              {initialMode !== 'EPISODES_ONLY' && (
-                <div className="bg-zinc-950/75 border border-white/10 p-5 rounded-sm flex flex-col justify-between">
-                  <div>
-                    <div className="border-b border-white/10 pb-3 mb-4 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Music className="w-4 h-4 text-blue-400" />
-                        <span className="text-[10px] font-black tracking-widest text-white uppercase">{isRu ? 'РЕЙТИНГ САУНДТРЕКОВ' : 'SOUNDTRACK STANDINGS'}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[7.5px] font-mono font-bold tracking-widest uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          {isRu ? 'ОНЛАЙН' : 'ONLINE'}
-                        </div>
-                        <span className="text-[8px] font-mono text-white/30 tracking-widest font-bold">
-                          {totalSongVotes} {isRu ? 'ГОЛОСОВ' : 'TOTAL VOTES'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Leaderboard list */}
-                    <div className="flex flex-col gap-3.5 max-h-[480px] overflow-y-auto no-scrollbar pr-1">
-                      {globalLeaderboardSongs.map((item, idx) => {
-                        const percentage = totalSongVotes > 0 ? (item.count / totalSongVotes) * 100 : 0;
-                        return (
-                          <div key={item.cid} className="group relative">
-                            <div className="flex items-center justify-between text-[10px] font-bold mb-1">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-[9px] font-mono text-white/20">
-                                  {String(idx + 1).padStart(2, '0')}
-                                </span>
-                                {item.coverUrl && (
-                                  <img 
-                                    src={item.coverUrl} 
-                                    alt=""
-                                    className="w-4 h-4 object-cover border border-white/5 rounded-xs shrink-0"
-                                    referrerPolicy="no-referrer"
-                                  />
-                                )}
                                 <span className="uppercase tracking-wide truncate text-white/90">
                                   {item.name}
                                 </span>
@@ -2944,16 +2702,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                 {(playingSongDetail.artistes || playingSongDetail.artists || []).join(', ') || 'Monster Siren Records'}
               </p>
             </div>
-
-            <button
-              onClick={(e) => handleDirectVoteSong(playingSongCid, e)}
-              className={`p-1.5 rounded-sm transition-colors ${
-                votes.userVote?.songCid === playingSongCid ? 'text-amber-400' : 'text-white/30 hover:text-white'
-              }`}
-              title={isRu ? 'В избранное / Голос' : 'Favorite / Vote'}
-            >
-              <Heart className={`w-4 h-4 ${votes.userVote?.songCid === playingSongCid ? 'fill-amber-400' : ''}`} />
-            </button>
 
             <button
               onClick={() => setShowLyricsModal(true)}
@@ -3139,18 +2887,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                 </p>
 
                 <div className="flex items-center gap-3 mb-6">
-                  <button
-                    onClick={(e) => handleDirectVoteSong(playingSongCid, e)}
-                    className={`px-3 py-1.5 rounded-sm border text-[9px] font-black tracking-widest uppercase transition-all flex items-center gap-1.5 ${
-                      votes.userVote?.songCid === playingSongCid
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-400'
-                        : 'bg-zinc-900 border-white/10 hover:border-amber-500/50 text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${votes.userVote?.songCid === playingSongCid ? 'fill-amber-400' : ''}`} />
-                    {votes.userVote?.songCid === playingSongCid ? (isRu ? 'В ИЗБРАННОМ' : 'VOTED') : (isRu ? 'ГОЛОСОВАТЬ' : 'VOTE')}
-                  </button>
-
                   <button
                     onClick={(e) => downloadSingleTrack({ cid: playingSongCid, name: playingSongDetail.name, albumCid: playingSongDetail.albumCid }, e)}
                     className="px-3 py-1.5 rounded-sm border border-white/10 hover:border-blue-500 bg-zinc-900 text-white/70 hover:text-white text-[9px] font-black tracking-widest uppercase transition-all flex items-center gap-1.5 cursor-pointer"

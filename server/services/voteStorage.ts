@@ -3,21 +3,16 @@ import path from 'path';
 
 export interface VoteState {
   episodeVotes: Record<string, number>;
-  songVotes: Record<string, number>;
-  userVotes: Record<string, { episodeId?: string; songCid?: string; updatedAt?: number }>;
+  userVotes: Record<string, { episodeId?: string; updatedAt?: number }>;
 }
 
 export interface UserVoteResponse {
   voterId: string | null;
   episodeId: string | null;
-  songCid: string | null;
-  isDiscordUser: boolean;
-  isDiscordMember: boolean;
 }
 
 export interface VotePayload {
   episodeId?: string | null;
-  songCid?: string | null;
 }
 
 /**
@@ -36,7 +31,6 @@ class VoteStorageService {
     this.filePath = path.join(process.cwd(), 'votes.json');
     this.state = {
       episodeVotes: {},
-      songVotes: {},
       userVotes: {}
     };
   }
@@ -53,7 +47,6 @@ class VoteStorageService {
         const parsed = JSON.parse(raw) as Partial<VoteState>;
         this.state = {
           episodeVotes: parsed.episodeVotes || {},
-          songVotes: parsed.songVotes || {},
           userVotes: parsed.userVotes || {}
         };
       } else {
@@ -63,7 +56,6 @@ class VoteStorageService {
       console.warn('[VoteStorage] Failed to read votes file, initializing in-memory store:', error);
       this.state = {
         episodeVotes: {},
-        songVotes: {},
         userVotes: {}
       };
     } finally {
@@ -76,8 +68,7 @@ class VoteStorageService {
    */
   public async getVoteState(voterId: string | null): Promise<{
     episodeVotes: Record<string, number>;
-    songVotes: Record<string, number>;
-    userVote: { episodeId: string | null; songCid: string | null };
+    userVote: { episodeId: string | null };
   }> {
     if (!this.isInitialized) {
       await this.init();
@@ -87,30 +78,27 @@ class VoteStorageService {
 
     return {
       episodeVotes: { ...this.state.episodeVotes },
-      songVotes: { ...this.state.songVotes },
       userVote: {
-        episodeId: userVote.episodeId || null,
-        songCid: userVote.songCid || null
+        episodeId: userVote.episodeId || null
       }
     };
   }
 
   /**
-   * Atomically records or retracts a user's vote and queues safe disk persistence.
+   * Atomically records or retracts a user's episode vote and queues safe disk persistence.
    */
   public async applyVote(voterId: string, payload: VotePayload): Promise<{
     episodeVotes: Record<string, number>;
-    songVotes: Record<string, number>;
-    userVote: { episodeId: string | null; songCid: string | null };
+    userVote: { episodeId: string | null };
   }> {
     if (!this.isInitialized) {
       await this.init();
     }
 
-    const { episodeId, songCid } = payload;
+    const { episodeId } = payload;
     const existingVote = this.state.userVotes[voterId] || {};
 
-    // 1. Process Episode Vote
+    // Process Episode Vote
     if (episodeId !== undefined) {
       // Retract previous vote if different
       if (existingVote.episodeId && existingVote.episodeId !== episodeId) {
@@ -135,48 +123,21 @@ class VoteStorageService {
       }
     }
 
-    // 2. Process Song Vote
-    if (songCid !== undefined) {
-      // Retract previous vote if different
-      if (existingVote.songCid && existingVote.songCid !== songCid) {
-        const oldSong = existingVote.songCid;
-        this.state.songVotes[oldSong] = Math.max(0, (this.state.songVotes[oldSong] || 1) - 1);
-        if (this.state.songVotes[oldSong] === 0) {
-          delete this.state.songVotes[oldSong];
-        }
-      }
-
-      // Apply new vote or retraction
-      if (songCid && existingVote.songCid !== songCid) {
-        this.state.songVotes[songCid] = (this.state.songVotes[songCid] || 0) + 1;
-        existingVote.songCid = songCid;
-      } else if (songCid === null && existingVote.songCid) {
-        const oldSong = existingVote.songCid;
-        this.state.songVotes[oldSong] = Math.max(0, (this.state.songVotes[oldSong] || 1) - 1);
-        if (this.state.songVotes[oldSong] === 0) {
-          delete this.state.songVotes[oldSong];
-        }
-        existingVote.songCid = undefined;
-      }
-    }
-
-    // 3. Update or purge user registry
-    if (!existingVote.episodeId && !existingVote.songCid) {
+    // Update or purge user registry
+    if (!existingVote.episodeId) {
       delete this.state.userVotes[voterId];
     } else {
       existingVote.updatedAt = Date.now();
       this.state.userVotes[voterId] = existingVote;
     }
 
-    // 4. Trigger non-blocking atomic persistence via mutex write queue
+    // Trigger non-blocking atomic persistence via mutex write queue
     this.enqueuePersist();
 
     return {
       episodeVotes: { ...this.state.episodeVotes },
-      songVotes: { ...this.state.songVotes },
       userVote: {
-        episodeId: existingVote.episodeId || null,
-        songCid: existingVote.songCid || null
+        episodeId: existingVote.episodeId || null
       }
     };
   }
