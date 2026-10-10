@@ -22,8 +22,37 @@ function getCacheKey(operatorId: string, sectionIdx: number, targetLang: string)
 }
 
 /**
- * Approach A: Pure static translation engine for dossiers.
- * Transforms labels, section titles, and lore terminology instantly without needing API keys.
+ * Canonical glossary replacement engine for static dossier translation.
+ *
+ * Rules (protects lore canon):
+ * 1. Longest terms are matched first, so composite terms win
+ *    ("Rhodes Island Pharmaceuticals" over "Rhodes Island",
+ *     "Ursus Empire" over "Ursus", "Reunion Movement" over "Reunion").
+ * 2. Terms only match on word boundaries, so we never corrupt words
+ *    (no more "Катастрофаs" from "Catastrophes" or "Урсус Empire").
+ *    Unmatched English stays untranslated instead of being mangled.
+ */
+const GLOSSARY_REPLACEMENTS: Array<{ pattern: RegExp; ruTerm: string }> = Object.entries(ARKNIGHTS_CANONICAL_GLOSSARY)
+  .sort((a, b) => b[0].length - a[0].length)
+  .map(([enTerm, ruTerm]) => ({
+    pattern: new RegExp(
+      `(?<![A-Za-z0-9])${enTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`,
+      'g'
+    ),
+    ruTerm,
+  }));
+
+function applyCanonicalGlossary(text: string): string {
+  let result = text;
+  for (const { pattern, ruTerm } of GLOSSARY_REPLACEMENTS) {
+    result = result.replace(pattern, ruTerm);
+  }
+  return result;
+}
+
+/**
+ * Static translation engine for dossiers: transforms labels, section titles,
+ * and lore terminology instantly without needing an API key.
  */
 export function getStaticDossierTranslation(
   operatorId: string,
@@ -36,26 +65,14 @@ export function getStaticDossierTranslation(
 
   // Translate structured items (e.g. Basic Info, Exam, Performance)
   const translatedItems = items?.map((it) => {
-    let labelRu = commonLabels[it.label] || it.label;
-    let valRu = it.value;
-
-    // Apply canonical glossary replacements to values
-    for (const [enTerm, ruTerm] of Object.entries(ARKNIGHTS_CANONICAL_GLOSSARY)) {
-      if (valRu.includes(enTerm)) {
-        valRu = valRu.replaceAll(enTerm, ruTerm);
-      }
-    }
+    const labelRu = commonLabels[it.label] || it.label;
+    const valRu = applyCanonicalGlossary(it.value);
 
     return { label: labelRu, value: valRu };
   });
 
   // Apply canonical glossary replacements to narrative text
-  let translatedText = rawText;
-  for (const [enTerm, ruTerm] of Object.entries(ARKNIGHTS_CANONICAL_GLOSSARY)) {
-    if (translatedText.includes(enTerm)) {
-      translatedText = translatedText.replaceAll(enTerm, ruTerm);
-    }
-  }
+  const translatedText = applyCanonicalGlossary(rawText);
 
   return {
     translatedTitle: canonicalTitle || rawTitle,

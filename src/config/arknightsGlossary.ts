@@ -90,6 +90,7 @@ export const ARKNIGHTS_CANONICAL_GLOSSARY: Record<string, string> = {
   "Chernobog": "Чернобог",
   "Landship": "Сухопутный корабль",
   "Doctor": "Доктор",
+  "Doctors": "Докторы",
   "Kal'tsit": "Кальцит",
   "Amiya": "Амия",
   "Ch'en": "Чэнь",
