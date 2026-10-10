@@ -905,9 +905,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 )}
 
                 {/* News Block */}
-                <div 
+                <a
+                  href={NEWS_ITEMS[currentNewsIndex]?.link || 'https://www.skport.com'}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hidden md:flex max-lg:landscape:flex portrait:hidden bg-zinc-950/80 border border-white/10 hover:border-blue-500/50 rounded-sm shadow-2xl w-full aspect-[2/1] relative overflow-hidden group cursor-pointer transition-all duration-300"
-                  onClick={() => window.open(NEWS_ITEMS[currentNewsIndex]?.link || 'https://www.skport.com', '_blank', 'noopener,noreferrer')}
                 >
                   <div className="absolute inset-0">
                     <img 
@@ -932,6 +934,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       <button 
                         key={idx}
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setCurrentNewsIndex(idx);
                         }}
@@ -944,7 +947,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       />
                     ))}
                   </div>
-                </div>
+                </a>
 
               </div>
 

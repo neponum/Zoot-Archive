@@ -6,6 +6,7 @@ import { TranslationInterface } from './components/TranslationInterface';
 import { AnimatePresence, motion } from 'motion/react';
 import { fetchChapterList } from './services/storyService';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -254,6 +255,7 @@ function AppContent() {
       )}
 
       <PWAInstallPrompt />
+      <PWAUpdatePrompt />
       <Analytics />
       <SpeedInsights />
     </div>

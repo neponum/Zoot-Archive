@@ -11,7 +11,7 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
         VitePWA({
-          registerType: 'autoUpdate',
+          registerType: 'prompt',
           injectRegister: 'auto',
           devOptions: {
             enabled: true
@@ -36,20 +36,22 @@ export default defineConfig(({mode}) => {
                 purpose: 'any'
               },
               {
-                src: 'ZOOT.svg',
-                sizes: '512x512',
-                type: 'image/svg+xml',
-                purpose: 'maskable'
-              },
-              {
                 src: 'ZOOT.png',
                 sizes: '192x192',
-                type: 'image/png'
+                type: 'image/png',
+                purpose: 'any'
               },
               {
-                src: 'ZOOT.png',
+                src: 'ZOOT-512.png',
                 sizes: '512x512',
-                type: 'image/png'
+                type: 'image/png',
+                purpose: 'any'
+              },
+              {
+                src: 'maskable-512.png',
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'maskable'
               }
             ]
           },
