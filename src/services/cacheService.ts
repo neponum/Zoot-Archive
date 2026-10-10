@@ -60,31 +60,9 @@ export class CacheService {
   }
 
   private static blobUrlCache = new Map<string, string>();
+  private static blobUrlRefs = new Map<string, number>();
 
-  /**
-   * Revokes all cached blob URLs to prevent memory leaks
-   */
-  static revokeBlobUrls(): void {
-    try {
-      this.blobUrlCache.forEach((blobUrl) => {
-        try {
-          URL.revokeObjectURL(blobUrl);
-        } catch (e) {
-          console.warn('Failed to revoke object URL:', blobUrl, e);
-        }
-      });
-      this.blobUrlCache.clear();
-      console.log('Blob URLs successfully revoked and cleared from memory');
-    } catch (err) {
-      console.warn('Failed to revoke blob URLs:', err);
-    }
-  }
-
-  /**
-   * Retrieves cached blob and returns a URL
-   */
-  static async getCachedBlobUrl(url: string): Promise<string | null> {
-    if (url.startsWith('blob:')) return url;
+  private static async createBlobUrl(url: string): Promise<string | null> {
     if (this.blobUrlCache.has(url)) {
       return this.blobUrlCache.get(url)!;
     }
@@ -103,6 +81,71 @@ export class CacheService {
       console.warn('Failed to get cached blob:', err);
     }
     return null;
+  }
+
+  private static revokeCachedBlobUrl(url: string): void {
+    const blobUrl = this.blobUrlCache.get(url);
+    if (!blobUrl) return;
+    try {
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.warn('Failed to revoke object URL:', blobUrl, e);
+    }
+    this.blobUrlCache.delete(url);
+  }
+
+  /**
+   * Returns a cached blob URL and registers a reference to it.
+   * Each acquired URL must later be handed back with releaseBlobUrl.
+   */
+  static async acquireBlobUrl(url: string): Promise<string | null> {
+    if (url.startsWith('blob:')) return url;
+    const blobUrl = await this.createBlobUrl(url);
+    if (!blobUrl) return null;
+    this.blobUrlRefs.set(url, (this.blobUrlRefs.get(url) ?? 0) + 1);
+    return blobUrl;
+  }
+
+  /**
+   * Drops a previously acquired reference. The blob URL is revoked and
+   * forgotten only once the last reference is released.
+   */
+  static releaseBlobUrl(url: string): void {
+    const refs = this.blobUrlRefs.get(url);
+    if (refs === undefined) return;
+    if (refs > 1) {
+      this.blobUrlRefs.set(url, refs - 1);
+      return;
+    }
+    this.blobUrlRefs.delete(url);
+    this.revokeCachedBlobUrl(url);
+  }
+
+  /**
+   * Revokes blob URLs nobody holds a reference to. URLs handed out through
+   * acquireBlobUrl stay valid until their references are released, so
+   * components still rendering them (e.g. CachedImage) keep a working src.
+   */
+  static revokeBlobUrls(): void {
+    try {
+      let revokedCount = 0;
+      this.blobUrlCache.forEach((_blobUrl, sourceUrl) => {
+        if (this.blobUrlRefs.get(sourceUrl)) return;
+        this.revokeCachedBlobUrl(sourceUrl);
+        revokedCount++;
+      });
+      console.log(`Blob URLs successfully revoked and cleared from memory (${revokedCount} revoked)`);
+    } catch (err) {
+      console.warn('Failed to revoke blob URLs:', err);
+    }
+  }
+
+  /**
+   * Retrieves cached blob and returns a URL
+   */
+  static async getCachedBlobUrl(url: string): Promise<string | null> {
+    if (url.startsWith('blob:')) return url;
+    return this.createBlobUrl(url);
   }
 
   /**

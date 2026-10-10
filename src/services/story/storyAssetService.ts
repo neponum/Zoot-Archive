@@ -353,7 +353,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         if (faceItem.group === -1 && faceOrImg) {
           const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
           const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
-          const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
+          const cachedUrl = await acquireBlobUrl(assetCacheBlobRefs, rawBodyUrl);
           return {
             bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
             size: data.size,
@@ -366,8 +366,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
           const facePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
           const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
           const rawFaceUrl = `https://torappu.prts.wiki/assets/avg/characters/${facePath}.png`;
-          const cachedBody = await CacheService.getCachedBlobUrl(rawBodyUrl);
-          const cachedFace = await CacheService.getCachedBlobUrl(rawFaceUrl);
+          const cachedBody = await acquireBlobUrl(assetCacheBlobRefs, rawBodyUrl);
+          const cachedFace = await acquireBlobUrl(assetCacheBlobRefs, rawFaceUrl);
           return {
             bodyUrl: cachedBody || wrapUrlWithProxy(rawBodyUrl),
             faceUrl: cachedFace || wrapUrlWithProxy(rawFaceUrl),
@@ -385,7 +385,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         const group = groupList[0];
         const bodyPath = group.base.split('/').map(p => encodeURIComponent(p)).join('/');
         const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${bodyPath}.png`;
-        const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
+        const cachedUrl = await acquireBlobUrl(assetCacheBlobRefs, rawBodyUrl);
         return {
           bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
           size: data.size,
@@ -397,7 +397,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         if (faceOrImg) {
           const imagePath = faceOrImg.split('/').map(p => encodeURIComponent(p)).join('/');
           const rawBodyUrl = `https://torappu.prts.wiki/assets/avg/characters/${imagePath}.png`;
-          const cachedUrl = await CacheService.getCachedBlobUrl(rawBodyUrl);
+          const cachedUrl = await acquireBlobUrl(assetCacheBlobRefs, rawBodyUrl);
           return {
             bodyUrl: cachedUrl || wrapUrlWithProxy(rawBodyUrl),
             size: data.size,
@@ -437,8 +437,8 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
         }
       }
 
-      const cachedBody = await CacheService.getCachedBlobUrl(resolvedBodyUrl);
-      const cachedFace = resolvedFaceUrl ? await CacheService.getCachedBlobUrl(resolvedFaceUrl) : undefined;
+      const cachedBody = await acquireBlobUrl(assetCacheBlobRefs, resolvedBodyUrl);
+      const cachedFace = resolvedFaceUrl ? await acquireBlobUrl(assetCacheBlobRefs, resolvedFaceUrl) : undefined;
 
       return {
         bodyUrl: cachedBody || wrapUrlWithProxy(resolvedBodyUrl),
@@ -449,7 +449,7 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
     }
 
     const fallbackBodyUrl = await getImageUrl('character_body', baseName);
-    const cachedFallback = await CacheService.getCachedBlobUrl(fallbackBodyUrl);
+    const cachedFallback = await acquireBlobUrl(assetCacheBlobRefs, fallbackBodyUrl);
     return {
       bodyUrl: cachedFallback || wrapUrlWithProxy(fallbackBodyUrl),
       size: data?.size
@@ -466,9 +466,35 @@ export async function getCharacterAssetInfo(name: string): Promise<CharacterAsse
 const urlCache = new Map<string, string>();
 const pendingUrlPromises = new Map<string, Promise<string>>();
 
+// Blob URLs handed out to consumers keyed by their source URL with the number of
+// outstanding references. References are dropped when the owning cache is cleared.
+const urlCacheBlobRefs = new Map<string, number>();
+const assetCacheBlobRefs = new Map<string, number>();
+
+// Uses the referenced blob URL from CacheStorage and keeps a reference to it, so
+// CacheService.revokeBlobUrls() does not pull it away from mounted consumers.
+async function acquireBlobUrl(refs: Map<string, number>, url: string): Promise<string | null> {
+  if (!url || url.startsWith('blob:')) return url ?? null;
+  const blobUrl = await CacheService.acquireBlobUrl(url).catch(() => null);
+  if (blobUrl) {
+    refs.set(url, (refs.get(url) ?? 0) + 1);
+  }
+  return blobUrl;
+}
+
+function releaseBlobRefs(refs: Map<string, number>): void {
+  refs.forEach((count, url) => {
+    for (let i = 0; i < count; i++) {
+      CacheService.releaseBlobUrl(url);
+    }
+  });
+  refs.clear();
+}
+
 export function clearUrlCache(): void {
   urlCache.clear();
   pendingUrlPromises.clear();
+  releaseBlobRefs(urlCacheBlobRefs);
 }
 
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
@@ -519,7 +545,7 @@ export async function getImageUrl(type: AssetType, name: string): Promise<string
     // WebKit/iOS Safari does not support playing audio from blob URLs reliably (or at all).
     // Always use standard proxy streaming URLs for audio assets.
     if (type !== 'music' && type !== 'sound' && type !== 'voice') {
-      const cachedBlobUrl = await CacheService.getCachedBlobUrl(rawUrl).catch(() => null);
+      const cachedBlobUrl = await acquireBlobUrl(urlCacheBlobRefs, rawUrl);
       if (cachedBlobUrl) return cachedBlobUrl;
     }
     
@@ -576,13 +602,61 @@ function checkImageViaElement(url: string, timeoutMs = 3500): Promise<boolean> {
   });
 }
 
+function checkAudioViaElement(url: string, timeoutMs = 5000): Promise<boolean> {
+  if (!url) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    let resolved = false;
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        audio.onloadedmetadata = null;
+        audio.onerror = null;
+        // Do NOT set audio.src = '' here: it aborts an in-flight request (NS_BINDING_ABORTED)
+        resolve(false);
+      }
+    }, timeoutMs);
+
+    audio.onloadedmetadata = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        audio.onloadedmetadata = null;
+        audio.onerror = null;
+        resolve(true);
+      }
+    };
+    audio.onerror = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        audio.onloadedmetadata = null;
+        audio.onerror = null;
+        resolve(false);
+      }
+    };
+    audio.src = url;
+    audio.load();
+  });
+}
+
 export async function checkImageExists(url: string): Promise<boolean> {
   if (!url) return false;
   
-  // Audio files on torappu.prts.wiki cannot be checked via browser fetch/HEAD because of CORS limitations.
-  // Instead, always assume they exist so the HTML5 Audio element can play them directly (which supports simple GET requests).
+  // Audio files on torappu.prts.wiki cannot be checked with a plain fetch HEAD from the
+  // browser (CORS), so probe them through an HTMLAudioElement requesting only metadata.
+  // The result (including misses) is cached, so probing stays cheap.
   if (/\.(mp3|wav|ogg|flac|aac|m4a)(\?.*)?$/i.test(url) || url.includes('/assets/audio/')) {
-    return true;
+    if (existenceCheckCache.has(url)) {
+      return existenceCheckCache.get(url)!;
+    }
+
+    const audioExists = typeof window !== 'undefined'
+      ? await checkAudioViaElement(url)
+      : await fetchWithTimeout(url, { method: 'HEAD' }, 5000).then(r => r.ok || r.status === 206).catch(() => false);
+    existenceCheckCache.set(url, audioExists);
+    return audioExists;
   }
 
   if (existenceCheckCache.has(url)) {
@@ -816,7 +890,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
         baseNames.push(`m_dia_${cleanAudioName}`);
       }
       
-      const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player', 'beta2_180603'];
+      const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player', 'beta2_180603', 'music/beta2_180603'];
       const candidates: string[] = [];
       
       if (parts.length > 1) {
@@ -852,6 +926,9 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
         return found.url;
       }
       
+      // No candidate is actually available: report the track as missing instead of
+      // handing back a guessed URL that would fail silently in the player.
+      console.warn(`Music track not found on torappu.prts.wiki: ${name}`);
       activeAudioMusic[cleanAudioName] = '';
       return '';
     }
@@ -913,6 +990,7 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
         return foundSound.url;
       }
       
+      console.warn(`Sound asset not found on torappu.prts.wiki: ${name}`);
       activeAudioSound[cleanAudioName] = '';
       return '';
     }
@@ -958,6 +1036,7 @@ export function clearPreloadedImages(): void {
   pendingCharacterInfoPromises.clear();
   naturalSizeCache.clear();
   loadedImageUrlSet.clear();
+  releaseBlobRefs(assetCacheBlobRefs);
   CacheService.revokeBlobUrls();
   clearUrlCache();
 }
@@ -1059,7 +1138,7 @@ export async function preloadAssets(
         return;
       }
 
-      const cachedBlobUrl = await CacheService.getCachedBlobUrl(url).catch(() => null);
+      const cachedBlobUrl = await acquireBlobUrl(assetCacheBlobRefs, url);
       if (cachedBlobUrl) {
         if (type === 'image') {
           await new Promise<void>((resolve) => {

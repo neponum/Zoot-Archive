@@ -17,6 +17,9 @@ class AudioManager {
   
   private sfx: Set<HTMLAudioElement> = new Set();
   private voice: HTMLAudioElement | null = null;
+  // Track the requested (pre-master) volume of live elements so setVolumes can re-apply master scaling
+  private sfxVolumes: WeakMap<HTMLAudioElement, number> = new WeakMap();
+  private voiceVolume: number = 1;
   private isUnlocked = false;
   
   private log(msg: string) {
@@ -132,6 +135,16 @@ class AudioManager {
       this.bgm.volume = Math.max(0, Math.min(1, this.bgmVolume * this.masterBGMVolume));
     }
     
+    this.sfx.forEach((sound) => {
+      const baseVolume = this.sfxVolumes.get(sound);
+      if (baseVolume === undefined) return;
+      sound.volume = Math.max(0, Math.min(1, baseVolume * this.masterSFXVolume));
+    });
+    
+    if (this.voice) {
+      this.voice.volume = Math.max(0, Math.min(1, this.voiceVolume * this.masterVoiceVolume));
+    }
+    
     localStorage.setItem('arknights_avg_volumes', JSON.stringify({ bgm, sfx, voice }));
   }
 
@@ -207,7 +220,8 @@ class AudioManager {
     const oldBgm = this.bgm;
     const oldInterval = this.bgmFadeInterval;
     
-    this.bgmUrl = url;
+    // bgmUrl is only assigned once playback actually started, otherwise a failed
+    // track would be treated as "current" and never retried by later playBGM calls.
     this.bgmVolume = Math.max(0, volume);
 
     if (oldInterval) {
@@ -239,6 +253,15 @@ class AudioManager {
       const target = e.target as HTMLAudioElement;
       const errorMsg = target.error ? target.error.message : 'Unknown error';
       this.logError(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
+      // Release the dead element and forget the URL so the track can be retried later
+      if (this.bgm === newBgm) {
+        this.bgm = null;
+        this.bgmUrl = null;
+      }
+      newBgm.pause();
+      newBgm.onended = null;
+      newBgm.onerror = null;
+      newBgm.src = '';
     };
     
     try {
@@ -250,12 +273,14 @@ class AudioManager {
       if (playId !== this.currentPlayId) {
         this.log('BGM play playId outdated, stopping new BGM');
         newBgm.pause();
+        newBgm.onended = null;
         newBgm.onerror = null;
         newBgm.src = '';
         return;
       }
 
       this.bgm = newBgm;
+      this.bgmUrl = url;
       const finalVolume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
       this.log(`BGM playing. Actual volume: ${finalVolume} (lineVolume=${volume}, masterVolume=${this.masterBGMVolume})`);
       this.bgmFadeInterval = this.fadeAudio(newBgm, 0, finalVolume, fadeDuration);
@@ -291,12 +316,28 @@ class AudioManager {
             } catch (e) {
               const errorMsg = e instanceof Error ? e.message : String(e);
               this.logError(`Failed to play loop BGM: ${name || url}. Error: ${errorMsg}`);
+              loopBgm.pause();
+              loopBgm.onerror = null;
+              loopBgm.onended = null;
+              loopBgm.src = '';
+              // Forget the dead intro/loop pair so the BGM can be requested again
+              if (this.bgm === newBgm && playId === this.currentPlayId) {
+                this.bgm = null;
+                this.bgmUrl = null;
+              }
             }
           }
         };
       }
     } catch (e) {
+      // The element never made it to playback: free it instead of leaking it
+      newBgm.pause();
+      newBgm.onended = null;
+      newBgm.onerror = null;
+      newBgm.src = '';
+
       if (playId === this.currentPlayId) {
+        this.bgmUrl = null;
         const errorMsg = e instanceof Error ? e.message : String(e);
         this.logError(`Failed to play BGM: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
         
@@ -362,6 +403,7 @@ class AudioManager {
     return new Promise<void>((resolve) => {
       const sound = new Audio(this.formatAudioUrl(url));
       sound.volume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
+      this.sfxVolumes.set(sound, Math.max(0, volume));
       sound.loop = loop;
       
       const finish = () => {
@@ -378,6 +420,7 @@ class AudioManager {
       
       sound.addEventListener('ended', () => {
         this.sfx.delete(sound);
+        this.sfxVolumes.delete(sound);
         if (channel && this.channelSfx.get(channel) === sound) {
           this.channelSfx.delete(channel);
         }
@@ -447,6 +490,7 @@ class AudioManager {
     if (!channel) return;
     const sound = this.channelSfx.get(channel);
     if (sound) {
+      this.sfxVolumes.set(sound, Math.max(0, volume));
       const targetVolume = Math.max(0, Math.min(1, volume * this.masterSFXVolume));
       if (fadeDuration > 0) {
         this.fadeAudio(sound, sound.volume, targetVolume, fadeDuration);
@@ -472,6 +516,7 @@ class AudioManager {
     }
 
     this.voice = new Audio(this.formatAudioUrl(url));
+    this.voiceVolume = Math.max(0, volume);
     this.voice.volume = Math.max(0, Math.min(1, volume * this.masterVoiceVolume));
     
     this.voice.onerror = (e: Event) => {
