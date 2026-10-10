@@ -1,5 +1,5 @@
 import { Language, OperatorVoiceLine, OperatorCvInfo, OperatorVoiceData } from '../types';
-import { CacheService } from './cacheService';
+import { DbService } from './dbService';
 
 export type { OperatorVoiceLine, OperatorCvInfo, OperatorVoiceData };
 
@@ -210,72 +210,374 @@ export function getCanonicalVoiceTitle(rawTitle: string | undefined, lang: Langu
   return rawTitle;
 }
 
-// In-memory cache for fetched charword_tables
-let cachedZhCharWordTable: any = null;
-let cachedEnCharWordTable: any = null;
-let cachedJaCharWordTable: any = null;
-let isFetchingCharWordTable = false;
-const fetchListeners: Array<() => void> = [];
+export type VoiceTableLang = 'zh' | 'en' | 'ja';
 
-async function loadCharWordTables(): Promise<{ zh: any; en: any; ja: any }> {
-  if (cachedZhCharWordTable && cachedEnCharWordTable && cachedJaCharWordTable) {
-    return { zh: cachedZhCharWordTable, en: cachedEnCharWordTable, ja: cachedJaCharWordTable };
+export interface OperatorVoiceOptions {
+  /** Overrides automatic table resolution; `'all'` loads zh + en + ja. */
+  langs?: readonly VoiceTableLang[] | 'all';
+}
+
+const VOICE_TABLE_LANGS: readonly VoiceTableLang[] = ['zh', 'en', 'ja'];
+
+const CHARWORD_TABLE_URLS: Record<VoiceTableLang, string> = {
+  zh: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/charword_table.json',
+  en: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/en_US/gamedata/excel/charword_table.json',
+  ja: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/ja_JP/gamedata/excel/charword_table.json'
+};
+
+// Bump to re-key the persisted tables: payloads written under an older version
+// are ignored on read and pruned on write.
+const CHARWORD_TABLE_VERSION = 2;
+const CHARWORD_TABLE_KEY_PREFIX = `ak_charword_table_v${CHARWORD_TABLE_VERSION}`;
+const CHARWORD_LEGACY_PRUNE_DEPTH = 3;
+
+const voiceTableCacheKey = (lang: VoiceTableLang): string => `${CHARWORD_TABLE_KEY_PREFIX}_${lang}`;
+
+type CharWordItem = {
+  charWordId?: string;
+  charId?: string;
+  wordKey?: string;
+  voiceId?: string;
+  voiceTitle?: string;
+  voiceText?: string;
+  voiceAsset?: string;
+  unlockType?: string;
+  lockDescription?: string | null;
+};
+
+type VoiceLangDictEntry = {
+  charId?: string;
+  wordkeys?: string[];
+  dict?: Record<string, { cvName?: string | string[]; wordkey?: string; voicePath?: string | null }>;
+};
+
+type RawVoiceTable = {
+  charWords?: Record<string, CharWordItem>;
+  voiceLangDict?: Record<string, VoiceLangDictEntry>;
+};
+
+type CharWordEntry = {
+  key: string;
+  item: CharWordItem;
+  charId: string;
+  wordKey: string;
+  voiceId: string;
+};
+
+/**
+ * Precomputed lookup indexes for a table, built once per download (or per
+ * IndexedDB read) instead of once per operator.
+ */
+type CharWordIndex = {
+  /** Primary table only: pre-lowered identities for the single matching pass. */
+  entries: CharWordEntry[];
+  /** `charId\0voiceId` -> item (first occurrence wins, as `Array.find` did). */
+  byCharIdVoice: Map<string, CharWordItem>;
+  /** `wordKey\0voiceId` -> item. */
+  byWordKeyVoice: Map<string, CharWordItem>;
+  /** Raw `voiceLangDict` keys (lowercased). */
+  dictByKey: Map<string, VoiceLangDictEntry>;
+  dictByCharId: Map<string, VoiceLangDictEntry>;
+  dictByWordKey: Map<string, VoiceLangDictEntry>;
+};
+
+type LoadedVoiceTable = {
+  lang: VoiceTableLang;
+  raw: RawVoiceTable;
+  index: CharWordIndex;
+  source: 'idb' | 'network' | 'empty';
+};
+
+const IDENTITY_SEP = '\u0000';
+
+function buildVoiceTableIndex(raw: RawVoiceTable, withEntries: boolean): CharWordIndex {
+  const index: CharWordIndex = {
+    entries: [],
+    byCharIdVoice: new Map(),
+    byWordKeyVoice: new Map(),
+    dictByKey: new Map(),
+    dictByCharId: new Map(),
+    dictByWordKey: new Map()
+  };
+
+  const charWords = raw.charWords;
+  if (charWords) {
+    for (const key of Object.keys(charWords)) {
+      const item = charWords[key];
+      if (!item) continue;
+
+      const charId = typeof item.charId === 'string' ? item.charId.toLowerCase() : '';
+      const wordKey = typeof item.wordKey === 'string' ? item.wordKey.toLowerCase() : '';
+      const voiceId = typeof item.voiceId === 'string' ? item.voiceId : '';
+
+      if (withEntries) {
+        index.entries.push({ key, item, charId, wordKey, voiceId });
+      }
+
+      if (charId) {
+        const identity = charId + IDENTITY_SEP + voiceId;
+        if (!index.byCharIdVoice.has(identity)) index.byCharIdVoice.set(identity, item);
+      }
+      if (wordKey) {
+        const identity = wordKey + IDENTITY_SEP + voiceId;
+        if (!index.byWordKeyVoice.has(identity)) index.byWordKeyVoice.set(identity, item);
+      }
+    }
   }
 
-  if (isFetchingCharWordTable) {
-    return new Promise((resolve) => {
-      fetchListeners.push(() => {
-        resolve({ zh: cachedZhCharWordTable, en: cachedEnCharWordTable, ja: cachedJaCharWordTable });
-      });
-    });
+  const voiceLangDict = raw.voiceLangDict;
+  if (voiceLangDict) {
+    for (const key of Object.keys(voiceLangDict)) {
+      const dictEntry = voiceLangDict[key];
+      if (!dictEntry) continue;
+
+      const lowerKey = key.toLowerCase();
+      if (!index.dictByKey.has(lowerKey)) index.dictByKey.set(lowerKey, dictEntry);
+
+      if (typeof dictEntry.charId === 'string' && dictEntry.charId) {
+        const lower = dictEntry.charId.toLowerCase();
+        if (!index.dictByCharId.has(lower)) index.dictByCharId.set(lower, dictEntry);
+      }
+      if (Array.isArray(dictEntry.wordkeys)) {
+        for (const wordKey of dictEntry.wordkeys) {
+          if (typeof wordKey !== 'string' || !wordKey) continue;
+          const lower = wordKey.toLowerCase();
+          if (!index.dictByWordKey.has(lower)) index.dictByWordKey.set(lower, dictEntry);
+        }
+      }
+    }
   }
 
-  isFetchingCharWordTable = true;
+  return index;
+}
+
+function findVoiceLangDictEntry(index: CharWordIndex, keys: Iterable<string>): VoiceLangDictEntry | undefined {
+  for (const key of keys) {
+    const byCharId = index.dictByCharId.get(key);
+    if (byCharId) return byCharId;
+    const byWordKey = index.dictByWordKey.get(key);
+    if (byWordKey) return byWordKey;
+  }
+  return undefined;
+}
+
+function findOverlayItem(
+  index: CharWordIndex | null,
+  charId: string,
+  wordKey: string,
+  voiceId: string
+): CharWordItem | undefined {
+  if (!index) return undefined;
+  const byCharId = index.byCharIdVoice.get(charId + IDENTITY_SEP + voiceId);
+  if (byCharId) return byCharId;
+  return index.byWordKeyVoice.get(wordKey + IDENTITY_SEP + voiceId);
+}
+
+const VOICE_DUB_PREF_KEY = 'ak-voice-lang-preference';
+
+/** Best-effort read of the dub language the voice player persists. */
+function readActiveVoiceDubLang(): string {
+  try {
+    return localStorage.getItem(VOICE_DUB_PREF_KEY) || 'JP';
+  } catch {
+    return 'JP';
+  }
+}
+
+/**
+ * Resolves which tables a single request needs.
+ *
+ * `zh` is the canonical spine (`voiceLangDict` lives only there) and is always
+ * required. `en` is only required when the UI locale renders English
+ * titles/text, and `ja` only when the Japanese dub is active, because it is the
+ * sole source of `voiceTextJa`.
+ */
+export function resolveVoiceTableLangs(uiLang: Language, options?: OperatorVoiceOptions): VoiceTableLang[] {
+  if (options?.langs === 'all') return ['zh', 'en', 'ja'];
+
+  const langs: VoiceTableLang[] = ['zh'];
+
+  const addLang = (lang: VoiceTableLang) => {
+    if (!langs.includes(lang)) langs.push(lang);
+  };
+
+  if (options?.langs) {
+    for (const lang of options.langs) addLang(lang);
+    return langs;
+  }
+
+  if (uiLang !== 'zh_CN') addLang('en');
+  if (readActiveVoiceDubLang() === 'JP') addLang('ja');
+
+  return langs;
+}
+
+const loadedVoiceTables = new Map<VoiceTableLang, LoadedVoiceTable>();
+const inflightVoiceTables = new Map<VoiceTableLang, Promise<LoadedVoiceTable>>();
+let voiceTableWritesDisabled = false;
+let voiceTableLegacyPruned = false;
+
+function createEmptyVoiceTable(lang: VoiceTableLang): LoadedVoiceTable {
+  const raw: RawVoiceTable = { charWords: {}, voiceLangDict: {} };
+  return { lang, raw, index: buildVoiceTableIndex(raw, false), source: 'empty' };
+}
+
+function isValidVoiceTable(raw: unknown): raw is RawVoiceTable {
+  if (!raw || typeof raw !== 'object') return false;
+  const table = raw as RawVoiceTable;
+  return !!table.charWords && typeof table.charWords === 'object' && Object.keys(table.charWords).length > 0;
+}
+
+function isQuotaExceededError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const name = (err as { name?: unknown }).name;
+  return name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED';
+}
+
+/** Sandboxed iframes expose no `indexedDB`; there we stay in memory only. */
+function isVoiceTableStorageAvailable(): boolean {
+  try {
+    return typeof indexedDB !== 'undefined' && typeof indexedDB.open === 'function';
+  } catch {
+    return false;
+  }
+}
+
+async function readPersistedVoiceTable(lang: VoiceTableLang): Promise<RawVoiceTable | null> {
+  if (!isVoiceTableStorageAvailable()) return null;
+  try {
+    const payload = await DbService.get(voiceTableCacheKey(lang));
+    if (!payload || typeof payload !== 'object') return null;
+    const record = payload as { v?: unknown; table?: unknown };
+    if (record.v !== CHARWORD_TABLE_VERSION) return null;
+    return isValidVoiceTable(record.table) ? record.table : null;
+  } catch (err) {
+    console.warn(`Failed to read persisted charword table (${lang}):`, err);
+    return null;
+  }
+}
+
+async function pruneLegacyVoiceTables(): Promise<void> {
+  if (!isVoiceTableStorageAvailable()) return;
+  for (let version = CHARWORD_TABLE_VERSION - CHARWORD_LEGACY_PRUNE_DEPTH; version < CHARWORD_TABLE_VERSION; version++) {
+    if (version < 1) continue;
+    for (const lang of VOICE_TABLE_LANGS) {
+      const legacyKey = `ak_charword_table_v${version}_${lang}`;
+      try {
+        await DbService.delete(legacyKey);
+      } catch (err) {
+        console.warn(`Failed to prune legacy charword table (${legacyKey}):`, err);
+      }
+    }
+  }
+}
+
+async function persistVoiceTable(lang: VoiceTableLang, raw: RawVoiceTable): Promise<void> {
+  if (voiceTableWritesDisabled || !isVoiceTableStorageAvailable()) return;
+  const payload = { v: CHARWORD_TABLE_VERSION, lang, table: raw };
+  let firstError: unknown = null;
 
   try {
-    const zhUrl = 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/charword_table.json';
-    const enUrl = 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/en_US/gamedata/excel/charword_table.json';
-    const jaUrl = 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/ja_JP/gamedata/excel/charword_table.json';
-
-    const proxiedZhUrl = `/api/proxy?url=${encodeURIComponent(zhUrl)}`;
-    const proxiedEnUrl = `/api/proxy?url=${encodeURIComponent(enUrl)}`;
-    const proxiedJaUrl = `/api/proxy?url=${encodeURIComponent(jaUrl)}`;
-
-    const [zhRes, enRes, jaRes] = await Promise.all([
-      fetch(proxiedZhUrl).then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }).catch(async () => {
-        const direct = await fetch(zhUrl);
-        return direct.json();
-      }).catch(() => ({ charWords: {}, voiceLangDict: {} })),
-      fetch(proxiedEnUrl).then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }).catch(async () => {
-        const direct = await fetch(enUrl);
-        return direct.json();
-      }).catch(() => ({ charWords: {}, voiceLangDict: {} })),
-      fetch(proxiedJaUrl).then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }).catch(async () => {
-        const direct = await fetch(jaUrl);
-        return direct.json();
-      }).catch(() => ({ charWords: {}, voiceLangDict: {} }))
-    ]);
-
-    cachedZhCharWordTable = zhRes;
-    cachedEnCharWordTable = enRes;
-    cachedJaCharWordTable = jaRes;
-
-    return { zh: cachedZhCharWordTable, en: cachedEnCharWordTable, ja: cachedJaCharWordTable };
-  } finally {
-    isFetchingCharWordTable = false;
-    while (fetchListeners.length > 0) {
-      const cb = fetchListeners.shift();
-      if (cb) cb();
+    await DbService.set(voiceTableCacheKey(lang), payload);
+    if (!voiceTableLegacyPruned) {
+      voiceTableLegacyPruned = true;
+      void pruneLegacyVoiceTables();
     }
+    return;
+  } catch (err) {
+    console.warn(`Failed to persist charword table (${lang}):`, err);
+    firstError = err;
+  }
+
+  if (!isQuotaExceededError(firstError)) {
+    voiceTableWritesDisabled = true;
+    return;
+  }
+
+  await pruneLegacyVoiceTables();
+  try {
+    await DbService.set(voiceTableCacheKey(lang), payload);
+  } catch (retryErr) {
+    console.warn(`Retry to persist charword table (${lang}) failed:`, retryErr);
+    voiceTableWritesDisabled = true;
+  }
+}
+
+/** Keeps the ~10 MB structured clone of a table off the interaction-critical path. */
+function scheduleVoiceTablePersist(lang: VoiceTableLang, table: RawVoiceTable): void {
+  const persist = () => void persistVoiceTable(lang, table);
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(persist, { timeout: 5000 });
+  } else {
+    setTimeout(persist, 0);
+  }
+}
+
+async function fetchVoiceTable(lang: VoiceTableLang): Promise<RawVoiceTable | null> {
+  const url = CHARWORD_TABLE_URLS[lang];
+  const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+
+  try {
+    const proxied = await fetch(proxiedUrl);
+    if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
+    return (await proxied.json()) as RawVoiceTable;
+  } catch (proxyErr) {
+    const direct = await fetch(url);
+    if (!direct.ok) throw new Error(`HTTP ${direct.status}`);
+    return (await direct.json()) as RawVoiceTable;
+  }
+}
+
+async function loadVoiceTable(lang: VoiceTableLang): Promise<LoadedVoiceTable> {
+  const memo = loadedVoiceTables.get(lang);
+  if (memo) return memo;
+
+  const inflight = inflightVoiceTables.get(lang);
+  if (inflight) return inflight;
+
+  const task = (async (): Promise<LoadedVoiceTable> => {
+    const persisted = await readPersistedVoiceTable(lang);
+    if (persisted) {
+      const loaded: LoadedVoiceTable = {
+        lang,
+        raw: persisted,
+        index: buildVoiceTableIndex(persisted, lang === 'zh'),
+        source: 'idb'
+      };
+      loadedVoiceTables.set(lang, loaded);
+      return loaded;
+    }
+
+    let raw: RawVoiceTable | null = null;
+    try {
+      raw = await fetchVoiceTable(lang);
+    } catch (err) {
+      console.warn(`Failed to download charword table (${lang}):`, err);
+    }
+
+    if (isValidVoiceTable(raw)) {
+      const table = raw as RawVoiceTable;
+      const loaded: LoadedVoiceTable = {
+        lang,
+        raw: table,
+        index: buildVoiceTableIndex(table, lang === 'zh'),
+        source: 'network'
+      };
+      loadedVoiceTables.set(lang, loaded);
+      scheduleVoiceTablePersist(lang, table);
+      return loaded;
+    }
+
+    // Deliberately not memoised: a failed download is retried on the next open
+    // instead of being pinned for the rest of the session.
+    return createEmptyVoiceTable(lang);
+  })();
+
+  inflightVoiceTables.set(lang, task);
+  try {
+    return await task;
+  } finally {
+    inflightVoiceTables.delete(lang);
   }
 }
 
@@ -346,23 +648,32 @@ export function getLineAudioUrl(line: OperatorVoiceLine, voiceLangType: string):
  * Fetch and extract voice lines for a specific operator with full multi-language audio support.
  */
 export async function getOperatorVoiceData(
-  rawCharId: string, 
-  uiLang: Language = 'ru_RU'
+  rawCharId: string,
+  uiLang: Language = 'ru_RU',
+  options?: OperatorVoiceOptions
 ): Promise<OperatorVoiceData | null> {
   if (!rawCharId) return null;
 
   try {
-    const { zh, en, ja } = await loadCharWordTables();
+    const tableLangs = resolveVoiceTableLangs(uiLang, options);
+    const [zhTable, enTable, jaTable] = await Promise.all([
+      loadVoiceTable('zh'),
+      tableLangs.includes('en') ? loadVoiceTable('en') : null,
+      tableLangs.includes('ja') ? loadVoiceTable('ja') : null
+    ]);
+
+    const zh = zhTable.raw;
     if (!zh || !zh.charWords) return null;
 
     const cleanId = rawCharId.toLowerCase().trim();
     const idWithoutPrefix = cleanId.replace(/^char_/, '');
     const idWithPrefix = cleanId.startsWith('char_') ? cleanId : `char_${cleanId}`;
-    
-    const zhWords = zh.charWords || {};
-    const enWords = en?.charWords || {};
-    const jaWords = ja?.charWords || {};
-    const voiceLangDict = zh.voiceLangDict || {};
+
+    const zhIndex = zhTable.index;
+    const enWords = enTable?.raw.charWords || {};
+    const jaWords = jaTable?.raw.charWords || {};
+    const enIndex = enTable?.index || null;
+    const jaIndex = jaTable?.index || null;
 
     // Build target keys set for matching all aliases, variants, and wordKeys
     const targetKeys = new Set<string>([cleanId, idWithoutPrefix, idWithPrefix]);
@@ -371,17 +682,11 @@ export async function getOperatorVoiceData(
     const cvList: OperatorCvInfo[] = [];
     const availableLangs: string[] = [];
 
-    const cvData = voiceLangDict[cleanId] || 
-      voiceLangDict[idWithPrefix] || 
-      voiceLangDict[idWithoutPrefix] ||
-      Object.values(voiceLangDict).find((v: any) => {
-        const vCharId = (v.charId || '').toLowerCase();
-        if (targetKeys.has(vCharId)) return true;
-        if (v.wordkeys && Array.isArray(v.wordkeys)) {
-          return v.wordkeys.some((wk: string) => targetKeys.has(wk.toLowerCase()));
-        }
-        return false;
-      }) as any;
+    const cvData =
+      zhIndex.dictByKey.get(cleanId) ||
+      zhIndex.dictByKey.get(idWithPrefix) ||
+      zhIndex.dictByKey.get(idWithoutPrefix) ||
+      findVoiceLangDictEntry(zhIndex, targetKeys);
 
     if (cvData) {
       if (cvData.charId) targetKeys.add(cvData.charId.toLowerCase());
@@ -394,7 +699,7 @@ export async function getOperatorVoiceData(
           if (langInfo.cvName && langInfo.cvName.length > 0) {
             const names = Array.isArray(langInfo.cvName) ? langInfo.cvName : [langInfo.cvName];
             const labelObj = CV_LANG_LABELS[langKey] || { ru: langKey, en: langKey, flag: '🎙️' };
-            
+
             cvList.push({
               langType: langKey,
               langLabel: uiLang === 'ru_RU' || uiLang === 'ru_RU_CN' ? labelObj.ru : labelObj.en,
@@ -416,95 +721,97 @@ export async function getOperatorVoiceData(
       availableLangs.push('JP');
     }
 
-    // Find all matching voice entries by charId or wordKey
+    const cvByLang = new Map<string, OperatorCvInfo>();
+    for (const cvInfo of cvList) {
+      cvByLang.set(cvInfo.langType, cvInfo);
+    }
+
+    // Find all matching voice entries by charId or wordKey.
+    // One pass over the pre-lowered primary entries plus O(1) overlay lookups.
     const matchingEntries: OperatorVoiceLine[] = [];
     const wordKeySet = new Set<string>();
+    const zhEntries = zhIndex.entries;
 
-    for (const [key, itemZh] of Object.entries<any>(zhWords)) {
-      const itemCharId = (itemZh.charId || '').toLowerCase();
-      const itemWordKey = (itemZh.wordKey || '').toLowerCase();
+    for (let i = 0; i < zhEntries.length; i++) {
+      const entry = zhEntries[i];
+      const itemZh = entry.item;
+      const itemCharId = entry.charId;
+      const itemWordKey = entry.wordKey;
 
-      const isMatch = 
-        targetKeys.has(itemCharId) || 
+      const isMatch =
+        targetKeys.has(itemCharId) ||
         targetKeys.has(itemWordKey) ||
         cleanId === itemCharId ||
         cleanId === itemWordKey ||
         itemCharId.endsWith(cleanId) ||
         cleanId.endsWith(itemCharId);
 
-      if (isMatch) {
-        wordKeySet.add(itemZh.wordKey || itemZh.charId);
+      if (!isMatch) continue;
 
-        const itemEn = enWords[key] || Object.values(enWords).find((e: any) => 
-          (e.charId?.toLowerCase() === itemCharId || e.wordKey?.toLowerCase() === itemWordKey) && 
-          e.voiceId === itemZh.voiceId
-        ) as any;
+      const wordKey = itemZh.wordKey || itemZh.charId;
+      if (wordKey) wordKeySet.add(wordKey);
 
-        const itemJa = jaWords[key] || Object.values(jaWords).find((j: any) => 
-          (j.charId?.toLowerCase() === itemCharId || j.wordKey?.toLowerCase() === itemWordKey) && 
-          j.voiceId === itemZh.voiceId
-        ) as any;
+      const itemEn = enWords[entry.key] || findOverlayItem(enIndex, itemCharId, itemWordKey, entry.voiceId);
+      const itemJa = jaWords[entry.key] || findOverlayItem(jaIndex, itemCharId, itemWordKey, entry.voiceId);
 
-        const titleZh = itemZh.voiceTitle || '';
-        const titleEn = itemEn?.voiceTitle || itemZh.voiceTitle || '';
-        const titleJa = itemJa?.voiceTitle || '';
-        const titleRu = VOICE_TITLE_RU_MAP[titleEn.toLowerCase()] || 
-                        VOICE_TITLE_RU_MAP[titleZh] || 
-                        VOICE_TITLE_RU_MAP[titleJa] ||
-                        titleEn || 
-                        titleZh;
+      const titleZh = itemZh.voiceTitle || '';
+      const titleEn = itemEn?.voiceTitle || itemZh.voiceTitle || '';
+      const titleJa = itemJa?.voiceTitle || '';
+      const titleRu = VOICE_TITLE_RU_MAP[titleEn.toLowerCase()] ||
+                      VOICE_TITLE_RU_MAP[titleZh] ||
+                      VOICE_TITLE_RU_MAP[titleJa] ||
+                      titleEn ||
+                      titleZh;
 
-        const textZh = itemZh.voiceText || '';
-        const textEn = itemEn?.voiceText || textZh;
-        const textJa = itemJa?.voiceText || '';
-        
-        let localizedText = textEn;
-        if (uiLang === 'zh_CN') {
-          localizedText = textZh;
-        } else if (uiLang === 'ru_RU' || uiLang === 'ru_RU_CN') {
-          // Display EN or RU translation
-          localizedText = textEn || textZh;
-        }
+      const textZh = itemZh.voiceText || '';
+      const textEn = itemEn?.voiceText || textZh;
+      const textJa = itemJa?.voiceText || '';
 
-        let localizedTitle = titleEn;
-        if (uiLang === 'zh_CN') {
-          localizedTitle = titleZh;
-        } else if (uiLang === 'ru_RU' || uiLang === 'ru_RU_CN') {
-          localizedTitle = titleRu;
-        }
-
-        const category = getVoiceCategory(titleEn, titleZh);
-
-        // Pre-build audio URLs for all available language dubs for this operator
-        const audioUrls: Record<string, string> = {};
-        for (const lType of availableLangs) {
-          const dictEntry = cvList.find(c => c.langType === lType);
-          audioUrls[lType] = buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, lType, dictEntry);
-        }
-
-        const primaryAudioUrl = audioUrls.JP || audioUrls[availableLangs[0]] || buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, 'JP');
-
-        matchingEntries.push({
-          charWordId: key,
-          charId: itemZh.charId || cleanId,
-          wordKey: itemZh.wordKey || itemZh.charId || cleanId,
-          voiceId: itemZh.voiceId,
-          voiceTitle: localizedTitle,
-          voiceTitleEn: titleEn,
-          voiceTitleZh: titleZh,
-          voiceTitleRu: titleRu,
-          voiceText: localizedText,
-          voiceTextJa: textJa,
-          voiceTextEn: textEn,
-          voiceTextZh: textZh,
-          voiceAsset: itemZh.voiceAsset,
-          category,
-          audioUrls,
-          audioUrl: primaryAudioUrl,
-          unlockType: itemZh.unlockType,
-          lockDescription: itemZh.lockDescription
-        });
+      let localizedText = textEn;
+      if (uiLang === 'zh_CN') {
+        localizedText = textZh;
+      } else if (uiLang === 'ru_RU' || uiLang === 'ru_RU_CN') {
+        // Display EN or RU translation
+        localizedText = textEn || textZh;
       }
+
+      let localizedTitle = titleEn;
+      if (uiLang === 'zh_CN') {
+        localizedTitle = titleZh;
+      } else if (uiLang === 'ru_RU' || uiLang === 'ru_RU_CN') {
+        localizedTitle = titleRu;
+      }
+
+      const category = getVoiceCategory(titleEn, titleZh);
+
+      // Pre-build audio URLs for all available language dubs for this operator
+      const audioUrls: Record<string, string> = {};
+      for (const lType of availableLangs) {
+        audioUrls[lType] = buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, lType, cvByLang.get(lType));
+      }
+
+      const primaryAudioUrl = audioUrls.JP || audioUrls[availableLangs[0]] || buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, 'JP');
+
+      matchingEntries.push({
+        charWordId: entry.key,
+        charId: itemZh.charId || cleanId,
+        wordKey: itemZh.wordKey || itemZh.charId || cleanId,
+        voiceId: itemZh.voiceId,
+        voiceTitle: localizedTitle,
+        voiceTitleEn: titleEn,
+        voiceTitleZh: titleZh,
+        voiceTitleRu: titleRu,
+        voiceText: localizedText,
+        voiceTextJa: textJa,
+        voiceTextEn: textEn,
+        voiceTextZh: textZh,
+        voiceAsset: itemZh.voiceAsset,
+        category,
+        audioUrls,
+        audioUrl: primaryAudioUrl,
+        unlockType: itemZh.unlockType,
+        lockDescription: itemZh.lockDescription
+      });
     }
 
     return {
