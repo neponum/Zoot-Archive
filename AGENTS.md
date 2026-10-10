@@ -1,23 +1,31 @@
-# AGENTS.md — AI Coding Agent Project Context & Development Protocols
+# 🤖 AGENTS.md — AI Coding Agent Master Directive & Protocols
 
-This file is automatically loaded into the AI Studio agent environment to guide development, data maintenance, and code architecture for **Zoot Archive** (Arknights Dossier & Story Reader).
+This file is automatically loaded into the AI Studio agent environment. It serves as the primary operational directive, architectural index, and safety rulebook for **Zoot Archive** (Arknights Dossier & Visual Novel Reader).
 
 ---
 
-## 🏛️ Project Architecture Overview
+## 📚 Deep-Dive Technical Documentation Index
 
-- **Framework**: React 19 + TypeScript + Vite + Express (Full-Stack).
-- **Hosting & Deployment**: Hosted on **Vercel** (production deployment uses `@vercel/analytics` and `@vercel/speed-insights`, configured via `vercel.json`).
+For exhaustive subsystem specifications, consult the dedicated manuals in the `docs/` directory:
+- **[System Architecture & Topology](docs/ARCHITECTURE.md)**: Full-stack component composition, state lifecycle, dev/prod Express mounting, and D3 graph engine.
+- **[Visual Novel & Story Engine](docs/STORY_ENGINE.md)**: Arknights AST parser syntax, camera tweens, coordinate normalization math, scale-aware clamping, and character sprite resolution.
+- **[Security Architecture & Hardening](docs/SECURITY.md)**: SSRF defenses in `/api/proxy`, Discord OAuth2 state validation, rate-limiting tiers, and client XSS sanitization.
+- **[Data Pipeline & Localization](docs/DATA_PIPELINE.md)**: Torappu PRTS data sources, JSON schemas, sync/validation routines, and the canonical Russian lore glossary.
+
+---
+
+## 🏛️ Project Architecture at a Glance
+
+- **Framework**: React 19 + TypeScript 5.8 + Vite 6 + Express 4 (Full-Stack).
+- **Deployment**: Hosted on **Vercel** & Google Cloud Run. Uses `@vercel/analytics` and `@vercel/speed-insights`.
 - **Styling**: Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`).
-- **Audio Engine**: Howler.js wrapped in `src/services/audioManager.ts`.
-- **Animation & Motion**: Motion (`motion/react`).
-- **Data Visualization**: D3.js for operator relationships and node graphs (`OperationRecordsGraph.tsx`).
+- **Motion & Physics**: Motion (`motion/react` v12).
+- **Audio Engine**: Howler.js (`src/services/audioManager.ts`) with IndexedDB binary persistence (`CacheService`).
+- **Data Visualization**: D3.js v7 for operator connection graphs (`OperationRecordsGraph.tsx`).
 
 ---
 
-## 🗺️ Client Routing & Views
-
-The frontend uses `react-router-dom` with the following route structure:
+## 🗺️ Client Route Map (`react-router-dom` v6)
 
 | Route Path | Component / View | Purpose |
 | :--- | :--- | :--- |
@@ -26,106 +34,51 @@ The frontend uses `react-router-dom` with the following route structure:
 | `/event/:eventId` | `ChapterSelector` | Deep link to a specific event story collection |
 | `/operators` | `ChapterSelector` | Operator records list & dossiers overview |
 | `/operators/:operatorId` | `ChapterSelector` | Operator specific records and dossier modal |
-| `/operator/:operatorId` | `ChapterSelector` | Alias for `/operators/:operatorId` |
-| `/music` | `ChapterSelector` | Music player & track listing |
+| `/operator/:operatorId` | `ChapterSelector` | Route alias for `/operators/:operatorId` |
+| `/music` | `ChapterSelector` | PRTS music player & track listing |
 | `/story/*` | `StoryViewerRoute` (`StoryViewer`) | Visual novel engine reproducing in-game story scenarios |
 | `/translate/*` | `TranslationInterface` | Community translation workbench with live preview & AI assistance |
 
 ---
 
-## 🪝 Application State & Custom Hooks (`src/hooks/`)
+## 🛡️ Non-Negotiable AI Coding Directives & Invariants
 
-- `useReadingProgress.ts`: Manages read chapters (`ak-read-chapters`), bookmarked chapters, and mark-as-read/completion logic.
-- `useTranslationState.ts`: Manages active translation session, translator preferences, chapter/episode context, and viewer testing state.
-- `usePageMeta.ts`: Dynamic document title and Open Graph metadata synchronizer across routes.
-- `useStoryControls.ts` & `useStoryReducer.ts`: Visual novel runtime engine, state reducer, and playback controls.
+When modifying code in Zoot Archive, all AI agents **MUST** strictly adhere to the following invariants:
 
----
+### 1. Absolute Fidelity to Raw Script Character Assets
+- **RULE**: NEVER replace or alias character sprite IDs requested in game scripts (`[Character(name="...")]`).
+- **WHY**: In Arknights, different chapters use specific character variants (combat uniforms, damaged clothes, rain gear, shadowy silhouettes). Replacing IDs with arbitrary skins (e.g. swimsuits or summer alts) corrupts the story narrative.
 
-## 🎬 Visual Novel & Story Engine Architecture
+### 2. Scale-Aware Coordinate Clamping Math (`BackgroundLayer.tsx`)
+- **RULE**: Always clamp image and background translations to the zoom margin:
+  $$\text{maxBound} = \frac{(S - 1)}{2} \times 100\% \quad (\text{for } S > 1)$$
+- **WHY**: Prevents extreme coordinates in raw scripts (e.g. `yTO=600` in 04-02) from moving illustrations off-screen into empty black voids.
 
-The visual novel player lives in `src/components/StoryViewer.tsx` and `src/components/story/`, powered by services in `src/services/story/`:
+### 3. Prohibition of `window.alert` and `window.open`
+- **RULE**: NEVER invoke `window.alert()`, `window.confirm()`, or `window.open()` in React components.
+- **WHY**: The application runs inside sandboxed iframes where popups and modal alerts are blocked by browser security policies. Always use in-app modals (`LogModal`, `BackConfirmation`, `SettingsModal`, `BugReportModal`).
 
-1. **Parser (`storyParser.ts`)**:
-   - Parses Arknights visual novel text scripts into AST/command tokens (`[name="..."]`, `[Decision(...)]`, `[Background(...)]`, `[Blocker(...)]`, etc.).
-2. **State & Reducer (`useStoryReducer.ts`, `useStoryControls.ts`)**:
-   - Manages dialog lines, character positioning/cut-ins, screen shakes, sound/music cues, branch decisions, and auto/skip modes.
-3. **Stage Layers**:
-   - `BackgroundLayer.tsx`: Scene backgrounds and transitions.
-   - `CharacterLayer.tsx` & `CharacterCutinLayer.tsx`: Operator portraits, sprite coordinates, and facial expressions.
-   - `CinematicEffectsLayer.tsx` & `EffectsLayer.tsx`: Flashes, shakes, fades, and weather particles.
-   - `DialogueUI.tsx` & `DialogueBox.tsx` & `Typewriter.tsx`: Text printing with formatting tags, speaker names, and rich text effects.
-   - `DecisionOverlay.tsx`: Interactive player dialogue choices.
-   - `ControlsOverlay.tsx` & `TopControls.tsx` & `SkipControls.tsx`: Auto-play, log history, fast-forward, and audio toggles.
+### 4. Zero-Tolerance for SSRF in Asset Proxying (`server/routes/proxy.ts`)
+- **RULE**: Maintain strict protocol checks (`https:`/`http:`), block all private/loopback/cloud metadata IP ranges, and validate against `ALLOWED_PREFIXES`.
+- **WHY**: Protects internal server network surfaces and metadata endpoints from exploitation.
 
----
+### 5. Mandatory State & Cookie CSRF in OAuth (`server/routes/auth.ts`)
+- **RULE**: Discord OAuth callbacks must strictly require both query `state` and cookie `oauth_state` to match. Session cookies must always carry `httpOnly: true`, `sameSite: 'lax'`, and `secure: isSecureRequest(req)`.
 
-## 🎵 Audio Subsystem
+### 6. Data Integrity Protocol
+- **RULE**: Before building or committing after modifying files in `src/data/`:
+  - Run `npm run validate:data`.
+  - If `operators_database.json` was altered, run `npm run sync:operators`.
 
-Managed via `src/services/audioManager.ts` & `src/services/story/storyAssetService.ts`:
-- **Dynamic Resolution & Caching**: BGM and sound effect URLs are resolved dynamically directly from Torappu PRTS Wiki (`https://torappu.prts.wiki/assets/audio/`) with client-side IndexedDB persistence via `CacheService`.
-- **Audio Unlock Policy**: Browsers block autoplay before user interaction. `audioManager.unlock()` is triggered on initial user interaction (e.g. selecting a chapter).
-- **Fade & Crossfade**: Smooth volume transitions for BGM changes.
+### 7. Canonical Lore & Russian Localization Standard
+- **RULE**: Always adhere to `ARKNIGHTS_CANONICAL_GLOSSARY` in `src/config/arknightsGlossary.ts` for all Russian names and terminology (*Родос Айленд*, *Урсус*, *Ориджиниум*, *Орипатия*, *Кель'си*, *Чэнь*).
 
 ---
 
-## 🌐 Server & API Routes (`server/`)
+## 🛠️ Mandatory Verification Workflow
 
-Express backend running at `0.0.0.0:3000` (and integrated as Serverless functions on Vercel):
+After every task or code modification, run the following sequential verification:
 
-- **Discord Authentication (`/api/auth/discord`)**:
-  - `GET /api/auth/discord/login` — Initiates OAuth flow.
-  - `GET /api/auth/discord/callback` / `GET /auth/discord/callback` — Handles OAuth code exchange and sets secure session cookies.
-  - `GET /api/auth/discord/me` — Fetches current authenticated user profile & permissions.
-  - `POST /api/auth/discord/logout` — Clears authentication cookie.
-- **Proxy Services (`/api/proxy`)**:
-  - Proxies requests to external raw assets (Github, Torappu, Mooncell, Fexli) with CORS headers, timeouts, and fallback handling to avoid client-side CORS blocking.
-- **AI Translation (`/api/translate`)**:
-  - Uses `@google/genai` (Gemini API with `GEMINI_API_KEY`) to provide assisted translation of Arknights dialogue with context-aware lore awareness.
-- **Community Voting (`/api/vote`)**:
-  - Community polls, song rankings, and story translation votes persisted via `server/services/voteStorage.ts` (`votes.json`).
-- **Bug Reporting (`/api/bug-report`)**:
-  - Sends formatted bug reports and scene error logs directly to Discord webhook (`DISCORD_BUG_WEBHOOK_URL`).
-
----
-
-## 📚 Lore & Data Layer
-
-- **Canonical Lore Glossary**: `src/config/arknightsGlossary.ts` (`ARKNIGHTS_CANONICAL_GLOSSARY`)
-  - Strict Russian nomenclature for factions (*Родос Айленд*, *Урсус*, *Янь*), operators (*Кальцит*, *Чэнь*, *Кель'си*), and terms (*Ориджиниум*, *Орипатия*).
-- **Operators Database**: `src/data/operators_database.json`
-  - Operator dossiers, voice lines, talents, modules, and lore logs.
-- **Operator Names Map**: `src/data/operator_names_map.json`
-  - Fast lookup map for ID ↔ EN/CN/RU names.
-- **Tags & UI Strings**: `src/data/tags_database.json`, `src/data/translations.json`, `src/translations.ts`.
-
----
-
-## 🛠️ Mandatory Agent Workflow & Safety Rules
-
-1. **Hosting Awareness**:
-   - The application is hosted on **Vercel** and containerized on Cloud Run. Maintain `@vercel/analytics`, `@vercel/speed-insights`, and `vercel.json` compatibility.
-
-2. **JSON Data Integrity Check**:
-   - Before building or after modifying any file in `src/data/`, run `npm run validate:data`.
-   - If `src/data/operators_database.json` is modified or extended, run `npm run sync:operators` to refresh `src/data/operator_names_map.json`.
-
-3. **TypeScript & Type Safety**:
-   - Strict TypeScript rules apply (`noImplicitAny`).
-   - Use explicit interfaces from `src/types.ts`. Avoid `any` types wherever possible.
-   - Run `npm run lint` (`tsc --noEmit`) to verify zero type errors.
-
-4. **Lore & Localization Standards**:
-   - Always refer to `ARKNIGHTS_CANONICAL_GLOSSARY` in `src/config/arknightsGlossary.ts` when translating or displaying Russian terms.
-   - Ensure operator handbook titles follow `getCanonicalHandbookTitle` formatting in `src/utils/operatorUtils.ts`.
-
-5. **Useful Developer Commands**:
-   - `npm run validate:data` — Validates all JSON files for syntax and completeness.
-   - `npm run sync:operators` — Re-generates `src/data/operator_names_map.json`.
-   - `npm run lint` — Runs TypeScript compiler check (`tsc --noEmit`).
-   - `npm run build` — Compiles Vite frontend and bundles server into `dist/server.cjs`.
-
----
-
-*Keep this file up to date whenever new architectural modules, API routes, or dataset structures are introduced.*
-
+1. `npm run validate:data` — Validates JSON database syntax and ID alignment.
+2. `npm run lint` — Runs TypeScript compiler check (`tsc --noEmit`). Must produce 0 errors.
+3. `npm run build` — Compiles the Vite frontend bundle and server bundle.

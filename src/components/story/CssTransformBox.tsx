@@ -22,6 +22,7 @@ export interface CssTransformBoxProps {
   duration?: number;
   ease?: string;
   unit?: '%' | 'px';
+  tweenId?: string | number;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -39,12 +40,14 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
   duration = 0,
   ease = "easeInOut",
   unit = '%',
+  tweenId,
   className = "",
   style = {},
   children
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const lastTargetRef = React.useRef({ x, y, scaleX, scaleY });
+  const lastTweenIdRef = React.useRef<string | number | undefined>(tweenId);
   const isFirstRender = React.useRef(true);
 
   React.useLayoutEffect(() => {
@@ -57,6 +60,9 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
       prev.y !== y || 
       prev.scaleX !== scaleX || 
       prev.scaleY !== scaleY;
+
+    const tweenChanged = tweenId !== undefined && tweenId !== lastTweenIdRef.current;
+    lastTweenIdRef.current = tweenId;
 
     const fromProvided = 
       xFrom !== undefined || 
@@ -98,7 +104,9 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
       return;
     }
 
-    if (targetChanged || fromProvided) {
+    // Only start new transition if target changed or a new tween was dispatched.
+    // Prevents cancelling/resetting running animations on unrelated parent re-renders.
+    if (targetChanged || tweenChanged) {
       lastTargetRef.current = { x, y, scaleX, scaleY };
 
       let startTransform: string;
@@ -129,7 +137,7 @@ export const CssTransformBox: React.FC<CssTransformBoxProps> = React.memo(({
       });
       return () => cancelAnimationFrame(animationFrame);
     }
-  }, [x, y, scaleX, scaleY, xFrom, yFrom, scaleXFrom, scaleYFrom, duration, ease, unit]);
+  }, [x, y, scaleX, scaleY, xFrom, yFrom, scaleXFrom, scaleYFrom, duration, ease, unit, tweenId]);
 
   return (
     <div 

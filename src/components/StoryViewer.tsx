@@ -94,6 +94,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const bgUrlRef = useRef<string | null>(null);
   const currentBgRef = useRef<string | null>(null);
   const imageUrlRef = useRef<string | null>(null);
+  const currentBgStateRef = useRef<{ x: number; y: number; scaleX: number; scaleY: number }>({ x: 0, y: 0, scaleX: 1, scaleY: 1 });
+  const currentImageStateRef = useRef<{ x: number; y: number; scaleX: number; scaleY: number }>({ x: 0, y: 0, scaleX: 1, scaleY: 1 });
 
   useEffect(() => {
     bgUrlRef.current = bgUrl;
@@ -320,17 +322,29 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'background':
             if (line.assetName) {
               const isBlack = line.assetName.toLowerCase().includes('black') || line.assetName.toLowerCase() === 'bg_black';
+              currentBgStateRef.current = {
+                x: line.x ?? 0,
+                y: line.y ?? 0,
+                scaleX: line.xScale ?? 1,
+                scaleY: line.yScale ?? 1
+              };
               if (isBlack) {
                 bgUrlRef.current = 'BLACK_FALLBACK';
                 currentBgRef.current = line.assetName;
-                dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName, tween: line } });
+                dispatch({ type: 'SET_BG', payload: { bgUrl: 'BLACK_FALLBACK', assetName: line.assetName, tween: { ...line, tweenId: `${index}-${Date.now()}` } } });
               } else {
                 const url = await getImageUrl('background', line.assetName);
                 if (processToken.current !== token) return;
                 bgUrlRef.current = url;
                 currentBgRef.current = line.assetName;
-                dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName, tween: line } });
+                dispatch({ type: 'SET_BG', payload: { bgUrl: url, assetName: line.assetName, tween: { ...line, tweenId: `${index}-${Date.now()}` } } });
               }
+            } else {
+              // Clearing background (e.g. [Background] without image attribute)
+              bgUrlRef.current = null;
+              currentBgRef.current = null;
+              currentBgStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
+              dispatch({ type: 'SET_BG', payload: { bgUrl: null, assetName: null } });
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
               const waitDuration = line.duration;
@@ -516,9 +530,25 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               const url = await getImageUrl('image', line.assetName);
               if (processToken.current !== token) return;
               imageUrlRef.current = url;
-              dispatch({ type: 'SET_IMAGE', payload: { url, tween: line } });
+              currentImageStateRef.current = {
+                x: line.x ?? 0,
+                y: line.y ?? 0,
+                scaleX: line.xScale ?? 1,
+                scaleY: line.yScale ?? 1
+              };
+              dispatch({ 
+                type: 'SET_IMAGE', 
+                payload: { 
+                  url, 
+                  tween: { 
+                    ...line, 
+                    tweenId: `${index}-${Date.now()}` 
+                  } 
+                } 
+              });
             } else {
               imageUrlRef.current = null;
+              currentImageStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
               dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
@@ -559,7 +589,44 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
 
           case 'backgroundtween':
-            dispatch({ type: 'SET_BG', payload: { bgUrl: bgUrlRef.current, assetName: currentBgRef.current, tween: line } });
+            {
+              const prevBg = { ...currentBgStateRef.current };
+              const targetScaleX = line.xScaleTo !== undefined ? line.xScaleTo : (line.xScale !== undefined ? line.xScale : prevBg.scaleX);
+              const targetScaleY = line.yScaleTo !== undefined ? line.yScaleTo : (line.yScale !== undefined ? line.yScale : prevBg.scaleY);
+              const targetX = line.xTo !== undefined ? line.xTo : (line.x !== undefined ? line.x : prevBg.x);
+              const targetY = line.yTo !== undefined ? line.yTo : (line.y !== undefined ? line.y : prevBg.y);
+
+              const fromScaleX = line.xScaleFrom !== undefined ? line.xScaleFrom : prevBg.scaleX;
+              const fromScaleY = line.yScaleFrom !== undefined ? line.yScaleFrom : prevBg.scaleY;
+              const fromX = line.xFrom !== undefined ? line.xFrom : prevBg.x;
+              const fromY = line.yFrom !== undefined ? line.yFrom : prevBg.y;
+
+              currentBgStateRef.current = { x: targetX, y: targetY, scaleX: targetScaleX, scaleY: targetScaleY };
+
+              dispatch({ 
+                type: 'SET_BG', 
+                payload: { 
+                  bgUrl: bgUrlRef.current, 
+                  assetName: currentBgRef.current, 
+                  tween: {
+                    ...line,
+                    xScale: targetScaleX,
+                    yScale: targetScaleY,
+                    xScaleTo: targetScaleX,
+                    yScaleTo: targetScaleY,
+                    xScaleFrom: fromScaleX,
+                    yScaleFrom: fromScaleY,
+                    x: targetX,
+                    y: targetY,
+                    xTo: targetX,
+                    yTo: targetY,
+                    xFrom: fromX,
+                    yFrom: fromY,
+                    tweenId: `${index}-${Date.now()}`
+                  } 
+                } 
+              });
+            }
             if (line.block && line.duration && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               if (!await waitForCompletion(line.duration)) return;
@@ -569,6 +636,19 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             
           case 'imagetween':
             {
+              const prevImg = { ...currentImageStateRef.current };
+              const targetScaleX = line.xScaleTo !== undefined ? line.xScaleTo : (line.xScale !== undefined ? line.xScale : prevImg.scaleX);
+              const targetScaleY = line.yScaleTo !== undefined ? line.yScaleTo : (line.yScale !== undefined ? line.yScale : prevImg.scaleY);
+              const targetX = line.xTo !== undefined ? line.xTo : (line.x !== undefined ? line.x : prevImg.x);
+              const targetY = line.yTo !== undefined ? line.yTo : (line.y !== undefined ? line.y : prevImg.y);
+
+              const fromScaleX = line.xScaleFrom !== undefined ? line.xScaleFrom : prevImg.scaleX;
+              const fromScaleY = line.yScaleFrom !== undefined ? line.yScaleFrom : prevImg.scaleY;
+              const fromX = line.xFrom !== undefined ? line.xFrom : prevImg.x;
+              const fromY = line.yFrom !== undefined ? line.yFrom : prevImg.y;
+
+              currentImageStateRef.current = { x: targetX, y: targetY, scaleX: targetScaleX, scaleY: targetScaleY };
+
               const url = line.assetName ? await getImageUrl('image', line.assetName) : imageUrlRef.current;
               if (processToken.current !== token) return;
               if (url) {
@@ -579,22 +659,23 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     url, 
                     tween: {
                       ...line,
-                      xScale: line.xScale,
-                      yScale: line.yScale,
-                      xScaleFrom: line.xScaleFrom,
-                      xScaleTo: line.xScaleTo,
-                      yScaleFrom: line.yScaleFrom,
-                      yScaleTo: line.yScaleTo,
-                      x: line.x,
-                      y: line.y,
-                      xFrom: line.xFrom,
-                      xTo: line.xTo,
-                      yFrom: line.yFrom,
-                      yTo: line.yTo,
+                      xScale: targetScaleX,
+                      yScale: targetScaleY,
+                      xScaleFrom: fromScaleX,
+                      xScaleTo: targetScaleX,
+                      yScaleFrom: fromScaleY,
+                      yScaleTo: targetScaleY,
+                      x: targetX,
+                      y: targetY,
+                      xFrom: fromX,
+                      xTo: targetX,
+                      yFrom: fromY,
+                      yTo: targetY,
                       duration: line.duration,
                       tiled: line.tiled,
                       ease: line.ease,
-                      type: 'imagetween'
+                      type: 'imagetween',
+                      tweenId: `${index}-${Date.now()}`
                     }
                   } 
                 });
@@ -698,6 +779,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'hideimage':
           case 'clearimage':
             imageUrlRef.current = null;
+            currentImageStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
             dispatch({ type: 'SET_IMAGE', payload: { url: null } });
             break;
 
@@ -1170,7 +1252,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       } 
     });
     currentIndexRef.current = lineIndex;
-    
+    currentBgStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
+    currentImageStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
+
     // 4. close log implicitly handled by restoring the state snapshot where showLog is usually false, 
     // but just in case:
     dispatch({ type: 'SET_SHOW_LOG', payload: false });

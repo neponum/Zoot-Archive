@@ -186,6 +186,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     >
       <div className="relative h-full w-fit">
         <img 
+          key={data.url}
           ref={handleBodyRef}
           src={data.url!} 
           alt={`Character ${slot}`} 
@@ -194,6 +195,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           draggable="false"
           loading="eager"
           onLoad={(e) => {
+            e.currentTarget.style.display = 'block';
             const w = e.currentTarget.naturalWidth;
             const h = e.currentTarget.naturalHeight;
             if (data.url && w && h) recordLoadedImage(data.url, w, h);
@@ -202,8 +204,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           onError={(e) => {
             const currentSrc = e.currentTarget.src;
             const cleanUrl = cleanAndUnwrapUrl(data.url || '');
-            const isCdnUrl = currentSrc.includes('weserv.nl') || currentSrc.includes('wsrv.nl') || currentSrc.includes('wp.com') || currentSrc.includes('statically.io');
-            if (isCdnUrl && cleanUrl && !currentSrc.includes('/api/proxy')) {
+            if (!currentSrc.includes('/api/proxy') && cleanUrl) {
               e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
               return;
             }
@@ -214,6 +215,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
         {/* Render face expression overlay with precise positioning relative to the body image */}
         {data.faceUrl && data.faceRect && naturalSize && (
           <img 
+            key={data.faceUrl}
             ref={handleFaceRef}
             src={data.faceUrl} 
             alt="" 
@@ -232,15 +234,15 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             referrerPolicy="no-referrer"
             draggable="false"
             loading="eager"
-            onLoad={() => {
+            onLoad={(e) => {
+              e.currentTarget.style.display = 'block';
               if (data.faceUrl) recordLoadedImage(data.faceUrl);
               setFaceLoaded(true);
             }}
             onError={(e) => {
               const currentSrc = e.currentTarget.src;
               const cleanUrl = cleanAndUnwrapUrl(data.faceUrl || '');
-              const isCdnUrl = currentSrc.includes('weserv.nl') || currentSrc.includes('wsrv.nl') || currentSrc.includes('wp.com') || currentSrc.includes('statically.io');
-              if (isCdnUrl && cleanUrl && !currentSrc.includes('/api/proxy')) {
+              if (!currentSrc.includes('/api/proxy') && cleanUrl) {
                 e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
                 return;
               }

@@ -91,7 +91,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onSettingsClick(); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
+            title={t.settings || "Settings"}
           >
             <Settings className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </button>
@@ -101,7 +102,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onLogClick(); }}
-            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
+            className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
             title="History"
           >
             <History className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
@@ -114,7 +115,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onToggleRead(); }}
               className={cn(
-                "transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 flex items-center gap-1",
+                "transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10",
                 isRead ? "text-emerald-400 hover:text-emerald-300" : "text-white/60 hover:text-white"
               )}
               title={isRead ? "Прочитано (нажмите, чтобы снять отметку)" : "Отметить как прочитанное"}
@@ -129,7 +130,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onBugReportClick(); }}
-              className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
+              className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
               title="Report Bug"
             >
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
@@ -142,7 +143,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
-              className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
+              className="text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />}

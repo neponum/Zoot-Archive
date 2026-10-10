@@ -110,6 +110,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
                 scaleYFrom={bgScaleYFrom}
                 duration={bgDuration}
                 ease={bgEase}
+                tweenId={bgTween?.tweenId}
                 className={cn("w-full h-full origin-center", bgTween?.tiled ? "bg-repeat" : "")}
               >
                 {bgUrl !== 'BLACK_FALLBACK' && (
@@ -163,6 +164,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
               scaleYFrom={imgScaleYFrom}
               duration={imgDuration}
               ease={imgEase}
+              tweenId={imageTween?.tweenId}
               className="w-full h-full origin-center flex items-center justify-center"
             >
               <img 

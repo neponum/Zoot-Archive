@@ -170,13 +170,7 @@ export function wrapUrlWithProxy(rawUrl: string): string {
       url.includes('/assets/char_arts/')
     ) {
       const safeUrl = url.replace(/#/g, '%23').replace(/\$/g, '%24');
-      if (shouldAvoidWeserv()) {
-        // WordPress Photon CDN (i0.wp.com) is an open, unblocked image proxy CDN for CIS region
-        const cleanNoProto = safeUrl.replace(/^https?:\/\//, '');
-        return `https://i0.wp.com/${cleanNoProto}`;
-      }
-      // Global Cloudflare-powered image proxy CDN (wsrv.nl)
-      return `https://wsrv.nl/?url=${encodeURIComponent(safeUrl)}`;
+      return safeUrl;
     }
     return `/api/proxy?url=${encodeURIComponent(url)}`;
   }
@@ -611,6 +605,15 @@ export async function checkImageExists(url: string): Promise<boolean> {
         return true;
       }
     }
+    const clean = cleanAndUnwrapUrl(url);
+    const proxyUrl = `/api/proxy?url=${encodeURIComponent(clean)}`;
+    if (proxyUrl !== targetUrl && proxyUrl !== url) {
+      const proxyExists = await checkImageViaElement(proxyUrl);
+      if (proxyExists) {
+        existenceCheckCache.set(url, true);
+        return true;
+      }
+    }
     existenceCheckCache.set(url, false);
     return false;
   }
@@ -618,6 +621,19 @@ export async function checkImageExists(url: string): Promise<boolean> {
   // Server-side fallback
   try {
     const response = await fetchWithTimeout(targetUrl, { method: 'HEAD' }, 2500);
+    const ok = response.ok || response.status === 206;
+    if (ok) {
+      existenceCheckCache.set(url, true);
+      return true;
+    }
+  } catch {
+    // Continue to proxy check
+  }
+
+  try {
+    const clean = cleanAndUnwrapUrl(url);
+    const proxyUrl = `/api/proxy?url=${encodeURIComponent(clean)}`;
+    const response = await fetchWithTimeout(proxyUrl, { method: 'HEAD' }, 2500);
     const ok = response.ok || response.status === 206;
     existenceCheckCache.set(url, ok);
     return ok;

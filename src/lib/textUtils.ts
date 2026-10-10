@@ -45,7 +45,11 @@ export const parseTags = (input: string): TextSegment[] => {
     }
 
     if (match[1]) { // <color=...>
-      currentStyle.color = match[2].replace(/['"]/g, '').trim();
+      const rawColor = match[2].replace(/['"]/g, '').trim();
+      // Only allow valid hex, rgb, rgba, or alphanumeric named colors
+      if (/^#[0-9a-fA-F]{3,8}$/.test(rawColor) || /^rgba?\([0-9,.\s%]+\)$/i.test(rawColor) || /^[a-zA-Z]+$/.test(rawColor)) {
+        currentStyle.color = rawColor;
+      }
     } else if (match[3]) { // </color>
       delete currentStyle.color;
     } else if (match[4]) { // <b>
@@ -61,7 +65,11 @@ export const parseTags = (input: string): TextSegment[] => {
     } else if (match[9]) { // </u>
       delete currentStyle.underline;
     } else if (match[10]) { // <size=...>
-      currentStyle.size = match[11].replace(/['"]/g, '').trim();
+      const rawSize = match[11].replace(/['"]/g, '').trim();
+      // Only allow valid numeric sizes with optional unit
+      if (/^[0-9]+(\.[0-9]+)?(px|pt|rem|em|%)?$/.test(rawSize)) {
+        currentStyle.size = /^[0-9]+$/.test(rawSize) ? `${rawSize}px` : rawSize;
+      }
     } else if (match[12]) { // </size>
       delete currentStyle.size;
     }

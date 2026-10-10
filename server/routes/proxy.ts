@@ -62,6 +62,26 @@ router.get('/', proxyLimiter, async (req, res) => {
     return res.status(400).json({ error: "Invalid target URL" });
   }
 
+  // Security: Only allow http and https protocols
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+    return res.status(400).json({ error: "Invalid target protocol: Only HTTP/HTTPS allowed" });
+  }
+
+  // Security: Block internal/loopback and cloud metadata hostnames
+  const lowHostname = parsedUrl.hostname.toLowerCase();
+  if (
+    lowHostname === 'localhost' ||
+    lowHostname === '127.0.0.1' ||
+    lowHostname === '::1' ||
+    lowHostname === '0.0.0.0' ||
+    lowHostname === '169.254.169.254' ||
+    lowHostname.startsWith('10.') ||
+    lowHostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(lowHostname)
+  ) {
+    return res.status(403).json({ error: "Forbidden: Access to private or metadata addresses is blocked" });
+  }
+
   // Security: Optional Referer check (browsers do not send Origin header on <audio>/<img> media GET requests)
   const referer = (req.headers.referer || '').toLowerCase();
   const origin = (req.headers.origin || '').toLowerCase();
@@ -77,26 +97,28 @@ router.get('/', proxyLimiter, async (req, res) => {
 
   // SSRF Protection: Restrict parsed hostname and prefix path
   const isAllowedDomain = 
-    parsedUrl.hostname.endsWith('.hycdn.cn') ||
-    parsedUrl.hostname.endsWith('.hypergryph.com') ||
-    parsedUrl.hostname.endsWith('.prts.wiki') ||
-    parsedUrl.hostname.endsWith('.githubusercontent.com') ||
-    parsedUrl.hostname.endsWith('.jsdelivr.net') ||
-    parsedUrl.hostname.endsWith('.weserv.nl') ||
-    parsedUrl.hostname === 'hycdn.cn' ||
-    parsedUrl.hostname === 'hypergryph.com' ||
-    parsedUrl.hostname === 'prts.wiki' ||
-    parsedUrl.hostname === 'raw.githubusercontent.com' ||
-    parsedUrl.hostname === 'fastly.jsdelivr.net' ||
-    parsedUrl.hostname === 'cdn.jsdelivr.net' ||
-    parsedUrl.hostname === 'images.weserv.nl' ||
+    lowHostname.endsWith('.hycdn.cn') ||
+    lowHostname.endsWith('.hypergryph.com') ||
+    lowHostname.endsWith('.prts.wiki') ||
+    lowHostname.endsWith('.jsdelivr.net') ||
+    lowHostname.endsWith('.weserv.nl') ||
+    lowHostname === 'hycdn.cn' ||
+    lowHostname === 'hypergryph.com' ||
+    lowHostname === 'prts.wiki' ||
+    lowHostname === 'fastly.jsdelivr.net' ||
+    lowHostname === 'cdn.jsdelivr.net' ||
+    lowHostname === 'images.weserv.nl' ||
+    (lowHostname === 'raw.githubusercontent.com' && PARSED_ALLOWED_PREFIXES.some(prefix => {
+      if (lowHostname !== prefix.hostname) return false;
+      return normalizedPathname.startsWith(prefix.pathname);
+    })) ||
     PARSED_ALLOWED_PREFIXES.some(prefix => {
-      if (parsedUrl.hostname !== prefix.hostname) return false;
+      if (lowHostname !== prefix.hostname) return false;
       return normalizedPathname.startsWith(prefix.pathname);
     });
 
   if (!isAllowedDomain) {
-    return res.status(403).json({ error: "Forbidden: Target URL path is not in the allowed list" });
+    return res.status(403).json({ error: "Forbidden: Target URL is not in the allowed resource list" });
   }
 
   // Construct safe request URL

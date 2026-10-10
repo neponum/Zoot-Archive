@@ -141,8 +141,8 @@ router.get('/callback', async (req: Request, res: Response) => {
     return res.status(400).send("Missing code parameter");
   }
 
-  // CSRF validation: If state was provided, verify it matches
-  if (cookieState && state && state !== cookieState) {
+  // CSRF validation: State parameter and cookie must both exist and match
+  if (!state || !cookieState || state !== cookieState) {
     return res.status(403).send("CSRF validation failed: State parameter mismatch or expired session.");
   }
 
