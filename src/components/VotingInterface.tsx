@@ -44,6 +44,7 @@ import {
   Edit2,
   FolderPlus
 } from 'lucide-react';
+import { useToast } from './ui/Toast';
 
 export interface Playlist {
   id: string;
@@ -147,6 +148,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   onClose
 }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
 
   // UI Modes: 'MODE_SELECT' | 'EPISODE_DUEL' | 'MUSIC_DUEL' | 'RESULTS' | 'MUSIC_PORTAL'
@@ -1028,7 +1030,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
       }
     } catch (err) {
       console.error('Failed to download track:', err);
-      alert(isRu ? 'Не удалось скачать трек' : 'Failed to download track');
+      toast.error(isRu ? 'Не удалось скачать трек' : 'Failed to download track');
     } finally {
       setDownloadingSongCid(null);
     }
@@ -1061,7 +1063,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
       }
 
       if (albumTracks.length === 0) {
-        alert(isRu ? 'В этом альбоме нет треков' : 'No tracks found in this album');
+        toast.info(isRu ? 'В этом альбоме нет треков' : 'No tracks found in this album');
         setDownloadingAlbumCid(null);
         return;
       }
@@ -1135,7 +1137,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
       setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
     } catch (err) {
       console.error('Failed to download album:', err);
-      alert(isRu ? 'Не удалось скачать альбом' : 'Failed to download album');
+      toast.error(isRu ? 'Не удалось скачать альбом' : 'Failed to download album');
     } finally {
       setDownloadingAlbumCid(null);
       setDownloadProgress(null);

@@ -476,8 +476,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
               <button
                 onClick={handlePrev}
                 disabled={filteredLines.length === 0}
-                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30"
+                className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30 shrink-0"
                 title={isRussian ? 'Предыдущая' : 'Previous'}
+                aria-label={isRussian ? 'Предыдущая реплика' : 'Previous voice line'}
               >
                 <SkipBack className="w-4 h-4" />
               </button>
@@ -490,8 +491,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                     playLine(filteredLines[0]);
                   }
                 }}
-                className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:scale-105 active:scale-95"
+                className="w-12 h-12 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:scale-105 active:scale-95 shrink-0"
                 title={isPlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Воспроизведение' : 'Play')}
+                aria-label={isPlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Воспроизведение' : 'Play')}
               >
                 {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white translate-x-0.5" />}
               </button>
@@ -499,8 +501,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
               <button
                 onClick={handleStop}
                 disabled={!currentLineId}
-                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30"
+                className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30 shrink-0"
                 title={isRussian ? 'Остановить' : 'Stop'}
+                aria-label={isRussian ? 'Остановить воспроизведение' : 'Stop playback'}
               >
                 <Square className="w-4 h-4" />
               </button>
@@ -508,8 +511,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
               <button
                 onClick={handleNext}
                 disabled={filteredLines.length === 0}
-                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30"
+                className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-sm transition-colors disabled:opacity-30 shrink-0"
                 title={isRussian ? 'Следующая' : 'Next'}
+                aria-label={isRussian ? 'Следующая реплика' : 'Next voice line'}
               >
                 <SkipForward className="w-4 h-4" />
               </button>
@@ -538,7 +542,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
             {/* Auto Next Toggle */}
             <button
               onClick={() => setAutoNext(!autoNext)}
-              className={`flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] font-mono border transition-all ${
+              aria-pressed={autoNext}
+              aria-label={isRussian ? 'Автоматическое воспроизведение следующей реплики' : 'Auto play next voice line'}
+              className={`inline-flex items-center gap-1 min-h-[44px] px-2 rounded-sm text-[11px] font-mono border transition-all ${
                 autoNext 
                   ? 'bg-blue-950/80 border-blue-500/50 text-blue-300' 
                   : 'bg-black/40 border-white/10 text-white/40 hover:text-white/70'
@@ -552,7 +558,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
             {/* Dual Subtitles Toggle */}
             <button
               onClick={() => setShowDualText(!showDualText)}
-              className={`flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] font-mono border transition-all ${
+              aria-pressed={showDualText}
+              aria-label={isRussian ? 'Двойные субтитры (Оригинал + Перевод)' : 'Dual Subtitles (Original + Translation)'}
+              className={`inline-flex items-center gap-1 min-h-[44px] px-2 rounded-sm text-[11px] font-mono border transition-all ${
                 showDualText 
                   ? 'bg-zinc-800 border-white/20 text-white font-medium' 
                   : 'bg-black/40 border-white/10 text-white/40'
@@ -567,7 +575,9 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                className="text-white/60 hover:text-white transition-colors"
+                aria-pressed={isMuted}
+                aria-label={isMuted ? (isRussian ? 'Включить звук' : 'Unmute') : (isRussian ? 'Отключить звук' : 'Mute')}
+                className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white transition-colors shrink-0"
                 title={isMuted ? (isRussian ? 'Включить звук' : 'Unmute') : (isRussian ? 'Отключить звук' : 'Mute')}
               >
                 {isMuted || volume === 0 ? (
@@ -688,12 +698,13 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                     <button
                       onClick={() => playLine(line)}
                       className={cn(
-                        "mt-0.5 w-8 h-8 rounded-sm flex items-center justify-center shrink-0 border transition-all",
+                        "mt-0.5 w-11 h-11 rounded-sm flex items-center justify-center shrink-0 border transition-all",
                         isThisLinePlaying
                           ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
                           : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-blue-600/30 hover:border-blue-500/40"
                       )}
                       title={isThisLinePlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Слушать' : 'Play')}
+                      aria-label={isThisLinePlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Слушать' : 'Play')}
                     >
                       {isThisLinePlaying ? (
                         <Pause className="w-3.5 h-3.5 fill-current" />

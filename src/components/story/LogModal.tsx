@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, RotateCcw, FileText, ArrowDown } from 'lucide-react';
 import { parseTags } from '../../lib/textUtils';
@@ -12,6 +12,12 @@ interface LogModalProps {
   t: any;
 }
 
+// Incremental rendering of the log (a full chapter script can be thousands of
+// lines). We render the most recent page first, because the modal auto-scrolls
+// to the bottom, and "Показать ещё" walks backwards through older records.
+const LOG_PAGE_SIZE = 100;
+const LOG_INITIAL_COUNT = LOG_PAGE_SIZE;
+
 export const LogModal: React.FC<LogModalProps> = ({
   show,
   history,
@@ -22,9 +28,28 @@ export const LogModal: React.FC<LogModalProps> = ({
 }) => {
   const [showFull, setShowFull] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [visibleLogCount, setVisibleLogCount] = useState<number>(LOG_INITIAL_COUNT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Keeps the viewport anchored when older records are prepended above.
+  const scrollAnchorRef = useRef<{ height: number; top: number } | null>(null);
 
   const displayedLog = showFull && fullScript ? fullScript : history;
+
+  // Render only the tail of the log (bottom-anchored, like chat history).
+  const visibleLog = useMemo(
+    () => displayedLog.slice(Math.max(0, displayedLog.length - visibleLogCount)),
+    [displayedLog, visibleLogCount]
+  );
+  const hiddenLogCount = displayedLog.length - visibleLog.length;
+  const hasMoreLog = hiddenLogCount > 0;
+
+  // Reset the page when switching between history / full script, when another
+  // chapter script is loaded, or when the modal is (re)opened. Plain history
+  // growth (appended lines) keeps the current page size so an expanded log is
+  // not collapsed by new dialogue.
+  useEffect(() => {
+    setVisibleLogCount(LOG_INITIAL_COUNT);
+  }, [show, showFull, fullScript]);
 
   // Auto-scroll to bottom when modal opens or toggled
   useEffect(() => {
@@ -36,6 +61,24 @@ export const LogModal: React.FC<LogModalProps> = ({
       }, 50);
     }
   }, [show, showFull]);
+
+  // Restore the visual anchor after older records are rendered above.
+  useLayoutEffect(() => {
+    const el = scrollContainerRef.current;
+    const anchor = scrollAnchorRef.current;
+    if (el && anchor) {
+      el.scrollTop = anchor.top + (el.scrollHeight - anchor.height);
+      scrollAnchorRef.current = null;
+    }
+  }, [visibleLog]);
+
+  const handleShowMore = () => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      scrollAnchorRef.current = { height: el.scrollHeight, top: el.scrollTop };
+    }
+    setVisibleLogCount(c => Math.min(c + LOG_PAGE_SIZE, displayedLog.length));
+  };
 
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
@@ -96,12 +139,26 @@ export const LogModal: React.FC<LogModalProps> = ({
             className="flex-grow overflow-y-auto scrollbar-none px-4 portrait:px-4 landscape:px-6 pb-28 relative"
           >
             <div className="max-w-5xl mx-auto space-y-6 portrait:space-y-4 pt-6 portrait:pt-4 landscape:pt-8 md:pt-8">
+              {/* Incremental render: load older records */}
+              {hasMoreLog && (
+                <div className="flex flex-col items-center gap-2 pb-2">
+                  <button
+                    onClick={handleShowMore}
+                    className="px-5 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-sm text-xs font-mono uppercase tracking-widest text-white/60 hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    {`${t.show_more || 'ПОКАЗАТЬ ЕЩЁ'} (${hiddenLogCount})`}
+                  </button>
+                  <span className="text-[10px] font-mono text-white/25">
+                    {visibleLog.length} / {displayedLog.length}
+                  </span>
+                </div>
+              )}
               {displayedLog.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-white/20 uppercase tracking-[0.2em] text-sm py-20 font-mono">
                   {t.no_history || 'No history recorded'}
                 </div>
               ) : (
-                displayedLog.map((item, idx) => {
+                visibleLog.map((item, idx) => {
                   // If viewing full script, try to find a history match to allow jumping back
                   const historyMatch = showFull 
                     ? history.find(h => h.lineIndex === item.lineIndex)

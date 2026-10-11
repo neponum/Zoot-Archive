@@ -10,6 +10,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import Papa from 'papaparse';
 import { LogModal } from './story/LogModal';
 import { OperatorDossierModal } from './OperatorDossierModal';
+import { useToast } from './ui/Toast';
+import { useConfirm } from './ui/ConfirmDialog';
 
 import { TranslationRow, EditorDialogueItem } from '../services/storyService';
 import { ARKNIGHTS_CANONICAL_GLOSSARY } from '../config/arknightsGlossary';
@@ -42,6 +44,10 @@ const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
 ];
 
 type BlockType = 'command' | 'dialogue' | 'comment' | 'empty';
+
+// How many dialogue rows of the translation table are rendered at once.
+const BLOCKS_PAGE_SIZE = 200;
+const BLOCKS_INITIAL_COUNT = BLOCKS_PAGE_SIZE;
 
 interface TranslationBlock {
   id: string;
@@ -201,6 +207,8 @@ function getCleanChapterName(storyTxt: string, episodeId?: string): string {
 }
 
 export function TranslationInterface({ onClose, onTestTranslation, initialChapter, initialEpisode, initialOperator }: TranslationInterfaceProps) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [episodes, setEpisodes] = useState<StoryEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const sourceLang: Language = 'zh_CN';
@@ -304,7 +312,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       }));
     } catch (e) {
       console.error('Error translating dossier section:', e);
-      alert('Ошибка при ИИ-переводе раздела досье.');
+      toast.error('Ошибка при ИИ-переводе раздела досье.');
     } finally {
       setIsTranslatingDossier(false);
     }
@@ -354,7 +362,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       }
     } catch (e) {
       console.error('Error translating all dossier sections:', e);
-      alert('Ошибка при ИИ-переводе разделов досье.');
+      toast.error('Ошибка при ИИ-переводе разделов досье.');
     } finally {
       setIsTranslatingDossier(false);
       setDossierTranslationProgress(null);
@@ -497,6 +505,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [blocks, setBlocks] = useState<TranslationBlock[]>([]);
   const [loadingScript, setLoadingScript] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Incremental rendering: episodes can hold ~4000 dialogue blocks, so the table
+  // paints them in pages. Every filter/progress/scroll logic still works on the
+  // complete `blocks` array — only the rendered rows are sliced.
+  const [visibleBlocksCount, setVisibleBlocksCount] = useState<number>(BLOCKS_INITIAL_COUNT);
   
   // Profile Management
   const [profiles, setProfiles] = useState<string[]>(() => {
@@ -570,6 +583,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   } | null>(null);
 
   const cancelTranslationRef = React.useRef(false);
+  // Block id the editor wants to scroll to (may need the table page expanded).
+  const pendingScrollBlockIdRef = React.useRef<string | null>(null);
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<'add' | 'rename' | 'delete'>('add');
@@ -706,13 +721,13 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         if (failedChapters.length > 0) {
           msg += `\n\nНе удалось загрузить перевод для некоторых глав (возможно, они еще не переведены этим автором): ${failedChapters.join(', ')}`;
         }
-        alert(msg);
+        toast.error(msg);
       } else {
-        alert(`Не удалось импортировать перевод от ${t}. Возможно, переводы для этого автора отсутствуют или еще не опубликованы.`);
+        toast.error(`Не удалось импортировать перевод от ${t}. Возможно, переводы для этого автора отсутствуют или еще не опубликованы.`);
       }
     } catch (e) {
       console.error(e);
-      alert(`Произошла непредвиденная ошибка при импорте перевода от ${t}.`);
+      toast.error(`Произошла непредвиденная ошибка при импорте перевода от ${t}.`);
     } finally {
       setIsImportingTranslator(null);
     }
@@ -1029,7 +1044,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
   const handleDeleteProfile = async (profileToDelete: string) => {
     if (profileToDelete === 'Default') {
-      alert('Нельзя удалить профиль по умолчанию.');
+      toast.error('Нельзя удалить профиль по умолчанию.');
       return;
     }
     setProfiles(prev => prev.filter(p => p !== profileToDelete));
@@ -1052,7 +1067,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     }
     
     if (profiles.includes(trimmedNewName)) {
-      alert('Профиль с таким именем уже существует.');
+      toast.error('Профиль с таким именем уже существует.');
       return;
     }
 
@@ -1329,6 +1344,43 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     return () => { isMounted = false; };
   }, [selectedChapter, sourceLang, referenceLangs, targetLangs, activeProfile]);
 
+  // Dialogue rows only (command/comment blocks are not rendered in the table).
+  const dialogueBlocks = useMemo(
+    () => blocks.filter(b => b.type === 'dialogue'),
+    [blocks]
+  );
+
+  // Rendered slice of the dialogue table.
+  const visibleBlocks = useMemo(
+    () => dialogueBlocks.slice(0, visibleBlocksCount),
+    [dialogueBlocks, visibleBlocksCount]
+  );
+  const hasMoreBlocks = visibleBlocks.length < dialogueBlocks.length;
+
+  // Reset the page whenever the loaded chapter/language set changes.
+  useEffect(() => {
+    setVisibleBlocksCount(BLOCKS_INITIAL_COUNT);
+  }, [selectedChapter, sourceLang, referenceLangs, targetLangs, activeProfile]);
+
+  // Make sure a block is rendered before trying to scroll/highlight it.
+  const ensureBlockVisible = (blockId: string) => {
+    const idx = dialogueBlocks.findIndex(b => b.id === blockId);
+    if (idx !== -1) {
+      pendingScrollBlockIdRef.current = blockId;
+      setVisibleBlocksCount(prev => (idx < prev ? prev : idx + 1));
+    }
+  };
+
+  // Block requested by the editor may arrive with a newly loaded chapter:
+  // retry expanding the page slice once the new blocks are in place.
+  useEffect(() => {
+    const targetId = pendingScrollBlockIdRef.current;
+    if (!targetId || dialogueBlocks.length === 0) return;
+    const idx = dialogueBlocks.findIndex(b => b.id === targetId);
+    if (idx === -1) return;
+    setVisibleBlocksCount(prev => (idx < prev ? prev : idx + 1));
+  }, [dialogueBlocks]);
+
   const handleTranslationChange = (id: string, newText: string, lang: Language = activeTargetLang) => {
     setBlocks(prev => prev.map(b => {
       if (b.id === id) {
@@ -1578,7 +1630,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
   const handleGeminiTranslateBlock = async (blockId: string, lang: Language = activeTargetLang) => {
     if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      alert("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
+      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
       return;
     }
     const block = blocks.find(b => b.id === blockId);
@@ -1723,7 +1775,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
   const handleGeminiTranslateAll = async (lang: Language = activeTargetLang) => {
     if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      alert("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
+      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
       return;
     }
     
@@ -1740,7 +1792,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
     if (targetBlocks.length === 0) {
       if (translateOnlyUntranslated) {
-        alert("Все диалоговые строки в данной главе уже переведены.");
+        toast.info("Все диалоговые строки в данной главе уже переведены.");
       }
       return;
     }
@@ -1834,7 +1886,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     if (!selectedChapter || isEditorAnalyzing) return;
 
     if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      alert("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API в настройках или войдите через Discord.");
+      toast.error("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API в настройках или войдите через Discord.");
       return;
     }
 
@@ -1855,7 +1907,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       if (editorScope === 'chapter') {
         const dialogueBlocks = blocks.filter(b => b.type === 'dialogue');
         if (dialogueBlocks.length === 0) {
-          alert("В этой главе нет диалогов для редактирования.");
+          toast.info("В этой главе нет диалогов для редактирования.");
           setIsEditorAnalyzing(false);
           return;
         }
@@ -1872,7 +1924,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       } else {
         // Episode-wide scope
         if (!selectedEpisode) {
-          alert("Эпизод не выбран.");
+          toast.error("Эпизод не выбран.");
           setIsEditorAnalyzing(false);
           return;
         }
@@ -2441,9 +2493,13 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
           }
         }
         
+        // The row may be outside the currently rendered page — expand it first.
+        ensureBlockVisible(blockId);
+        
         setTimeout(() => {
           const el = document.getElementById(`block-${blockId}`);
           if (el) {
+            pendingScrollBlockIdRef.current = null;
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             el.classList.add('bg-purple-900/40', 'transition-colors', 'duration-500');
             setTimeout(() => {
@@ -2459,7 +2515,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
     const unfixed = editorIssues.filter(i => !i.fixed);
     if (unfixed.length === 0) return;
     applyFixesBatch(unfixed);
-    alert(`Успешно применено авто-исправлений: ${unfixed.length}!`);
+    toast.success(`Успешно применено авто-исправлений: ${unfixed.length}!`);
   };
 
   const translateChapterInBackground = async (
@@ -2774,14 +2830,14 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
   const handleGeminiTranslateEpisode = async (lang: Language = activeTargetLang) => {
     if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      alert("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
+      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
       return;
     }
     
     if (!selectedEpisode || isTranslatingEpisode) return;
 
     if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      alert("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API или войдите через Discord.");
+      toast.error("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API или войдите через Discord.");
       return;
     }
 
@@ -2789,13 +2845,16 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
     const { chapters } = selectedEpisode;
     if (!chapters || chapters.length === 0) {
-      alert("В выбранном эпизоде нет глав.");
+      toast.info("В выбранном эпизоде нет глав.");
       return;
     }
 
-    if (!window.confirm(`Вы действительно хотите перевести весь эпизод "${selectedEpisode.name || selectedEpisode.id}" с помощью Gemini? Это может занять несколько минут.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'ИИ-перевод эпизода',
+      message: `Вы действительно хотите перевести весь эпизод "${selectedEpisode.name || selectedEpisode.id}" с помощью Gemini? Это может занять несколько минут.`,
+      confirmText: 'Перевести'
+    });
+    if (!ok) return;
 
     setIsTranslatingEpisode(true);
     setErrorMessage(null);
@@ -2873,7 +2932,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
       await executeWithConcurrency();
       
       if (!cancelTranslationRef.current) {
-        alert("Перевод всего эпизода успешно завершен!");
+        toast.success("Перевод всего эпизода успешно завершен!");
       }
     } catch (error: any) {
       console.error("Episode translation failed:", error);
@@ -3078,15 +3137,15 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
           setBlocks(updatedBlocks);
           setAllTranslations(newTranslations);
-          alert(`CSV успешно импортирован для ${importLang}!`);
+          toast.success(`CSV успешно импортирован для ${importLang}!`);
         } catch (error) {
           console.error('CSV import error:', error);
-          alert('Не удалось импортировать CSV. Пожалуйста, проверьте формат файла.');
+          toast.error('Не удалось импортировать CSV. Пожалуйста, проверьте формат файла.');
         }
       },
       error: (error) => {
         console.error('CSV parsing error:', error);
-        alert('Не удалось прочитать CSV файл.');
+        toast.error('Не удалось прочитать CSV файл.');
       }
     });
 
@@ -3236,7 +3295,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
     if (!submissionEnabled) return;
 
     if (discordUser && activeProfile !== discordUser.username) {
-      alert(`Отправка перевода возможна только под вашим Discord-именем (${discordUser.username}).\n\nПожалуйста, переименуйте текущий профиль или переключитесь на нужный перед отправкой.`);
+      toast.error(`Отправка перевода возможна только под вашим Discord-именем (${discordUser.username}).\n\nПожалуйста, переименуйте текущий профиль или переключитесь на нужный перед отправкой.`);
       return;
     }
 
@@ -3250,7 +3309,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
       if (exportScope === 'chapter') {
         if (!selectedChapter) {
-          alert("Пожалуйста, сначала выберите главу для отправки.");
+          toast.info("Пожалуйста, сначала выберите главу для отправки.");
           setIsSubmitting(false);
           return;
         }
@@ -3260,13 +3319,13 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
         const translatedDialogue = dialogueBlocks.filter(b => b.content[activeTargetLang]?.text?.trim()).length;
 
         if (totalDialogue === 0) {
-          alert("Вы пытаетесь отправить главу, в которой нет строк диалогов.");
+          toast.info("Вы пытаетесь отправить главу, в которой нет строк диалогов.");
           setIsSubmitting(false);
           return;
         }
 
         if (translatedDialogue === 0) {
-          alert("Эта глава вообще не переведена! Пожалуйста, переведите хотя бы несколько строк перед отправкой.");
+          toast.error("Эта глава вообще не переведена! Пожалуйста, переведите хотя бы несколько строк перед отправкой.");
           setIsSubmitting(false);
           return;
         }
@@ -3275,9 +3334,11 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
           const untranslatedBlocks = dialogueBlocks.filter(b => !b.content[activeTargetLang]?.text?.trim());
           const untranslatedExamples = untranslatedBlocks.slice(0, 3).map(b => b.content[sourceLang]?.text || '').filter(Boolean).map(text => `"${text}"`).join('\n- ');
           
-          const confirmSubmit = window.confirm(
-            `Внимание: глава переведена не полностью!\nПереведено ${translatedDialogue} из ${totalDialogue} строк (${Math.round(translatedDialogue / totalDialogue * 100)}%).\n\nПримеры непереведенных строк:\n- ${untranslatedExamples}\n\nВы уверены, что хотите отправить незавершенный перевод?`
-          );
+          const confirmSubmit = await confirm({
+            title: 'Отправка перевода',
+            message: `Внимание: глава переведена не полностью!\nПереведено ${translatedDialogue} из ${totalDialogue} строк (${Math.round(translatedDialogue / totalDialogue * 100)}%).\n\nПримеры непереведенных строк:\n- ${untranslatedExamples}\n\nВы уверены, что хотите отправить незавершенный перевод?`,
+            confirmText: 'Отправить'
+          });
           if (!confirmSubmit) {
             setIsSubmitting(false);
             return;
@@ -3298,7 +3359,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
         filesToUpload.push({ file: csvFile, payloadContent });
       } else {
         if (!selectedEpisode) {
-          alert("Пожалуйста, выберите эпизод для отправки.");
+          toast.info("Пожалуйста, выберите эпизод для отправки.");
           setIsSubmitting(false);
           return;
         }
@@ -3327,22 +3388,24 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
         }
 
         if (totalDialogueRows === 0) {
-          alert("Вы пытаетесь отправить эпизод, в котором нет строк диалогов.");
+          toast.error("Вы пытаетесь отправить эпизод, в котором нет строк диалогов.");
           setIsSubmitting(false);
           return;
         }
 
         if (translatedDialogueRows === 0) {
-          alert("Этот эпизод вообще не переведен! Пожалуйста, переведите хотя бы несколько строк перед отправкой.");
+          toast.error("Этот эпизод вообще не переведен! Пожалуйста, переведите хотя бы несколько строк перед отправкой.");
           setIsSubmitting(false);
           return;
         }
 
         if (translatedDialogueRows < totalDialogueRows) {
           const examplesText = untranslatedEpisodeExamples.join('\n- ');
-          const confirmSubmit = window.confirm(
-            `Внимание: эпизод переведен не полностью!\nПереведено ${translatedDialogueRows} из ${totalDialogueRows} строк во всех главах (${Math.round(translatedDialogueRows / totalDialogueRows * 100)}%).\n\nПримеры непереведенных строк:\n- ${examplesText}\n\nВы уверены, что хотите отправить незавершенный эпизод?`
-          );
+          const confirmSubmit = await confirm({
+            title: 'Отправка перевода',
+            message: `Внимание: эпизод переведен не полностью!\nПереведено ${translatedDialogueRows} из ${totalDialogueRows} строк во всех главах (${Math.round(translatedDialogueRows / totalDialogueRows * 100)}%).\n\nПримеры непереведенных строк:\n- ${examplesText}\n\nВы уверены, что хотите отправить незавершенный эпизод?`,
+            confirmText: 'Отправить'
+          });
           if (!confirmSubmit) {
             setIsSubmitting(false);
             return;
@@ -3460,21 +3523,15 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
             <div className="flex items-center gap-1.5 shrink-0">
               <button 
                 onClick={() => {
-                  const win = window.open('about:blank', '_blank');
-                  if (win) {
-                    win.document.write(`
-                      <html>
-                        <head>
-                          <title>Original Script: ${selectedChapter.storyTxt}</title>
-                          <style>
-                            body { font-family: monospace; white-space: pre-wrap; padding: 20px; background: white; color: black; }
-                          </style>
-                        </head>
-                        <body>${originalScriptText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</body>
-                      </html>
-                    `);
-                    win.document.close();
-                  }
+                  const blob = new Blob([originalScriptText], { type: 'text/plain;charset=utf-8' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `${selectedChapter.storyTxt.split('/').pop() || 'script'}.txt`;
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  URL.revokeObjectURL(url);
                 }}
                 className="flex items-center gap-1.5 px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-sm transition-colors text-[10px] font-bold uppercase tracking-wider"
                 title="Скрипт"
@@ -4198,7 +4255,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                           </tr>
                         </thead>
                         <tbody>
-                          {blocks.map((block) => {
+                          {visibleBlocks.map((block) => {
                             if (block.type !== 'dialogue') return null;
 
                             return (
@@ -4280,6 +4337,21 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                           })}
                         </tbody>
                       </table>
+
+                      {/* Incremental render: load the next page of dialogue rows */}
+                      {hasMoreBlocks && (
+                        <div className="flex flex-col items-center gap-2 py-6">
+                          <button
+                            onClick={() => setVisibleBlocksCount(c => Math.min(c + BLOCKS_PAGE_SIZE, dialogueBlocks.length))}
+                            className="px-6 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 rounded-sm text-xs font-mono uppercase tracking-widest text-blue-400 transition-colors"
+                          >
+                            {`Показать ещё (${dialogueBlocks.length - visibleBlocks.length})`}
+                          </button>
+                          <span className="text-[10px] font-mono text-white/30">
+                            {visibleBlocks.length} / {dialogueBlocks.length}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -4682,13 +4754,18 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                     </span>
                     <button
                       onClick={async () => {
-                        if (window.confirm('Очистить кэш изображений и таблиц? (Переводы не будут удалены). Это может помочь, если возникли проблемы с загрузкой.')) {
-                          try {
-                            await CacheService.clear();
-                            setErrorMessage('Кэш успешно очищен. Пожалуйста, перезагрузите страницу.');
-                          } catch (e) {
-                            setErrorMessage('Произошла ошибка при очистке кэша.');
-                          }
+                        const ok = await confirm({
+                          title: 'Очистка кэша',
+                          message: 'Очистить кэш изображений и таблиц? (Переводы не будут удалены). Это может помочь, если возникли проблемы с загрузкой.',
+                          danger: true,
+                          confirmText: 'Очистить'
+                        });
+                        if (!ok) return;
+                        try {
+                          await CacheService.clear();
+                          setErrorMessage('Кэш успешно очищен. Пожалуйста, перезагрузите страницу.');
+                        } catch (e) {
+                          setErrorMessage('Произошла ошибка при очистке кэша.');
                         }
                       }}
                       className="w-full text-left bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-2 rounded-sm text-xs font-bold transition-colors cursor-pointer"

@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { fetchChapterList } from './services/storyService';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
+import { ToastProvider } from './components/ui/Toast';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -270,9 +272,13 @@ function App() {
       fallbackMessage="Приложению не удалось инициализировать корневое дерево компонентов."
       showHomeButton={false}
     >
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AppContent />
-      </BrowserRouter>
+      <ToastProvider>
+        <ConfirmProvider>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AppContent />
+          </BrowserRouter>
+        </ConfirmProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

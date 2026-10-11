@@ -45,6 +45,11 @@ const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
   { id: 'ru_RU', label: 'Русский', isOfficial: false },
 ];
 
+// Incremental rendering: operator cards are heavy (portraits + images), so we
+// only paint the first page and grow it on demand.
+const OPERATORS_PAGE_SIZE = 60;
+const OPERATORS_INITIAL_COUNT = OPERATORS_PAGE_SIZE;
+
 export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
   setSelectedEpisode,
   searchQuery,
@@ -76,6 +81,10 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
 
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
+
+  // Incremental rendering of the operator grid (filtering/searching always runs
+  // on the FULL list — only the rendered slice is limited).
+  const [visibleOperatorsCount, setVisibleOperatorsCount] = useState<number>(OPERATORS_INITIAL_COUNT);
 
   // Close menus on click outside
   useEffect(() => {
@@ -251,6 +260,20 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
 
     return result;
   }, [operators, selectedClass, selectedRarity, onlyWithStories, searchQuery, currentSort]);
+
+  // Only a page of cards is rendered at a time (perf), but filters/search/sort
+  // above are always applied to the complete operator list.
+  const visibleOperators = useMemo(
+    () => filteredOperators.slice(0, visibleOperatorsCount),
+    [filteredOperators, visibleOperatorsCount]
+  );
+  const hasMoreOperators = visibleOperators.length < filteredOperators.length;
+
+  // Reset the page slice whenever the filter/sort/search inputs change
+  // (filteredOperators identity only changes when its own dependencies do).
+  useEffect(() => {
+    setVisibleOperatorsCount(OPERATORS_INITIAL_COUNT);
+  }, [filteredOperators]);
 
   // Classes List (Black, White, Blue style)
   const classesList = useMemo(() => {
@@ -477,7 +500,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
               <button
                 key={cls.id}
                 onClick={() => setSelectedClass(cls.id)}
-                className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded-sm transition-all border shrink-0 ${
+                className={`inline-flex items-center justify-center min-h-[44px] px-2.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider rounded-sm transition-all border shrink-0 ${
                   isSelected
                     ? 'bg-blue-600 text-white border-blue-400 shadow-sm'
                     : 'bg-black/40 text-white/50 border-white/5 hover:text-white hover:border-white/20'
@@ -498,7 +521,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
               <button
                 key={r}
                 onClick={() => setSelectedRarity(r)}
-                className={`px-2 py-1 text-[10px] font-mono font-bold tracking-wider rounded-sm transition-all border shrink-0 ${
+                className={`inline-flex items-center justify-center min-h-[44px] px-2 py-2 text-[10px] font-mono font-bold tracking-wider rounded-sm transition-all border shrink-0 ${
                   isSelected
                     ? 'bg-white text-black border-white font-black shadow-sm'
                     : 'bg-black/40 text-white/50 border-white/5 hover:text-white hover:border-white/20'
@@ -521,15 +544,25 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
             </p>
           </div>
         ) : filteredOperators.length > 0 ? (
+          <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
-            {filteredOperators.map((op) => {
+            {visibleOperators.map((op) => {
               const totalChapters = op.chapters?.length || 0;
 
               return (
                 <div
                   key={op.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={op.displayName}
                   onClick={() => handleSelectOperator(op)}
-                  className="group relative flex flex-col bg-zinc-900/80 border border-white/10 hover:border-blue-400/80 rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] cursor-pointer select-none aspect-[3/4.2]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                      e.preventDefault();
+                      handleSelectOperator(op);
+                    }
+                  }}
+                  className="group relative flex flex-col bg-zinc-900/80 border border-white/10 hover:border-blue-400/80 rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] cursor-pointer select-none aspect-[3/4.2] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:border-blue-400/80"
                 >
                   {/* Portrait Cover Image */}
                   <div className="absolute inset-0 bg-zinc-950 overflow-hidden flex items-center justify-center">
@@ -605,6 +638,24 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
               );
             })}
           </div>
+
+          {/* Incremental Render: load the next page of operator cards */}
+          {hasMoreOperators && (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <button
+                onClick={() => setVisibleOperatorsCount((c) => Math.min(c + OPERATORS_PAGE_SIZE, filteredOperators.length))}
+                className="px-6 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 rounded-sm text-xs font-mono uppercase tracking-widest text-blue-400 transition-colors"
+              >
+                {isRussian
+                  ? `ПОКАЗАТЬ ЕЩЁ (${filteredOperators.length - visibleOperators.length})`
+                  : `SHOW MORE (${filteredOperators.length - visibleOperators.length})`}
+              </button>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
+                {visibleOperators.length} / {filteredOperators.length}
+              </span>
+            </div>
+          )}
+          </>
         ) : (
           /* Empty State */
           <div className="h-full flex flex-col items-center justify-center p-8 text-center my-auto">

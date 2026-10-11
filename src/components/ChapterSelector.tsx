@@ -1158,7 +1158,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
               <div className="absolute top-3 left-3 right-3 md:top-6 md:left-6 md:right-6 z-50 flex flex-row items-center justify-between gap-2 sm:gap-3 pointer-events-none">
                 {/* Top Left: Back & Home Group + Episode Voting Button */}
                 <div className="flex items-center gap-2 pointer-events-auto">
-                  <div className="flex items-center gap-1 bg-black/60 border border-white/10 rounded-sm overflow-hidden divide-x divide-white/10 h-10 px-1 backdrop-blur-md shadow-lg">
+                  <div className="flex items-center gap-1 bg-black/60 border border-white/10 rounded-sm overflow-hidden divide-x divide-white/10 h-14 px-1.5 backdrop-blur-md shadow-lg">
                     <button
                       onClick={() => {
                         if (isMobile && showEpisodesOnMobile && viewMode !== 'ALL') {
@@ -1168,8 +1168,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                           navigate('/');
                         }
                       }}
-                      className="flex items-center justify-center w-10 h-8 hover:bg-white/10 transition-all text-white/60 hover:text-white cursor-pointer"
+                      className="flex items-center justify-center w-11 h-11 hover:bg-white/10 transition-all text-white/60 hover:text-white cursor-pointer"
                       title={uiLang === 'ru_RU' ? 'Назад' : 'Back'}
+                      aria-label={uiLang === 'ru_RU' ? 'Назад' : 'Back'}
                     >
                       <ArrowLeft className="w-4 h-4" />
                     </button>
@@ -1178,8 +1179,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         setActiveTab('HOME');
                         navigate('/');
                       }}
-                      className="flex items-center justify-center w-10 h-8 hover:bg-white/10 transition-all text-white/60 hover:text-white cursor-pointer"
+                      className="flex items-center justify-center w-11 h-11 hover:bg-white/10 transition-all text-white/60 hover:text-white cursor-pointer"
                       title={uiLang === 'ru_RU' ? 'Главная' : 'Home'}
+                      aria-label={uiLang === 'ru_RU' ? 'Главная' : 'Home'}
                     >
                       <Home className="w-4 h-4" />
                     </button>

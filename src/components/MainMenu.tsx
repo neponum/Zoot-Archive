@@ -18,6 +18,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { CacheService } from '../services/cacheService';
 import { CUSTOM_QUOTES } from '../config/customQuotes';
 import { authService } from '../services/authService';
+import { useToast } from './ui/Toast';
 
 export interface NewsItem {
   id: string;
@@ -239,6 +240,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const navigate = useNavigate();
   const t = UI_STRINGS[lang];
   const isRussian = lang === 'ru_RU' || lang === 'ru_RU_CN';
+  const toast = useToast();
 
   // Reading progress stats calculation for the Terminal button
   const readingStats = useMemo(() => {
@@ -736,7 +738,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     } else if (orundum >= cost) {
       setOrundum(prev => prev - cost);
     } else {
-      alert("Недостаточно ресурсов (Орундама или Разрешений)!");
+      toast.error("Недостаточно ресурсов (Орундама или Разрешений)!");
       return;
     }
 
