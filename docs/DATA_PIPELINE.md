@@ -33,24 +33,47 @@ Zoot Archive operates on authoritative game data synchronized from open-source r
 
 ## 2. Core Local JSON Databases (`src/data/`)
 
-### `operators_database.json` (Array, ~441+ items)
-Contains detailed dossiers for each playable operator:
+### `operators_database.json` (Array, 441 items)
+Flat descriptor records for every playable operator (13 scalar fields per record):
 - `id`: Internal operator ID (e.g. `char_002_amiya`, `char_017_huang`, `char_308_swire`).
-- `name`: Localized display name.
-- `appellation`: English codename (e.g. `Amiya`, `Blaze`, `Swire`).
-- `rarity`: Operator star tier (1 to 6).
+- `nameZh`: Official Chinese display name.
+- `nameEn`: English codename (e.g. `Amiya`, `Blaze`, `Swire`).
+- `rarity`: Operator star tier (integer 1 to 6).
 - `profession`: Class (e.g. `WARRIOR`, `SNIPER`, `CASTER`, `MEDIC`, `SUPPORT`).
 - `subProfessionId`: Archetype branch (e.g. `dreadnought`, `centurion`).
-- `lore`: Background logs, physical exam, clinical analysis, paradox records.
-- `voices`: Audio lines with text transcripts and speaker identifiers.
+- `nationId`, `groupId`, `teamId`: faction/organization identifiers (may be empty strings).
+- `position`: In-game deploy position code.
+- `displayNumber`: Skin/collection number (e.g. `B003`, `RE41`).
+- `drawName`, `infoName`: asset key names for the portrait/avatar.
 
-### `operator_names_map.json` (Object, ~1200+ keys)
-High-speed lookup index mapping various name forms (ID, EN, CN, RU, appellation) to the primary operator record.
+> Note: lore records and voice lines are **not** stored in this file. Dossier text
+> comes from the upstream data sources and is localized at runtime
+> (`src/services/dossierTranslationService.ts`, `src/data/dossiers_ru.json`);
+> voice lines are fetched from `charword_table.json` on demand
+> (`src/services/operatorVoiceService.ts`).
+
+### `operator_names_map.json` (Object, 1210 keys)
+High-speed lookup index built from `operators_database.json`. Five lookup slots per operator:
+`id`, lowercased `id`, normalized id (`amiya` from `char_002_amiya`), Chinese name, and
+alphanumeric-only English name. Additionally a small hardcoded set of Russian aliases
+(`extraAliases` in `scripts/sync_operators.js`) is merged in.
 - Used by search filters, dossier quick-links, and story dialogue speaker tags.
 
-### `tags_database.json` & `translations.json`
-- `tags_database.json`: Recruitment and class archetype tags.
-- `translations.json`: Core UI strings across supported locales.
+### `tags_database.json` (Object, 28 keys)
+Dictionary of story script AST tags consumed by the visual novel engine
+(`HEADER`, `Dialog`, `Character`, `Background`, `ImageTween`, `CameraShake`,
+`Decision`, `Predicate`, `CharacterCutin`, `blocker`, `cameraEffect`, …).
+It is **not** the in-game recruitment tag set (that data comes from `Aceship/AN-EN-Tags`).
+
+### `translations.json` (Object, 13 locales)
+Core UI strings per locale. Only the six locales declared in `Language`
+(`src/types.ts`) are reachable from the UI; the remaining blocks are reserved
+and still contain untranslated English fallbacks.
+
+### `dossiers_ru.json` (Object)
+Manual Russian dossier labels and translations, keyed by operator; consumed by
+`src/services/dossierTranslationService.ts`. Contains the `_common_labels` dictionary
+shared across all dossiers.
 
 ---
 
@@ -59,19 +82,30 @@ High-speed lookup index mapping various name forms (ID, EN, CN, RU, appellation)
 Whenever data files in `src/data/` are updated, the following developer commands must be run:
 
 ### Data Validation (`npm run validate:data`)
-Script: `scripts/validate_data.js`
+Script: `scripts/validate_data.js` (path-independent — it resolves `src/data` from its own
+location, so it can be run from any working directory).
+
 Validates:
-1. Syntax and JSON formatting across all files in `src/data/`.
-2. Array structure of `operators_database.json`.
-3. Object structure of `operator_names_map.json`.
-4. Alignment between `operators_database.json` IDs and `operator_names_map.json`.
-If any mismatch or corrupt JSON syntax is detected, the script exits with non-zero code.
+1. Existence and JSON syntax of all five data files (`operators_database.json`,
+   `operator_names_map.json`, `tags_database.json`, `translations.json`, `dossiers_ru.json`).
+2. Root type of each file (array vs object).
+3. Localization completeness of `ru_RU` and `en_US` in `translations.json`.
+4. Record schema of `operators_database.json`: required non-empty string fields
+   (`id`, `nameZh`, `nameEn`, `profession`, `drawName`, `infoName`), optional string fields,
+   and `rarity` as an integer within 1..6.
+5. Alignment between `operators_database.json` and `operator_names_map.json`
+   (every operator must be reachable by at least one of its lookup aliases).
+
+**Any** failure — missing file, corrupt JSON, schema violation, or name-map
+mismatch — makes the script exit with a non-zero code and block the build.
 
 ### Operator Name Map Synchronization (`npm run sync:operators`)
 Script: `scripts/sync_operators.js`
 Rebuilds `src/data/operator_names_map.json` directly from `src/data/operators_database.json`.
-- Extracts all appellations, code names, and localized names.
+- Extracts all lookup aliases and the hardcoded Russian aliases.
 - Adds normalized lowercase keys for instant $O(1)$ search lookups.
+- Overwrites the file in a single write (no `--dry-run`/diff mode and no atomic
+  temp-file swap), so review the resulting diff before committing.
 
 ---
 
