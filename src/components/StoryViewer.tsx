@@ -1439,7 +1439,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         // --- Inject end of chapter dialog ---
         parsed.push({
           type: 'dialogue',
-          characterName: null,
+          characterName: undefined,
           text: `— ${t.chapter_end || 'КОНЕЦ ГЛАВЫ'} —`
         });
 

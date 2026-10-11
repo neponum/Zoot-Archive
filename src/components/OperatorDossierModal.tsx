@@ -134,12 +134,12 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
       const statusMap: Record<string, boolean> = {};
       const checkingMap: Record<string, boolean> = {};
 
-      for (const ch of operator.chapters) {
+      for (const ch of operator.chapters || []) {
         checkingMap[ch.id] = true;
       }
       if (isMounted) setCheckingStories({ ...checkingMap });
 
-      for (const ch of operator.chapters) {
+      for (const ch of operator.chapters || []) {
         const storyPath = ch.storyTxt || ch.id;
         let exists = false;
         if (storyPath) {

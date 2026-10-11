@@ -22,7 +22,7 @@ import { setLanguage } from '../services/storyService';
 
 interface OperatorStoriesViewerProps {
   filteredEpisodes: StoryEpisode[];
-  episodeImages: Record<string, string>;
+  episodeImages: Record<string, string | null>;
   failedImages: Record<string, boolean>;
   setSelectedEpisode: (ep: StoryEpisode) => void;
   searchQuery: string;

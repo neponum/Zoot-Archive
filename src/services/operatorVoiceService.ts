@@ -785,18 +785,20 @@ export async function getOperatorVoiceData(
       const category = getVoiceCategory(titleEn, titleZh);
 
       // Pre-build audio URLs for all available language dubs for this operator
+      const resolvedCharId = itemZh.charId || cleanId;
+      const resolvedVoiceId = itemZh.voiceId || '';
       const audioUrls: Record<string, string> = {};
       for (const lType of availableLangs) {
-        audioUrls[lType] = buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, lType, cvByLang.get(lType));
+        audioUrls[lType] = buildAudioUrlForLang(resolvedCharId, resolvedVoiceId, lType, cvByLang.get(lType));
       }
 
-      const primaryAudioUrl = audioUrls.JP || audioUrls[availableLangs[0]] || buildAudioUrlForLang(itemZh.charId || cleanId, itemZh.voiceId, 'JP');
+      const primaryAudioUrl = audioUrls.JP || audioUrls[availableLangs[0]] || buildAudioUrlForLang(resolvedCharId, resolvedVoiceId, 'JP');
 
       matchingEntries.push({
         charWordId: entry.key,
         charId: itemZh.charId || cleanId,
         wordKey: itemZh.wordKey || itemZh.charId || cleanId,
-        voiceId: itemZh.voiceId,
+        voiceId: resolvedVoiceId,
         voiceTitle: localizedTitle,
         voiceTitleEn: titleEn,
         voiceTitleZh: titleZh,
@@ -805,7 +807,7 @@ export async function getOperatorVoiceData(
         voiceTextJa: textJa,
         voiceTextEn: textEn,
         voiceTextZh: textZh,
-        voiceAsset: itemZh.voiceAsset,
+        voiceAsset: itemZh.voiceAsset || '',
         category,
         audioUrls,
         audioUrl: primaryAudioUrl,

@@ -648,7 +648,7 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
             let finalPrefix = prefix;
             const translatedText = translationRow['Translation'].replace(/\r?\n/g, '\\n');
             
-            let characterName = undefined;
+            let characterName: string | undefined = undefined;
             const nameMatch = prefix.match(/name="([^"]+)"/);
             if (nameMatch) {
               characterName = nameMatch[1];

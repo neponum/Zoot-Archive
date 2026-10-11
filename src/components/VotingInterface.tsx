@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StoryEpisode, Language } from '../types';
-import { authService } from '../services/authService';
+import { authService, DiscordUserData } from '../services/authService';
 import { 
   Award, 
   Music, 
@@ -176,7 +176,7 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const [songs, setSongs] = useState<SongData[]>([]);
 
   // Discord auth states
-  const [discordUser, setDiscordUser] = useState<{ username: string; avatar?: string; id: string } | null>(null);
+  const [discordUser, setDiscordUser] = useState<DiscordUserData | null>(null);
   const [isDiscordMember, setIsDiscordMember] = useState(false);
   const [isCheckingDiscord, setIsCheckingDiscord] = useState(false);
 

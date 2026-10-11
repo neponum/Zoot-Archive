@@ -49,7 +49,7 @@ const TITLE_TRANSLATIONS: Record<string, string> = {
 };
 
 const cachedHandbookDicts: Record<string, any> = {};
-const handbookFetchPromises: Record<string, Promise<any>> = {};
+const handbookFetchPromises: Record<string, Promise<any> | undefined> = {};
 
 /**
  * Downloads or retrieves handbook dict for a specified game language from GitHub

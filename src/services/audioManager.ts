@@ -248,10 +248,10 @@ class AudioManager {
     newBgm.volume = 0;
     
     // Add error listener to catch native browser errors
-    newBgm.onerror = (e: Event) => {
+    newBgm.onerror = (e: Event | string) => {
       if (!newBgm.src) return;
-      const target = e.target as HTMLAudioElement;
-      const errorMsg = target.error ? target.error.message : 'Unknown error';
+      const target = (typeof e === 'string' ? null : e.target) as HTMLAudioElement | null;
+      const errorMsg = target?.error ? target.error.message : 'Unknown error';
       this.logError(`Failed to load BGM audio resource: ${introName || name || introUrl || url}. Error: ${errorMsg}`);
       // Release the dead element and forget the URL so the track can be retried later
       if (this.bgm === newBgm) {
@@ -295,10 +295,10 @@ class AudioManager {
             loopBgm.loop = true;
             loopBgm.volume = Math.max(0, Math.min(1, volume * this.masterBGMVolume));
             
-            loopBgm.onerror = (e: Event) => {
+            loopBgm.onerror = (e: Event | string) => {
               if (!loopBgm.src) return;
-              const target = e.target as HTMLAudioElement;
-              const errorMsg = target.error ? target.error.message : 'Unknown error';
+              const target = (typeof e === 'string' ? null : e.target) as HTMLAudioElement | null;
+              const errorMsg = target?.error ? target.error.message : 'Unknown error';
               this.logError(`Failed to load loop BGM audio resource: ${name || url}. Error: ${errorMsg}`);
             };
             
@@ -410,10 +410,10 @@ class AudioManager {
         resolve();
       };
       
-      sound.onerror = (e: Event) => {
+      sound.onerror = (e: Event | string) => {
         if (!sound.src) return;
-        const target = e.target as HTMLAudioElement;
-        const errorMsg = target.error ? target.error.message : 'Unknown error';
+        const target = (typeof e === 'string' ? null : e.target) as HTMLAudioElement | null;
+        const errorMsg = target?.error ? target.error.message : 'Unknown error';
         console.error(`Failed to load SFX audio resource: ${url}. Error: ${errorMsg}`);
         finish();
       };
@@ -519,10 +519,10 @@ class AudioManager {
     this.voiceVolume = Math.max(0, volume);
     this.voice.volume = Math.max(0, Math.min(1, volume * this.masterVoiceVolume));
     
-    this.voice.onerror = (e: Event) => {
+    this.voice.onerror = (e: Event | string) => {
       if (!this.voice || !this.voice.src) return;
-      const target = e.target as HTMLAudioElement;
-      const errorMsg = target.error ? target.error.message : 'Unknown error';
+      const target = (typeof e === 'string' ? null : e.target) as HTMLAudioElement | null;
+      const errorMsg = target?.error ? target.error.message : 'Unknown error';
       console.error(`Failed to load voice audio resource: ${url}. Error: ${errorMsg}`);
     };
     

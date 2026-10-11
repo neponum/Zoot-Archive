@@ -45,7 +45,7 @@ const BASE_FALLBACK_VARIABLES: Record<string, any> = {
   bg_height: 1.5
 };
 
-export async function fetchStoryVariables(): Promise<Record<string, any>> {
+export async function fetchStoryVariables(): Promise<Record<string, any> | null> {
   if (inMemoryVariables && Object.keys(inMemoryVariables).length > 50) {
     return inMemoryVariables;
   }
@@ -89,7 +89,7 @@ export async function fetchStoryVariables(): Promise<Record<string, any>> {
 
     inMemoryVariables = BASE_FALLBACK_VARIABLES;
     return inMemoryVariables;
-  })();
+  })() as Promise<Record<string, any>>;
 
   return fetchPromise;
 }

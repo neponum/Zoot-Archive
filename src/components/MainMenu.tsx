@@ -17,7 +17,7 @@ import { audioManager } from '../services/audioManager';
 import { QRCodeSVG } from 'qrcode.react';
 import { CacheService } from '../services/cacheService';
 import { CUSTOM_QUOTES } from '../config/customQuotes';
-import { authService } from '../services/authService';
+import { authService, DiscordUserData } from '../services/authService';
 import { useToast } from './ui/Toast';
 
 export interface NewsItem {
@@ -226,6 +226,19 @@ interface MainMenuProps {
   episodes?: StoryEpisode[];
 }
 
+interface StorySettings {
+  fontSize: number;
+  bgmVolume: number;
+  sfxVolume: number;
+  voiceVolume: number;
+  textSpeed: number;
+  autoDelay: number;
+  fontFamily: string;
+  nickname: string;
+  shakeIntensity: number;
+  skipSpeed: number;
+}
+
 export const MainMenu: React.FC<MainMenuProps> = ({ 
   onOpenTerminal, 
   onOpenArchive, 
@@ -284,7 +297,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   }, [episodes, readChapters, readChaptersCount]);
 
   // Local settings synchronizing with player settings
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettings] = useState<StorySettings>(() => {
     const defaultSettings = {
       fontSize: 100,
       bgmVolume: 1.0,
@@ -453,7 +466,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   });
 
   // Discord Auth state
-  const [discordUser, setDiscordUser] = useState<{ username: string; avatar?: string; id: string } | null>(() => {
+  const [discordUser, setDiscordUser] = useState<DiscordUserData | null>(() => {
     return authService.getState().user;
   });
   const [isDiscordMember, setIsDiscordMember] = useState(() => {
@@ -1007,7 +1020,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       </div>
 
                       <div className="flex flex-col justify-center">
-                        <h3 className="text-2xl md:text-3.5xl max-lg:landscape:text-2.5xl font-black text-white uppercase tracking-wider font-mono">
+                        <h3 className="text-2xl md:text-3xl max-lg:landscape:text-xl font-black text-white uppercase tracking-wider font-mono">
                           {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ТЕРМИНАЛ' : 'TERMINAL'}
                         </h3>
                       </div>
@@ -1505,7 +1518,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       <div className="flex gap-4 mt-8 w-full">
                         <button
                           onClick={() => performHeadhunt(1)}
-                          className="flex-1 bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/30 p-4 rounded-sm flex flex-col items-center justify-between transition-all cursor-pointer"
+                          className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/30 p-4 rounded-sm flex flex-col items-center justify-between transition-all cursor-pointer"
                         >
                           <span className="text-[9px] font-black text-white/40 tracking-wider uppercase">SINGLE HEADHUNT</span>
                           <span className="text-sm font-black text-white mt-1.5">PULL x1</span>

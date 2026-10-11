@@ -82,7 +82,7 @@ export type StoryAction =
   | { type: 'UPDATE_CHARACTER_SLOTS'; payload: Record<string, CharacterSlotData> }
   | { type: 'CLEAR_CHARACTER_SLOTS'; payload?: string | { slot?: string; duration?: number } } // Optional slot to clear
   | { type: 'SET_FOCUS'; payload: number }
-  | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; index?: number; isSubtitle?: boolean; line?: StoryLine } }
+  | { type: 'SET_DIALOGUE'; payload: { speaker: string | null; text: string; index?: number; isSubtitle?: boolean; line?: StoryLine | null } }
   | { type: 'SET_SUBTITLE'; payload: StoryLine | null }
   | { type: 'SET_TYPEWRITER_FINISHED'; payload: boolean }
   | { type: 'SET_SKIP_TYPEWRITER'; payload: boolean }

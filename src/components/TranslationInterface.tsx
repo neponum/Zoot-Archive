@@ -455,7 +455,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       selectedEpisode.chapters.forEach(ch => {
         const chapData = allTranslations[ch.storyTxt];
         if (chapData) {
-          Object.values(chapData).forEach((item: Record<string, { text?: string; name?: string; edited?: boolean }>) => {
+          Object.values(chapData).forEach((item) => {
             const srcData = item[sourceLang];
             if (srcData?.name && srcData.name !== "Narrator/System") {
               chars.add(srcData.name);
@@ -608,7 +608,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
         complete: (results) => {
           resolve(results.data);
         },
-        error: (err) => {
+        error: (err: unknown) => {
           reject(err);
         }
       });
@@ -840,7 +840,8 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   }, [selectedChapter, activeTargetLang]);
 
   // Persistent translations: Record<storyTxt, Record<lineIndex, { text?: string, name?: string }>>
-  const [allTranslations, setAllTranslations] = useState<Record<string, Record<string, { text?: string, name?: string }>>>({});
+  // All stored translations: chapter story path -> block id -> language -> entry
+  const [allTranslations, setAllTranslations] = useState<Record<string, Record<string, Partial<Record<Language, { text?: string, name?: string, edited?: boolean }>>>>>({});
   const [isTranslationsLoaded, setIsTranslationsLoaded] = useState(false);
 
   // Store total dialogue lines for progress calculation: Record<storyTxt, totalDialogueLines>
@@ -3464,6 +3465,12 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
     }
   };
 
+  // Название главы для шапки редактора (вычисляется вне JSX,
+  // чтобы TypeScript корректно сузил selectedChapter)
+  const editorChapterLabel = selectedChapter
+    ? getCleanChapterName(selectedChapter.storyTxt ?? '', selectedEpisode?.id)
+    : '';
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#050505] text-white font-sans overflow-hidden select-none">
       {/* Unified Top Toolbar containing all selectors and action buttons in a single row */}
@@ -4078,7 +4085,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                                 : 'bg-[#151515] border-white/5 text-white/40 hover:bg-white/5 hover:text-white/60'
                             }`}
                           >
-                            <FileText className="w-3.5 h-3.5" /> Глава ({selectedChapter ? getCleanChapterName(selectedChapter.storyTxt, selectedEpisode?.id) : 'текущая'})
+                            <FileText className="w-3.5 h-3.5" /> Глава ({selectedChapter ? getCleanChapterName(selectedChapter.storyTxt ?? '', selectedEpisode?.id) : 'текущая'})
                           </button>
                           <button
                             onClick={() => setExportScope('episode')}
@@ -4667,7 +4674,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                             {translateOnlyUntranslated ? "Переводит только незаполненные реплики в текущей главе." : "Переводит диалоги текущей выбранной главы."}
                           </span>
                           {translationProgress && (
-                            <div className="absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300" style={{ width: `${(translationProgress.current / translationProgress.total) * 100}%` }} />
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300" style={{ width: `${((translationProgress?.current ?? 0) / (translationProgress?.total || 1)) * 100}%` }} />
                           )}
                         </button>
 
@@ -5208,7 +5215,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                         Переводит только текущую выбранную главу.
                       </span>
                       {translationProgress && (
-                        <div className="absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300" style={{ width: `${(translationProgress.current / translationProgress.total) * 100}%` }} />
+                        <div className="absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300" style={{ width: `${((translationProgress?.current ?? 0) / (translationProgress?.total || 1)) * 100}%` }} />
                       )}
                     </button>
 
@@ -5256,7 +5263,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                   <div className="flex items-center gap-3">
                     <div className="text-[11px] text-white/50">
                       {editorScope === 'chapter' ? (
-                        <span>Сканирование главы: <strong className="text-white font-mono">{selectedChapter ? getCleanChapterName(selectedChapter.storyTxt, selectedEpisode?.id) : ''}</strong></span>
+                        <span>Сканирование главы: <strong className="text-white font-mono">{editorChapterLabel}</strong></span>
                       ) : (
                         <span>Эпизод целиком: <strong className="text-white font-mono">{selectedEpisode?.name || selectedEpisode?.id}</strong></span>
                       )}
