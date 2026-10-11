@@ -28,7 +28,7 @@
 
 ## 🇷🇺 Русский
 
-**ZOOT Archive** — это полнофункциональная веб-платформа и архив лора вселенной **Arknights**, включающая полноценный движок визуальной новеллы для воспроизведения сюжетных сценариев игры, базу данных оперативников с интерактивным графом связей на D3.js, музыкальный плеер PRTS, а также верстак для фанатского перевода с поддержкой Google Gemini AI и интеграцией с Discord.
+**ZOOT Archive** — это полнофункциональная веб-платформа и архив лора вселенной **Arknights**, включающая полноценный движок визуальной новеллы для воспроизведения сюжетных сценариев игры, каталог оперативников с голосовыми репликами, музыкальный плеер PRTS, а также верстак для фанатского перевода с поддержкой Google Gemini AI и интеграцией с Discord.
 
 ### ✨ Ключевые возможности
 
@@ -39,9 +39,8 @@
   - Персонализация: динамическая подстановка имени Доктора во всех диалогах (`{@nickname}`, `{$nickname}`, `{nickname}`).
   - Управление воспроизведением: авточтение, регулировка скорости текста, мгновенный пропуск, журнал реплик (Backlog/Log) с возможностью перехода к любой строке и полноэкранный режим.
 
-- 👥 **Досье оперативников и граф связей**:
+- 👥 **Досье оперативников**:
   - Каталог оперативников с биографиями, записями парадоксов, голосовыми репликами, талантами и модулями.
-  - Интерактивная визуализация связей и отношений между персонажами на базе **D3.js** (`OperationRecordsGraph`).
 
 - 🎵 **Аудиосистема PRTS**:
   - Воспроизведение официальных фоновых треков (BGM) и звуковых эффектов (SFX) через Howler.js.
@@ -63,7 +62,7 @@
 | Область | Технологии |
 | :--- | :--- |
 | **Frontend** | React 19, TypeScript, Vite 6, Tailwind CSS v4, Motion (Framer Motion v12) |
-| **Data Viz & Audio** | D3.js v7, Howler.js v2, Lucide React, PapaParse |
+| **Audio & Utilities** | Howler.js v2, Lucide React, PapaParse |
 | **Backend** | Express 4, Node.js (`tsx` / `esbuild`), Cookie-Parser, Rate-Limit |
 | **AI Translation** | Google Generative AI (`@google/genai` Gemini SDK) |
 | **Deploy & Analytics** | Vercel (`@vercel/analytics`, `@vercel/speed-insights`), Docker / Cloud Run |
@@ -134,7 +133,7 @@ npm start
 
 ## 🇬🇧 English
 
-**ZOOT Archive** is a feature-rich web platform and lore archive for **Arknights**, featuring an authentic in-browser visual novel engine to reproduce in-game story scenarios, an interactive operator dossier with a D3.js relationship graph, PRTS music player, and a community translation workbench integrated with Google Gemini AI and Discord.
+**ZOOT Archive** is a feature-rich web platform and lore archive for **Arknights**, featuring an authentic in-browser visual novel engine to reproduce in-game story scenarios, an operator dossier with a voice line player, PRTS music player, and a community translation workbench integrated with Google Gemini AI and Discord.
 
 ### ✨ Key Features
 
@@ -145,9 +144,8 @@ npm start
   - Dynamic Doctor nickname substitution (`{@nickname}`, `{$nickname}`, `{nickname}`) synced with user settings.
   - Player controls: Auto-play, text speed adjustment, instant skip, backlog/log viewer with jump-to-line capability, and full-screen toggle.
 
-- 👥 **Operator Dossier & Relationship Graph**:
+- 👥 **Operator Dossier**:
   - Operator handbook, voice lines player, paradox simulations, talents, and modules.
-  - Interactive operator connection network powered by **D3.js** (`OperationRecordsGraph`).
 
 - 🎵 **PRTS Audio Engine**:
   - Background music (BGM) and sound effects (SFX) streaming via Howler.js.
@@ -169,7 +167,7 @@ npm start
 | Domain | Technologies |
 | :--- | :--- |
 | **Frontend** | React 19, TypeScript, Vite 6, Tailwind CSS v4, Motion (Framer Motion v12) |
-| **Data Viz & Audio** | D3.js v7, Howler.js v2, Lucide React, PapaParse |
+| **Audio & Utilities** | Howler.js v2, Lucide React, PapaParse |
 | **Backend** | Express 4, Node.js (`tsx` / `esbuild`), Cookie-Parser, Express Rate Limit |
 | **AI Translation** | Google Generative AI (`@google/genai` Gemini SDK) |
 | **Deployment** | Vercel (`@vercel/analytics`, `@vercel/speed-insights`), Docker / Cloud Run |

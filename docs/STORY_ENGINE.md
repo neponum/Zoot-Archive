@@ -18,12 +18,10 @@ StoryViewerRoute (`/story/*`)
         │           └── StickerLayer.tsx (Scenario comic stickers & popups)
         │
         ├── Dialogue UI Layer:
-        │     ├── DialogueUI.tsx (Speaker box, nameplate & typography)
-        │     ├── DialogueBox.tsx (Outer container & scrim gradient)
+        │     ├── DialogueUI.tsx (Speaker box, nameplate, typography & decision choices)
         │     └── Typewriter.tsx (Animated text printing & tag preservation)
         │
         ├── Interactive Overlays:
-        │     ├── DecisionOverlay.tsx (Branching player choices)
         │     ├── ControlsOverlay.tsx (Top bar: settings, log, read status, auto, skip)
         │     └── SkipControls.tsx (Fast-forward mode banner)
         │

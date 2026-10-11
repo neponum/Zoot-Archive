@@ -129,9 +129,11 @@ Managed via `src/services/audioManager.ts` and `src/services/story/storyAssetSer
 
 ---
 
-## 5. D3 Graph & Data Visualization
+## 5. Removed Subsystem: D3 Relationship Graph
 
-Managed in `src/components/OperationRecordsGraph.tsx`:
-- **Visualization Library**: D3.js v7 (`d3`).
-- **Algorithm**: `d3.forceSimulation` with charge force (`forceManyBody().strength(-1000)`), link distance (`forceLink().distance(200)`), and collision avoidance (`forceCollide().radius(80)`).
-- **Lifecycle Cleanup**: The force simulation is explicitly stopped on component unmount (`simulation.stop()`) to prevent background ticker loops and detached DOM memory leaks.
+The interactive D3.js operator relationship graph (`src/components/OperationRecordsGraph.tsx`)
+was never mounted by any route and has been removed together with its documentation
+references. The `d3` package remains declared in `package.json` for legacy reasons, but
+nothing imports it and it is not part of the client bundle. Operator relationship data is
+now sourced directly from `src/data/operators_database.json` records and rendered as
+static dossier fields.

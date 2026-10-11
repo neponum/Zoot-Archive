@@ -7,7 +7,7 @@ This file is automatically loaded into the AI Studio agent environment. It serve
 ## 📚 Deep-Dive Technical Documentation Index
 
 For exhaustive subsystem specifications, consult the dedicated manuals in the `docs/` directory:
-- **[System Architecture & Topology](docs/ARCHITECTURE.md)**: Full-stack component composition, state lifecycle, dev/prod Express mounting, and D3 graph engine.
+- **[System Architecture & Topology](docs/ARCHITECTURE.md)**: Full-stack component composition, state lifecycle, dev/prod Express mounting, and audio subsystem details.
 - **[Visual Novel & Story Engine](docs/STORY_ENGINE.md)**: Arknights AST parser syntax, camera tweens, coordinate normalization math, scale-aware clamping, and character sprite resolution.
 - **[Security Architecture & Hardening](docs/SECURITY.md)**: SSRF defenses in `/api/proxy`, Discord OAuth2 state validation, rate-limiting tiers, and client XSS sanitization.
 - **[Data Pipeline & Localization](docs/DATA_PIPELINE.md)**: Torappu PRTS data sources, JSON schemas, sync/validation routines, and the canonical Russian lore glossary.
@@ -21,7 +21,6 @@ For exhaustive subsystem specifications, consult the dedicated manuals in the `d
 - **Styling**: Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`).
 - **Motion & Physics**: Motion (`motion/react` v12).
 - **Audio Engine**: Howler.js (`src/services/audioManager.ts`) with IndexedDB binary persistence (`CacheService`).
-- **Data Visualization**: D3.js v7 for operator connection graphs (`OperationRecordsGraph.tsx`).
 
 ---
 
