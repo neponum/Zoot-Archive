@@ -1,5 +1,6 @@
 import { StoryLine } from '../../types';
 import { CacheService } from '../cacheService';
+import { resolveAudioViaManifest } from './audioManifest';
 import { 
   CharacterAssetInfo, 
   CharacterDataMap, 
@@ -874,25 +875,21 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
       const parts = name.split('/');
       const baseNameOnly = parts[parts.length - 1];
       const cleanAudioName = baseNameOnly.replace(/^\$/, '').replace(/\.(mp3|wav|ogg|flac|m4a)$/i, '').toLowerCase();
-      
-      if (cleanAudioName in activeAudioMusic) {
-        return activeAudioMusic[cleanAudioName];
+
+      // Пустая строка означает «проверено, не найдено» — такой кэш живёт недолго.
+      const cached = activeAudioMusic[cleanAudioName];
+      if (cached) return cached;
+
+      // 1. Манифест хоста: точный путь вместе с префиксом движка, без перебора папок.
+      const viaManifest = await resolveAudioViaManifest(name);
+      if (viaManifest) {
+        activeAudioMusic[cleanAudioName] = viaManifest;
+        saveAudioMapsToCache();
+        return viaManifest;
       }
-      
-      const baseNames = [cleanAudioName];
-      if (cleanAudioName.startsWith('m_')) {
-        baseNames.push(cleanAudioName.substring(2));
-      } else {
-        baseNames.push(`m_${cleanAudioName}`);
-        baseNames.push(`m_avg_${cleanAudioName}`);
-        baseNames.push(`m_sys_${cleanAudioName}`);
-        baseNames.push(`m_bat_${cleanAudioName}`);
-        baseNames.push(`m_dia_${cleanAudioName}`);
-      }
-      
-      const folders = ['music/avg', 'music', 'avg', 'battle', 'general', 'player', 'beta2_180603', 'music/beta2_180603'];
-      const candidates: string[] = [];
-      
+
+      // 2. Ручной путь вида music/<папка>/<файл>, если он задан явно.
+      const explicitCandidates: string[] = [];
       if (parts.length > 1) {
         const filteredParts = parts.filter((p, i) => {
           if (i === 0) {
@@ -902,32 +899,40 @@ async function resolveAssetUrl(type: AssetType, name: string): Promise<string> {
           return true;
         });
         const pathStr = filteredParts.map(p => p.toLowerCase()).join('/');
-        candidates.push(`https://torappu.prts.wiki/assets/audio/${pathStr}.mp3`);
-        candidates.push(`https://torappu.prts.wiki/assets/audio/music/${pathStr}.mp3`);
+        explicitCandidates.push(`https://torappu.prts.wiki/assets/audio/${pathStr}.mp3`);
+        explicitCandidates.push(`https://torappu.prts.wiki/assets/audio/music/${pathStr}.mp3`);
       }
 
-      for (const bName of baseNames) {
-        for (const folder of folders) {
-          candidates.push(`https://torappu.prts.wiki/assets/audio/${folder}/${bName}.mp3`);
+      // 3. Перебор папок — последний рубеж. Идём строго последовательно: хост
+      //    рейт-лимитит и при параллельных запросах честные треки выглядят как 404.
+      const baseNames = [cleanAudioName];
+      if (cleanAudioName.startsWith('m_')) {
+        baseNames.push(cleanAudioName.replace(/^m_[a-z0-9]+?_/, ''));
+      } else {
+        for (const prefix of ['m_dia_', 'm_sys_', 'm_bat_', 'm_avg_', 'm_']) {
+          baseNames.push(`${prefix}${cleanAudioName}`);
         }
       }
-      
-      const checkResults = await Promise.all(
-        candidates.map(async (url) => {
-          const exists = await checkImageExists(url);
-          return { url, exists };
-        })
-      );
-      
-      const found = checkResults.find(r => r.exists);
-      if (found) {
-        activeAudioMusic[cleanAudioName] = found.url;
-        saveAudioMapsToCache();
-        return found.url;
+
+      const folders = ['music', 'music/avg', 'avg', 'battle', 'general', 'player',
+                       'music/beta1_180603', 'music/beta2_180603', 'beta1_180603', 'beta2_180603'];
+
+      const candidates = [
+        ...explicitCandidates,
+        ...baseNames.flatMap(bName => folders.map(folder =>
+          `https://torappu.prts.wiki/assets/audio/${folder}/${bName}.mp3`))
+      ];
+
+      for (const url of candidates) {
+        if (await checkImageExists(url)) {
+          activeAudioMusic[cleanAudioName] = url;
+          saveAudioMapsToCache();
+          return url;
+        }
       }
-      
-      // No candidate is actually available: report the track as missing instead of
-      // handing back a guessed URL that would fail silently in the player.
+
+      // Ничего не нашлось — честно сообщаем, вместо того чтобы отдать URL,
+      // который молча сломается в плеере.
       console.warn(`Music track not found on torappu.prts.wiki: ${name}`);
       activeAudioMusic[cleanAudioName] = '';
       return '';

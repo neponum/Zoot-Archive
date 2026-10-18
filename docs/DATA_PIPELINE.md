@@ -196,3 +196,34 @@ Established by editorial decision and enforced by the sweep tools in the
 - **Infected** is *Инфицированные* in every case, both in labels and prose.
   Process words (*заражение, заразиться, заражается*) stay as they are, and
   *незаражённые* («not infected») is a different word and is left untouched.
+
+## 5.2 Audio resolution via the host manifest
+
+BGM tracks in Arknights story scripts are referenced by logical name
+(`[PlayMusic(key="$babel_loop")]`), but the file lives in a release-tagged folder
+that cannot be guessed: `$babel_loop` is `music/beta1_180603/m_dia_babel_loop.mp3`,
+`$escape_loop` is `music/beta2_180603/m_dia_escape_loop.mp3`, `$ekg_loop` is not in
+`music/` at all — it is `dialog/d_avg_ekg_loop.mp3`.
+
+`torappu.prts.wiki` exposes its own asset manifest:
+
+```
+GET /api/v1/version                                  → [{ id, resVersion, … }]
+GET /api/v1/manifest/{versionId}/search?q={name}     → [{ name, path, nodeType }]
+```
+
+`path` is the in-game path without extension, e.g.
+`audio/sound_beta_2/music/beta1_180603/m_dia_babel_loop`. The served URL is
+`assets/audio/<rest>.mp3` — i.e. strip the `sound_beta_2/` segment and add `.mp3`.
+
+`src/services/story/audioManifest.ts` resolves a track as:
+cache → manifest search (plain name, then `m_dia_`/`m_sys_`/`m_bat_`/`m_avg_`
+variants) → folder probing as a last resort.
+
+Measured over all 186 distinct tracks referenced by `cn/gamedata/story`:
+**179 resolved (96%), 0 broken URLs**; the remaining 7 are absent from the host.
+The manifest is maintained by the host owner, so no index has to be rebuilt here.
+Negative answers are cached for a week only, so tracks added later are picked up.
+
+Folder probing is deliberately sequential — the host rate-limits, and parallel
+probes turn real 206s into false 404s.
