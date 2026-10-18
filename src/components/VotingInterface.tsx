@@ -1,4 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
+import {
+  loadCatalog,
+  fetchSongDetail as loadSongDetail,
+  downloadAudio,
+  saveBlob,
+  safeFileName,
+  extensionForContentType,
+  estimateAlbumBytes,
+  formatBytes,
+  fetchAlbumTracks as fetchAlbumTracksSafe,
+  AlbumData as CatalogAlbumData,
+  SongData as CatalogSongData
+} from '../services/sirenCatalog';
 import { useNavigate } from 'react-router-dom';
 import { StoryEpisode, Language } from '../types';
 import { authService, DiscordUserData } from '../services/authService';
@@ -42,7 +55,9 @@ import {
   Plus,
   Trash2,
   Edit2,
-  FolderPlus
+  FolderPlus,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
 
@@ -155,6 +170,8 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const [currentView, setCurrentView] = useState<'MODE_SELECT' | 'EPISODE_DUEL' | 'MUSIC_DUEL' | 'RESULTS' | 'MUSIC_PORTAL'>('MUSIC_PORTAL');
   const [loading, setLoading] = useState(true);
   const [loadingMusic, setLoadingMusic] = useState(true);
+  const [musicCatalogError, setMusicCatalogError] = useState<string | null>(null);
+  const [songDownloadProgress, setSongDownloadProgress] = useState<Record<string, { loaded: number; total: number }>>({});
   
   // Real-time voting tallies from database
   const [votes, setVotes] = useState<VotingResults>({
@@ -429,46 +446,20 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     authService.login();
   };
 
-  // 3. Fetch Monster Siren Soundtrack Catalog
-  const fetchMonsterSirenCatalog = async () => {
+  // 3. Каталог саундтреков Monster Siren Records.
+  // Раньше здесь были два последовательных запроса без кэша и подстановка
+  // шести выдуманных треков при сбое. Теперь каталог кэшируется на сутки,
+  // списки тянутся параллельно, а при ошибке показывается честный экран.
+  const fetchMonsterSirenCatalog = async (force = false) => {
+    setLoadingMusic(true);
+    setMusicCatalogError(null);
     try {
-      setLoadingMusic(true);
-      const fetchDirectOrProxy = async (url: string) => {
-        try {
-          const directRes = await fetch(url);
-          if (directRes.ok) return directRes;
-        } catch {
-          // Fallback to proxy if direct fetch fails
-        }
-        return fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
-      };
-
-      const albumsRes = await fetchDirectOrProxy('https://monster-siren.hypergryph.com/api/albums');
-      if (!albumsRes.ok) throw new Error('Albums failed');
-      const albumsJson = await albumsRes.json();
-      const albumList: AlbumData[] = albumsJson.data?.list || albumsJson.data || [];
-      setAlbums(albumList);
-
-      const songsRes = await fetchDirectOrProxy('https://monster-siren.hypergryph.com/api/songs');
-      if (!songsRes.ok) throw new Error('Songs failed');
-      const songsJson = await songsRes.json();
-      const songList: SongData[] = songsJson.data?.list || songsJson.data || [];
-      setSongs(songList);
+      const { albums: albumList, songs: songList } = await loadCatalog(force);
+      setAlbums(albumList as unknown as AlbumData[]);
+      setSongs(songList as unknown as SongData[]);
     } catch (e) {
-      console.error('Failed to load Monster Siren records, using high-quality local cache:', e);
-      // Fallback songs with high fidelity
-      setAlbums([
-        { cid: 'album-1', name: 'Rhodes Island Records', coverUrl: 'https://monster-siren.hypergryph.com/images/default.jpg' },
-        { cid: 'album-2', name: 'Spark for Dream', coverUrl: 'https://monster-siren.hypergryph.com/images/default.jpg' }
-      ]);
-      setSongs([
-        { cid: '342938', name: 'Spark for Dream', albumCid: 'album-2' },
-        { cid: '492812', name: 'Renegade', albumCid: 'album-1' },
-        { cid: '501234', name: 'Radiant', albumCid: 'album-1' },
-        { cid: '129841', name: 'Speed of Light', albumCid: 'album-1' },
-        { cid: '192841', name: 'Towerfiertz', albumCid: 'album-1' },
-        { cid: '201948', name: 'Boiling Blood', albumCid: 'album-1' }
-      ]);
+      console.error('Failed to load Monster Siren records:', e);
+      setMusicCatalogError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoadingMusic(false);
     }
@@ -954,222 +945,127 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     }
   };
 
-  // 7c. Direct Track and Album Downloads with Cover Image
+  // 7c. Скачивание трека: потоком с прогрессом и расширением по фактическому
+  // формату. Раньше весь файл (WAV по 35–58 МБ) читался в Blob без прогресса
+  // и сохранялся с расширением .mp3, хотя приходил audio/wav.
   const downloadSingleTrack = async (song: SongData, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    
+
     setDownloadingSongCid(song.cid);
+    setSongDownloadProgress({});
     try {
-      const detailUrl = encodeURIComponent(`https://monster-siren.hypergryph.com/api/song/${song.cid}`);
-      const response = await fetch(`/api/proxy?url=${detailUrl}`);
-      if (!response.ok) throw new Error('Failed to retrieve song details');
-      const json = await response.json();
-      
-      const detail: SongDetail = json.data;
-      if (!detail || !detail.sourceUrl) {
-        throw new Error('Streaming URL omitted from database records');
-      }
+      const detail = await loadSongDetail(song.cid);
+      const safeName = safeFileName(song.name);
 
-      const safeName = song.name.replace(/[/\\?%*:|"<>]/g, '_').trim() || 'track';
+      const { blob, extension } = await downloadAudio(detail.sourceUrl, ({ loaded, total }) => {
+        setSongDownloadProgress({ [song.cid]: { loaded, total } });
+      });
 
-      // 1. Fetch audio stream (Try direct first to save server bandwidth, fallback to proxy)
-      let audioRes;
-      try {
-        audioRes = await fetch(detail.sourceUrl);
-        if (!audioRes.ok) throw new Error();
-      } catch (e) {
-        const audioProxyUrl = `/api/proxy?url=${encodeURIComponent(detail.sourceUrl)}`;
-        audioRes = await fetch(audioProxyUrl);
-      }
-      if (!audioRes.ok) throw new Error('Failed to download audio content');
+      saveBlob(blob, `${safeName}${extension}`);
 
-      const audioBlob = await audioRes.blob();
-
-      // 2. Fetch cover image (Try direct first to save server bandwidth, fallback to proxy)
+      // Обложка отдельным файлом — раньше она качалась всегда и второй кнопкой
+      // через setTimeout; теперь только если реально есть.
       const coverUrl = getSongCoverUrl(song);
-      let coverBlob: Blob | null = null;
       if (coverUrl) {
         try {
-          let coverRes;
-          try {
-            coverRes = await fetch(coverUrl);
-            if (!coverRes.ok) throw new Error();
-          } catch (e) {
-            coverRes = await fetch(`/api/proxy?url=${encodeURIComponent(coverUrl)}`);
-          }
-          if (coverRes.ok) {
-            coverBlob = await coverRes.blob();
-          }
-        } catch (cErr) {
-          console.warn('Cover image download warning:', cErr);
+          const coverRes = await fetch(coverUrl);
+          if (coverRes.ok) saveBlob(await coverRes.blob(), `${safeName}_cover.jpg`);
+        } catch (coverErr) {
+          console.warn('Обложка не скачалась:', coverErr);
         }
-      }
-
-      // 3. Download audio file
-      const audioObjUrl = URL.createObjectURL(audioBlob);
-      const audioLink = document.createElement('a');
-      audioLink.href = audioObjUrl;
-      audioLink.download = `${safeName}.mp3`;
-      document.body.appendChild(audioLink);
-      audioLink.click();
-      document.body.removeChild(audioLink);
-      setTimeout(() => URL.revokeObjectURL(audioObjUrl), 3000);
-
-      // 4. Download cover image file if available
-      if (coverBlob) {
-        setTimeout(() => {
-          const coverObjUrl = URL.createObjectURL(coverBlob!);
-          const coverLink = document.createElement('a');
-          coverLink.href = coverObjUrl;
-          coverLink.download = `${safeName}_cover.jpg`;
-          document.body.appendChild(coverLink);
-          coverLink.click();
-          document.body.removeChild(coverLink);
-          setTimeout(() => URL.revokeObjectURL(coverObjUrl), 3000);
-        }, 300);
       }
     } catch (err) {
       console.error('Failed to download track:', err);
       toast.error(isRu ? 'Не удалось скачать трек' : 'Failed to download track');
     } finally {
+      setSongDownloadProgress((prev) => {
+        const next = { ...prev };
+        delete next[song.cid];
+        return next;
+      });
       setDownloadingSongCid(null);
     }
   };
 
+  // Скачивание альбома. Раньше все треки и zip целиком собирались в памяти —
+  // альбом это сотни мегабайт, браузер на телефоне это не переживает.
+  // Теперь треки качаются по одному потоком, а перед стартом показывается
+  // предупреждение с оценкой размера.
   const downloadAlbum = async (album: AlbumData, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    
+
     setDownloadingAlbumCid(album.cid);
-
     try {
-      // 1. Fetch official album detail to get exact list of tracks
-      let albumTracks: { cid: string; name: string }[] = [];
-      try {
-        const albumDetailUrl = encodeURIComponent(`https://monster-siren.hypergryph.com/api/album/${album.cid}/detail`);
-        const albumRes = await fetch(`/api/proxy?url=${albumDetailUrl}`);
-        if (albumRes.ok) {
-          const albumJson = await albumRes.json();
-          if (albumJson.data?.songs && Array.isArray(albumJson.data.songs)) {
-            albumTracks = albumJson.data.songs;
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to fetch official album detail, falling back to local list:', e);
-      }
-
-      // Fallback to local songs matching albumCid
-      if (albumTracks.length === 0) {
+      let albumTracks: { cid: string; name: string }[] = await fetchAlbumTracksSafe(album.cid);
+      if (!albumTracks.length) {
         albumTracks = songs.filter(s => s.albumCid === album.cid).map(s => ({ cid: s.cid, name: s.name }));
       }
 
-      if (albumTracks.length === 0) {
+      if (!albumTracks.length) {
         toast.info(isRu ? 'В этом альбоме нет треков' : 'No tracks found in this album');
-        setDownloadingAlbumCid(null);
         return;
       }
 
+      const estimate = estimateAlbumBytes(albumTracks.length);
+      const confirmed = window.confirm(
+        isRu
+          ? `Альбом «${album.name}» — примерно ${formatBytes(estimate)}. Браузер будет удерживать файлы в памяти, пока собирает архив. Продолжить?`
+          : `Album "${album.name}" is about ${formatBytes(estimate)}. The browser will hold the files in memory while packing. Continue?`
+      );
+      if (!confirmed) return;
+
       setDownloadProgress({ current: 0, total: albumTracks.length });
 
-      // @ts-ignore
       const { default: JSZip } = await import('jszip');
       const zip = new JSZip();
 
-      // Download and save album cover image inside the ZIP! (Try direct first to save server bandwidth, fallback to proxy)
       if (album.coverUrl) {
         try {
-          let coverRes;
-          try {
-            coverRes = await fetch(album.coverUrl);
-            if (!coverRes.ok) throw new Error();
-          } catch (e) {
-            coverRes = await fetch(`/api/proxy?url=${encodeURIComponent(album.coverUrl)}`);
-          }
-          if (coverRes.ok) {
-            const coverBlob = await coverRes.blob();
-            zip.file('cover.jpg', coverBlob);
-          }
-        } catch (cErr) {
-          console.warn('Could not add album cover to zip:', cErr);
+          const coverRes = await fetch(album.coverUrl);
+          if (coverRes.ok) zip.file('cover.jpg', await coverRes.blob());
+        } catch (coverErr) {
+          console.warn('Не удалось положить обложку в архив:', coverErr);
         }
       }
 
+      const skipped: string[] = [];
       for (let i = 0; i < albumTracks.length; i++) {
         const songItem = albumTracks[i];
-        
         setDownloadProgress({ current: i + 1, total: albumTracks.length });
 
-        const detailUrl = encodeURIComponent(`https://monster-siren.hypergryph.com/api/song/${songItem.cid}`);
-        const response = await fetch(`/api/proxy?url=${detailUrl}`);
-        if (!response.ok) continue;
-        const json = await response.json();
-        
-        const detail: SongDetail = json.data;
-        if (!detail || !detail.sourceUrl) continue;
-
-        // Try direct first to save server bandwidth, fallback to proxy
-        let audioRes;
         try {
-          audioRes = await fetch(detail.sourceUrl);
-          if (!audioRes.ok) throw new Error();
-        } catch (e) {
-          const audioProxyUrl = `/api/proxy?url=${encodeURIComponent(detail.sourceUrl)}`;
-          audioRes = await fetch(audioProxyUrl);
+          const detail = await loadSongDetail(songItem.cid);
+          const { blob, extension } = await downloadAudio(detail.sourceUrl, ({ loaded, total }) => {
+            setDownloadProgress({ current: i + 1, total: albumTracks.length });
+            setSongDownloadProgress({ [album.cid]: { loaded, total } });
+          });
+          zip.file(`${i + 1}. ${safeFileName(songItem.name, `track_${i + 1}`)}${extension}`, blob);
+        } catch (err) {
+          console.warn(`Трек ${songItem.name} пропущен:`, err);
+          skipped.push(songItem.name);
         }
-        if (!audioRes.ok) continue;
-
-        const audioBlob = await audioRes.blob();
-        const safeTrackName = songItem.name.replace(/[/\\?%*:|"<>]/g, '_').trim() || `track_${i + 1}`;
-        zip.file(`${i + 1}. ${safeTrackName}.mp3`, audioBlob);
       }
 
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      const safeAlbumName = album.name.replace(/[/\\?%*:|"<>]/g, '_').trim() || 'album';
-      const filename = `${safeAlbumName}.zip`;
-      const objectUrl = URL.createObjectURL(zipBlob);
+      setSongDownloadProgress((prev) => {
+        const next = { ...prev };
+        delete next[album.cid];
+        return next;
+      });
 
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveBlob(zipBlob, `${safeFileName(album.name, 'album')}.zip`);
+
+      if (skipped.length) {
+        toast.info(isRu
+          ? `Архив собран без ${skipped.length} трек(ов): ${skipped.join(', ')}`
+          : `Archive built without ${skipped.length} track(s): ${skipped.join(', ')}`);
+      }
     } catch (err) {
       console.error('Failed to download album:', err);
       toast.error(isRu ? 'Не удалось скачать альбом' : 'Failed to download album');
     } finally {
       setDownloadingAlbumCid(null);
       setDownloadProgress(null);
-    }
-  };
-
-  // Format time utility (MM:SS)
-  const formatTime = (secs: number): string => {
-    if (isNaN(secs) || secs < 0) return '0:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-  const getEpisodeCoverUrl = (ep: any) => {
-    const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
-    const imageId = ep.storyEntryPicId || ep.id;
-    const chineseName = ep.chineseName || ep.name;
-    
-    const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
-    const safeChineseName = (chineseName || '').replace(/[:：\s<>"/\\|?*]/g, '').trim();
-    
-    if (ep.id.startsWith('main_')) {
-      const num = ep.id.replace('main_', '');
-      const paddedNum = num.length === 1 ? `0${num}` : num;
-      return `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
-    } else if (ep.id.startsWith('is_')) {
-      const num = ep.id.replace('is_', '');
-      return `${BANNERS_BASE_URL}/IS_${num}.png`;
-    } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
-      return `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
-    } else {
-      return `${BANNERS_BASE_URL}/${safeImageId}.png`;
     }
   };
 
@@ -1201,6 +1097,35 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     }
     img.src = nextSrc;
   };
+
+  const formatTime = (secs: number): string => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+  const getEpisodeCoverUrl = (ep: any) => {
+    const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
+    const imageId = ep.storyEntryPicId || ep.id;
+    const chineseName = ep.chineseName || ep.name;
+    
+    const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+    const safeChineseName = (chineseName || '').replace(/[:：\s<>"/\\|?*]/g, '').trim();
+    
+    if (ep.id.startsWith('main_')) {
+      const num = ep.id.replace('main_', '');
+      const paddedNum = num.length === 1 ? `0${num}` : num;
+      return `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
+    } else if (ep.id.startsWith('is_')) {
+      const num = ep.id.replace('is_', '');
+      return `${BANNERS_BASE_URL}/IS_${num}.png`;
+    } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
+      return `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
+    } else {
+      return `${BANNERS_BASE_URL}/${safeImageId}.png`;
+    }
+  };
+
 
   const getSongCoverUrl = (song: SongData) => {
     const album = albums.find(a => a.cid === song.albumCid);
@@ -1318,6 +1243,27 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
               const defaultSong = songs[0];
               const activeSong = songs.find(s => s.cid === playingSongCid) || defaultSong;
               
+              if (musicCatalogError) {
+                return (
+                  <div className="bg-zinc-950/40 border border-rose-500/20 rounded-sm p-8 text-center">
+                    <AlertTriangle className="w-6 h-6 text-rose-400 mx-auto mb-3" />
+                    <p className="text-[11px] font-black uppercase tracking-widest text-rose-300/90 mb-1">
+                      {isRu ? 'КАТАЛОГ САУНДТРЕКОВ НЕДОСТУПЕН' : 'SOUNDTRACK CATALOG UNAVAILABLE'}
+                    </p>
+                    <p className="text-[10px] text-white/40 mb-4 max-w-md mx-auto break-words">
+                      {musicCatalogError}
+                    </p>
+                    <button
+                      onClick={() => fetchMonsterSirenCatalog(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500/15 border border-rose-500/30 text-rose-200 text-[10px] font-black uppercase tracking-widest rounded-sm hover:bg-rose-500/25 transition-colors"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingMusic ? 'animate-spin' : ''}`} />
+                      {isRu ? 'Повторить' : 'Retry'}
+                    </button>
+                  </div>
+                );
+              }
+
               if (!activeSong) {
                 return (
                   <div className="bg-zinc-950/40 border border-white/5 rounded-sm p-8 text-center">
@@ -1966,6 +1912,22 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                           className="w-full h-full object-cover"
                                           referrerPolicy="no-referrer"
                                         />
+                                        {isDownloadingSingle && (
+                                          <div className="absolute inset-0 bg-black/75 flex items-center justify-center">
+                                            <div className="w-full h-1 bg-white/15 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-full bg-blue-400 transition-all duration-200"
+                                                style={{
+                                                  width: (() => {
+                                                    const p = songDownloadProgress[song.cid];
+                                                    if (!p?.total) return '15%';
+                                                    return `${Math.min(100, Math.round((p.loaded / p.total) * 100))}%`;
+                                                  })()
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
                                         {isPlaying && (
                                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                             <div className="flex gap-[2px] items-end h-3">
