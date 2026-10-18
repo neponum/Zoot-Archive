@@ -16,6 +16,7 @@ import { useConfirm } from './ui/ConfirmDialog';
 import { TranslationRow, EditorDialogueItem } from '../services/storyService';
 import { ARKNIGHTS_CANONICAL_GLOSSARY } from '../config/arknightsGlossary';
 import { getOperatorsList, EnrichedOperator, ParsedDossierSection, parseOperatorHandbook } from '../services/operatorService';
+import { getTranslationCsvCandidates, getTranslatorSuffix } from '../utils/translationPaths';
 import { 
   loadDossierTranslationAsync, 
   saveManualDossierTranslation, 
@@ -81,8 +82,9 @@ CRITICAL TRANSLATION & TERMINOLOGY RULES:
 1. CANONICAL ARKNIGHTS TERMINOLOGY & NAMES (NO APOSTROPHES IN RUSSIAN):
    - STRICTLY consult and adhere to the provided 'glossary' for all Character Names, Factions, Cities, Races, and Lore Terms.
    - Do NOT use apostrophes (') in Russian transliterations/names! (e.g. use "Кальцит", NOT "Кель'тсит" or "Каль'цит"; use "Чэнь", NOT "Ч'ен" or "Ч'ень").
-   - Character names MUST remain 100% consistent across every line (e.g. Amiya -> Амия, Kal'tsit -> Кальцит, Ch'en -> Чэнь, Texas -> Техас, Lappland -> Лаппланд, SilverAsh -> Сильвераш, Nearl -> Нирл, W -> W, Ines -> Инес, Hoederer -> Хёдерер).
-   - Organizations & Locations MUST be uniform: Rhodes Island -> Родос Айленд, Reunion -> Воссоединение, Lungmen -> Лунмэнь, Lungmen Guard Department (L.G.D.) -> Департамент Гвардии Лунмэня (ДГЛ), Rhine Lab -> Рейн Лаб, Ursus -> Урсус, Victoria -> Виктория, Kazimierz -> Казимеж, Laterano -> Латерано, Siracusa -> Сиракузы, Originium -> Ориджиниум, Catastrophe -> Катастрофа, Oripathy -> Орипатия, Infected -> Заражённые.
+   - Character names MUST remain 100% consistent across every line (e.g. Amiya -> Амия, Kal'tsit -> Кальцит, Ch'en -> Чэнь, Texas -> Техас, Lappland -> Лаппланд, SilverAsh -> Сильвераш, Nearl -> Ниарл, W -> W, Ines -> Инес, Hoederer -> Хёдерер).
+   - Organizations & Locations MUST be uniform: Rhodes Island -> Родос, Reunion -> Воссоединение, Lungmen -> Лунмэнь, Lungmen Guard Department (L.G.D.) -> Департамент Гвардии Лунмэня (ДГЛ), Penguin Logistics -> Пингвин Лоджистикс, Rhine Lab -> Рейн Лаб, Ursus -> Урсус, Victoria -> Виктория, Kazimierz -> Казимеж, Laterano -> Латерано, Siracusa -> Сиракузы, Originium -> Ориджиниум, Catastrophe -> Катастрофа, Oripathy -> Орипатия, Infected -> Инфицированные.
+   - ALWAYS write «ё» (пришёл, ещё, счёт, мёртвый, чёрный) and use a SINGLE em-dash «—», never «——».
 
 2. IDIOMS, METAPHORS & CHINESE CHENGYU (成语):
    - AUTOMATICALLY identify Chinese idioms (chengyu), cultural set phrases, and allegorical expressions in the source text.
@@ -619,7 +621,7 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     if (!selectedChapter || !activeTargetLang) return;
     setIsImportingTranslator(t);
     try {
-      const translatorSuffix = t && t !== 'Community Translators' && t !== 'Переводчики сообщества' ? `_${t}` : '';
+      const translatorSuffix = getTranslatorSuffix(t);
       const chaptersToImport = selectedEpisode ? selectedEpisode.chapters : [selectedChapter];
       
       const newTranslations = { ...allTranslations };
@@ -630,22 +632,32 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       await Promise.all(
         chaptersToImport.map(async (ch) => {
           const baseName = ch.storyTxt.split('/').pop()?.replace(/\.txt$/, '') || '';
-          const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${activeTargetLang}/${baseName}${translatorSuffix}.csv`;
-          
-          try {
-            const response = await fetch(csvUrl, { cache: 'no-cache' });
-            if (!response.ok) {
-              failedChapters.push(ch.name || baseName);
-              return;
-            }
-            
-            const csvText = await response.text();
-            const lowerText = csvText.trim().toLowerCase();
-            if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
-              failedChapters.push(ch.name || baseName);
-              return;
-            }
+          const csvUrls = getTranslationCsvCandidates(activeTargetLang, baseName, translatorSuffix);
 
+          let csvText: string | null = null;
+          for (const csvUrl of csvUrls) {
+            try {
+              const response = await fetch(csvUrl, { cache: 'no-cache' });
+              if (!response.ok) continue;
+
+              const text = await response.text();
+              const lowerText = text.trim().toLowerCase();
+              if (lowerText.startsWith('<!doctype') || lowerText.startsWith('<html') || lowerText.startsWith('404:') || lowerText.startsWith('not found')) {
+                continue;
+              }
+              csvText = text;
+              break;
+            } catch (e) {
+              console.warn(`Failed to load translation CSV for ${baseName}:`, e);
+            }
+          }
+
+          if (!csvText) {
+            failedChapters.push(ch.name || baseName);
+            return;
+          }
+
+          try {
             // We need the parsed source blocks to match IDs correctly,
             // especially since we don't have non-selected chapters loaded in the main state
             const sourceText = await fetchStoryScript(
@@ -2163,7 +2175,7 @@ Analyze the provided array of translated dialogue blocks. Your PRIMARY mission i
    - Check if a line contains incomplete or partial translation (e.g. untranslated English/Chinese chunks, untranslated options/subtitle fragments). Provide complete translation in 'suggestedValue' with targetField 'text'.
 
 3. 'terminology' (MEDIUM PRIORITY):
-   - Verify proper usage of core Arknights lore terms (Originium -> Ориджиниум, Oripathy -> Орипатия, Infected -> Заражённые, Catastrophe -> Катастрофа, Mobile Cities -> Мобильные города). Set targetField to 'text'.
+   - Verify proper usage of core Arknights lore terms (Originium -> Ориджиниум, Oripathy -> Орипатия, Infected -> Инфицированные, Catastrophe -> Катастрофа, Mobile Cities -> Мобильные города). Set targetField to 'text'.
 
 4. 'grammar_style' (MEDIUM PRIORITY):
    - Verify Russian gender verb/adjective agreement (Amiya/Kal'tsit/Ch'en/Texas -> feminine endings; Doctor/SilverAsh/Phantom -> masculine endings). Spot clumsy literal calques of Chinese idioms (成语) and suggest natural Russian phrasing. Set targetField to 'text'.

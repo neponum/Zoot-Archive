@@ -53,24 +53,28 @@ When modifying code in Zoot Archive, all AI agents **MUST** strictly adhere to t
   $$\text{maxBound} = \frac{(S - 1)}{2} \times 100\% \quad (\text{for } S > 1)$$
 - **WHY**: Prevents extreme coordinates in raw scripts (e.g. `yTO=600` in 04-02) from moving illustrations off-screen into empty black voids.
 
-### 3. Prohibition of `window.alert` and `window.open`
+### 3. Russian Typography Invariants
+- **RULE**: Always write `ё` where the word takes it (пришёл, ещё, счёт, мёртвый, чёрный, сестры) and use a SINGLE em-dash `—`. Never emit `——` runs.
+- **WHY**: Enforced repo-wide by the sweeps in the `zoot-data` repository (`tools/apply_canon.py`, `tools/apply_yo.py`). Stray forms are a measurable regression, not a matter of taste.
+
+### 4. Prohibition of `window.alert` and `window.open`
 - **RULE**: NEVER invoke `window.alert()`, `window.confirm()`, or `window.open()` in React components.
 - **WHY**: The application runs inside sandboxed iframes where popups and modal alerts are blocked by browser security policies. Always use in-app modals (`LogModal`, `BackConfirmation`, `SettingsModal`, `BugReportModal`).
 
-### 4. Zero-Tolerance for SSRF in Asset Proxying (`server/routes/proxy.ts`)
+### 5. Zero-Tolerance for SSRF in Asset Proxying (`server/routes/proxy.ts`)
 - **RULE**: Maintain strict protocol checks (`https:`/`http:`), block all private/loopback/cloud metadata IP ranges, and validate against `ALLOWED_PREFIXES`.
 - **WHY**: Protects internal server network surfaces and metadata endpoints from exploitation.
 
-### 5. Mandatory State & Cookie CSRF in OAuth (`server/routes/auth.ts`)
+### 6. Mandatory State & Cookie CSRF in OAuth (`server/routes/auth.ts`)
 - **RULE**: Discord OAuth callbacks must strictly require both query `state` and cookie `oauth_state` to match. Session cookies must always carry `httpOnly: true`, `sameSite: 'lax'`, and `secure: isSecureRequest(req)`.
 
-### 6. Data Integrity Protocol
+### 7. Data Integrity Protocol
 - **RULE**: Before building or committing after modifying files in `src/data/`:
   - Run `npm run validate:data`.
   - If `operators_database.json` was altered, run `npm run sync:operators`.
 
-### 7. Canonical Lore & Russian Localization Standard
-- **RULE**: Always adhere to `ARKNIGHTS_CANONICAL_GLOSSARY` in `src/config/arknightsGlossary.ts` for all Russian names and terminology (*Родос Айленд*, *Урсус*, *Ориджиниум*, *Орипатия*, *Кель'си*, *Чэнь*).
+### 8. Canonical Lore & Russian Localization Standard
+- **RULE**: Always adhere to `ARKNIGHTS_CANONICAL_GLOSSARY` in `src/config/arknightsGlossary.ts` for all Russian names and terminology (*Родос*, *Урсус*, *Ориджиниум*, *Орипатия*, *Кальцит*, *Чэнь*, *Кастер*, *Искусство*).
 
 ---
 

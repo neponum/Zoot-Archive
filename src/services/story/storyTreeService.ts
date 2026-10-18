@@ -6,6 +6,7 @@ import { UI_STRINGS } from '../../translations';
 import { TranslationRow } from './storyTypes';
 import { EXTRA_STORIES } from '../../data/extraStories';
 import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../../utils/operatorUtils';
+import { getTranslationCsvCandidates, getTranslatorSuffix } from '../../utils/translationPaths';
 
 export function detectInitialLanguage(): Language {
   try {
@@ -476,9 +477,7 @@ export async function checkScriptExists(storyPath: string, lang: Language, trans
   }
   
   const extension = 'csv';
-  let cleanTranslator = translator;
-  if (cleanTranslator === 'neponum') cleanTranslator = 'nep0num';
-  const translatorSuffix = cleanTranslator && cleanTranslator !== 'Community Translators' && cleanTranslator !== 'Переводчики сообщества' ? `_${cleanTranslator}` : '';
+  const translatorSuffix = getTranslatorSuffix(translator);
   const baseName = normalizedPath.split('/').pop();
   
   const tryUrl = async (urlStr: string) => {
@@ -496,12 +495,16 @@ export async function checkScriptExists(storyPath: string, lang: Language, trans
     return false;
   };
 
-  const primaryUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.${extension}`;
-  let exists = await tryUrl(primaryUrl);
+  // Episode folder first, then the legacy flat layout.
+  const candidates = getTranslationCsvCandidates(lang, baseName || '', translatorSuffix)
+    .map(url => url.replace(/\.csv$/, `.${extension}`));
 
-  if (!exists && translatorSuffix) {
-    const fallbackUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}.${extension}`;
-    exists = await tryUrl(fallbackUrl);
+  let exists = false;
+  for (const url of candidates) {
+    if (await tryUrl(url)) {
+      exists = true;
+      break;
+    }
   }
 
   scriptExistenceCache[cacheKey] = exists;
@@ -584,29 +587,35 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       const registry = TRANSLATION_REGISTRY[lang];
       const defaultTranslator = (registry && registry.translators.length > 0) ? getDefaultTranslator(registry.translators) : undefined;
       const effectiveTranslator = translator || defaultTranslator;
-      const translatorSuffix = effectiveTranslator && effectiveTranslator !== 'Community Translators' && effectiveTranslator !== 'Переводчики сообщества' ? `_${effectiveTranslator}` : '';
-      const baseName = normalizedPath.split('/').pop();
-      const csvUrl = `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/${baseName}${translatorSuffix}.csv`;
+      const translatorSuffix = getTranslatorSuffix(effectiveTranslator);
+      const baseName = normalizedPath.split('/').pop() || '';
+      const csvUrls = getTranslationCsvCandidates(lang, baseName, translatorSuffix);
       
       let csvText: string | null = null;
       
-      try {
-        const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' });
-        if (response.ok) {
-          csvText = await response.text();
-          const lowerText = csvText.trim().toLowerCase();
-          if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
-            await CacheService.cacheText(csvUrl, csvText);
-          } else {
-            csvText = null;
+      for (const csvUrl of csvUrls) {
+        try {
+          const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' });
+          if (response.ok) {
+            const fresh = await response.text();
+            const lowerText = fresh.trim().toLowerCase();
+            if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
+              csvText = fresh;
+              await CacheService.cacheText(csvUrl, csvText);
+              break;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch fresh translation, trying cache:', e);
+        }
+
+        if (!csvText) {
+          const cached = await CacheService.getCachedText(csvUrl);
+          if (cached) {
+            csvText = cached;
+            break;
           }
         }
-      } catch (e) {
-        console.warn('Failed to fetch fresh translation, trying cache:', e);
-      }
-
-      if (!csvText) {
-        csvText = await CacheService.getCachedText(csvUrl);
       }
       
       if (!csvText) {
