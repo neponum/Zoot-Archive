@@ -25,13 +25,13 @@ interface CharacterLayerProps {
 }
 
 const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; characterSlots: Record<string, CharacterSlot> }> = ({ slot, data, characterSlots }) => {
+  // `faceRect` is expressed in the pixel space of the base texture, so the
+  // overlay can only be placed once the real dimensions of the downloaded PNG
+  // are known. `data.size` is the in-game sprite size (Unity units) and lives in
+  // a different space, so it must never be used as a substitute here.
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(() => {
     if (data.url) {
-      const cached = getNaturalSize(data.url);
-      if (cached) return cached;
-    }
-    if (data.size && data.size.x && data.size.y) {
-      return { w: data.size.x, h: data.size.y };
+      return getNaturalSize(data.url) ?? null;
     }
     return null;
   });
@@ -45,18 +45,16 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   useEffect(() => {
     if (data.url) {
       const cached = getNaturalSize(data.url);
-      if (cached) {
-        setNaturalSize(cached);
-      } else if (data.size && data.size.x && data.size.y) {
-        setNaturalSize({ w: data.size.x, h: data.size.y });
-      }
+      setNaturalSize(cached ?? null);
+    } else {
+      setNaturalSize(null);
     }
     if (data.faceUrl) {
       setFaceLoaded(isImageLoadedInCache(data.faceUrl));
     } else {
       setFaceLoaded(true);
     }
-  }, [data.url, data.faceUrl, data.size]);
+  }, [data.url, data.faceUrl]);
 
   const handleBodyRef = React.useCallback((img: HTMLImageElement | null) => {
     if (img && img.complete && img.naturalWidth && img.naturalHeight) {
@@ -162,6 +160,17 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
   const baseName = data.name?.split(/[#$]/)[0] || data.name;
   const itemKey = `${slot}-${baseName}`;
 
+  // The overlay rectangle is only meaningful inside the base texture it was
+  // measured on. A manifest that lags behind the artwork (a sprite re-rendered
+  // at a higher resolution) can carry a rectangle that does not belong to the
+  // downloaded PNG at all, and pasting it would put a foreign patch of artwork
+  // on the sprite. Such an overlay is dropped instead of being drawn wrong.
+  const faceRectFitsTexture = !!(data.faceRect && naturalSize &&
+    data.faceRect.x >= 0 && data.faceRect.y >= 0 &&
+    data.faceRect.x + data.faceRect.w <= naturalSize.w &&
+    data.faceRect.y + data.faceRect.h <= naturalSize.h);
+  const showFaceOverlay = !!(data.faceUrl && data.faceRect && naturalSize && faceRectFitsTexture);
+
   // Slot horizontal anchoring: Left at 30%, Center at 50%, Right at 70%
   const slotLeft = slot === 'left' ? '35%' : slot === 'right' ? '65%' : '50%';
 
@@ -213,7 +222,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           }}
         />
         {/* Render face expression overlay with precise positioning relative to the body image */}
-        {data.faceUrl && data.faceRect && naturalSize && (
+        {showFaceOverlay && data.faceUrl && data.faceRect && naturalSize && (
           <img 
             key={data.faceUrl}
             ref={handleFaceRef}

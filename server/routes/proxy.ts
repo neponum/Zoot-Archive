@@ -293,7 +293,15 @@ router.get('/', proxyLimiter, async (req, res) => {
     
     // Forward crucial headers for audio/media streaming
     const forwardHeaders = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
+    // `fetch` transparently decodes compressed upstream bodies, so the upstream
+    // `content-length` (the size of the compressed payload) no longer matches the
+    // bytes that are streamed to the client. Forwarding it truncates the response
+    // (a Brotli-encoded character.json used to arrive cut in half and failed to
+    // parse), so the length is dropped for encoded bodies and the response is
+    // chunked instead.
+    const upstreamEncoding = response.headers.get('content-encoding');
     forwardHeaders.forEach(h => {
+      if (h === 'content-length' && upstreamEncoding) return;
       const val = response.headers.get(h);
       if (val) {
         res.setHeader(h, val);

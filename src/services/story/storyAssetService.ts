@@ -199,25 +199,47 @@ function buildNormalizedCharMap(charData: CharacterDataMap): Map<string, Charact
 }
 
 /**
- * Helper to fetch latest character data from remote sources (GitHub CDN / PRTS Wiki).
+ * Remote sources for the character asset manifest.
+ *
+ * torappu.prts.wiki is the authoritative source: the `character.json` it serves
+ * describes exactly the PNGs it hosts, including the `faceRect` of every
+ * `face_overlay` group (the rectangle is expressed in the pixel space of the
+ * base texture). The zoot-data mirrors are static snapshots, so they lag behind
+ * whenever PRTS re-renders a sprite (for example at a higher resolution) and
+ * their stale `faceRect` no longer matches the artwork that is downloaded.
+ * A manifest that lags behind the artwork makes the face overlay land on the
+ * wrong spot, or disappear completely and leave a blank face on the sprite.
+ */
+const REMOTE_CHARACTER_SOURCES: Array<{ url: string; viaProxy: boolean }> = [
+  // PRTS serves the manifest with `Access-Control-Allow-Origin: *`, so the
+  // browser can read it directly; the proxied variant stays as a safety net.
+  { url: 'https://torappu.prts.wiki/assets/avg/character.json', viaProxy: false },
+  { url: 'https://torappu.prts.wiki/assets/avg/character.json', viaProxy: true },
+  // Mirrors are only a last resort: they are static snapshots of the PRTS
+  // manifest and go stale as soon as PRTS re-renders a sprite.
+  { url: 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/character.json', viaProxy: false },
+  { url: 'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json', viaProxy: false }
+];
+
+/**
+ * The manifest is a ~1.7 MB JSON file, so a short timeout cuts the request off
+ * exactly when it is about to succeed. The mirrors are tried afterwards.
+ */
+const MANIFEST_FETCH_TIMEOUT_MS = 20000;
+
+/**
+ * Helper to fetch latest character data from remote sources (PRTS Wiki / GitHub CDN).
  */
 async function fetchRemoteCharacterData(): Promise<CharacterDataMap | null> {
-  const remoteUrls = [
-    'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/character.json',
-    'https://raw.githubusercontent.com/neponum/zoot-data/main/character.json',
-    'https://torappu.prts.wiki/assets/avg/character.json'
-  ];
-
-  for (const url of remoteUrls) {
+  for (const source of REMOTE_CHARACTER_SOURCES) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MANIFEST_FETCH_TIMEOUT_MS);
     try {
-      const fetchUrl = url.includes('prts.wiki') 
-        ? `/api/proxy?url=${encodeURIComponent(url)}`
-        : url;
+      const fetchUrl = source.viaProxy
+        ? `/api/proxy?url=${encodeURIComponent(source.url)}`
+        : source.url;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
       const response = await fetch(fetchUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
 
       if (response.ok) {
         const text = await response.text();
@@ -231,6 +253,8 @@ async function fetchRemoteCharacterData(): Promise<CharacterDataMap | null> {
       }
     } catch {
       // Continue to next remote URL
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   return null;
@@ -238,7 +262,7 @@ async function fetchRemoteCharacterData(): Promise<CharacterDataMap | null> {
 
 /**
  * Robust fetcher for character asset definitions with client-side CacheService persistence.
- * Character data is fetched dynamically from remote sources (GitHub / PRTS Wiki) and updated on the client.
+ * Character data is fetched dynamically from remote sources (PRTS Wiki / GitHub) and updated on the client.
  */
 export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (cachedCharacterData && Object.keys(cachedCharacterData).length > 0) {
@@ -248,7 +272,10 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
   if (characterDataPromise) return characterDataPromise;
 
   characterDataPromise = (async (): Promise<CharacterDataMap> => {
-    const CACHE_KEY = 'arknights_character_json_v1';
+    // v2 drops the v1 manifest: it was seeded from a static mirror and kept
+    // stale `faceRect` values that no longer match the sprites on PRTS.
+    const CACHE_KEY = 'arknights_character_json_v2';
+    const LEGACY_CACHE_KEYS = ['arknights_character_json_v1'];
 
     // 1. Try loading client-side persisted cache from CacheService (IndexedDB / Cache API)
     try {
@@ -257,11 +284,19 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
         cachedCharacterData = localCached;
         cachedNormalizedCharMap = buildNormalizedCharMap(localCached);
 
+        // Drop manifests written by older builds so they cannot resurface later.
+        for (const legacyKey of LEGACY_CACHE_KEYS) {
+          CacheService.deleteCachedJson(legacyKey).catch(() => {});
+        }
+
         // Non-blocking background refresh from remote to stay updated
         fetchRemoteCharacterData().then((remoteData) => {
           if (remoteData && Object.keys(remoteData).length > 0) {
             cachedCharacterData = remoteData;
             cachedNormalizedCharMap = buildNormalizedCharMap(remoteData);
+            // A refreshed manifest may point at re-rendered sprites, so every
+            // character resolved against the previous one has to be resolved again.
+            characterAssetInfoCache.clear();
             CacheService.cacheJson(CACHE_KEY, remoteData).catch(() => {});
           }
         }).catch(() => {});
@@ -272,12 +307,15 @@ export async function fetchCharacterData(): Promise<CharacterDataMap> {
       // Ignore cache lookup error and proceed to remote fetch
     }
 
-    // 2. If no client cache exists, fetch from remote sources (GitHub / PRTS Wiki)
+    // 2. If no client cache exists, fetch from remote sources (PRTS Wiki / GitHub)
     const remoteData = await fetchRemoteCharacterData();
     if (remoteData && Object.keys(remoteData).length > 0) {
       cachedCharacterData = remoteData;
       cachedNormalizedCharMap = buildNormalizedCharMap(remoteData);
       CacheService.cacheJson(CACHE_KEY, remoteData).catch(() => {});
+      for (const legacyKey of LEGACY_CACHE_KEYS) {
+        CacheService.deleteCachedJson(legacyKey).catch(() => {});
+      }
       return remoteData;
     }
 

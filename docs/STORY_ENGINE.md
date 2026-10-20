@@ -112,6 +112,16 @@ Arknights characters use two distinct rendering modes depending on the era of th
    - `face`: Face expression cutout (e.g. `avg_017_huang_1/4$1.png`).
    - `faceRect`: Coordinate rectangle `{ x, y, w, h }` defining the exact position and dimensions to layer the face on top of the base body.
 
+#### Face Overlay Coordinate Space (Invariant)
+`faceRect` is measured in the **pixel space of the base texture** (`groups[].base`), not in Unity units and not in the space of the face file. The face PNG is a re-render of that very region, stretched onto a square canvas, so the overlay is drawn by mapping the rectangle onto the *rendered* body box:
+
+$$\text{left} = \frac{x}{W_{base}} \cdot 100\%,\quad \text{top} = \frac{y}{H_{base}} \cdot 100\%,\quad \text{width} = \frac{w}{W_{base}} \cdot 100\%,\quad \text{height} = \frac{h}{H_{base}} \cdot 100\%$$
+
+where $W_{base}, H_{base}$ are the **natural pixel size of the downloaded base PNG**. The in-game sprite size (`size` from `character.json`, Unity units) must never be used as that denominator: it does not change when PRTS re-renders a sprite at a higher resolution, while the texture does. `CharacterLayer.tsx` therefore waits for the real PNG dimensions and refuses to draw an overlay whose rectangle does not fit the texture.
+
+#### Manifest Authority (Invariant)
+The sprite PNGs are downloaded from `torappu.prts.wiki`, so the only manifest that describes them correctly is the one served by the same host (`https://torappu.prts.wiki/assets/avg/character.json`). The `zoot-data` mirrors are static snapshots: whenever PRTS re-renders a sprite (higher resolution, recomposed canvas) the mirrored `faceRect` keeps the old values, the overlay is pasted at the wrong spot, and the character shows a foreign rectangular patch over the face. `storyAssetService.ts` therefore queries PRTS first and only falls back to the mirrors when PRTS is unreachable; the persisted manifest lives under the versioned cache key `arknights_character_json_v2` so that manifests written by older builds cannot resurface.
+
 ### Strict Script Asset Name Invariant
 **NEVER overwrite or substitute character IDs with other costumes or aliases.**
 - If the script requests `char_017_homura_3#4`, it must resolve against the canonical asset tables without forcing alternate event skins (such as summer swimsuits or alternate class alts).

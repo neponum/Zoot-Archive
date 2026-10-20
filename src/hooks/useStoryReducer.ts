@@ -219,11 +219,17 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       // If character is already in this slot and no animation, skip update to avoid re-renders.
       // Exiting slots are never skipped: the same character may walk back in right after
       // its fade-out, and skipping would leave the sprite stuck at opacity 0.
+      // The face rectangle is compared as well: a refreshed character manifest may
+      // carry a corrected overlay rectangle for the very same artwork.
       if (!data.animation &&
           !existingSlot?.isExiting &&
           existingSlot?.name === data.name &&
           existingSlot?.url === data.url &&
           existingSlot?.faceUrl === data.faceUrl &&
+          existingSlot?.faceRect?.x === data.faceRect?.x &&
+          existingSlot?.faceRect?.y === data.faceRect?.y &&
+          existingSlot?.faceRect?.w === data.faceRect?.w &&
+          existingSlot?.faceRect?.h === data.faceRect?.h &&
           existingSlot?.focus === data.focus) {
         return state;
       }
@@ -250,6 +256,10 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
             nextSlots[slot]?.name !== data.name ||
             nextSlots[slot]?.url !== data.url ||
             nextSlots[slot]?.faceUrl !== data.faceUrl ||
+            nextSlots[slot]?.faceRect?.x !== data.faceRect?.x ||
+            nextSlots[slot]?.faceRect?.y !== data.faceRect?.y ||
+            nextSlots[slot]?.faceRect?.w !== data.faceRect?.w ||
+            nextSlots[slot]?.faceRect?.h !== data.faceRect?.h ||
             nextSlots[slot]?.focus !== data.focus) {
           
           // Logic for slot clearing when center is used

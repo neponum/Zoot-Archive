@@ -196,6 +196,19 @@ export class CacheService {
   }
 
   /**
+   * Removes a cached JSON entry (used to drop outdated asset manifests)
+   */
+  static async deleteCachedJson(url: string): Promise<void> {
+    if (url.startsWith('blob:')) return;
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.delete(url);
+    } catch (err) {
+      console.warn('Failed to delete cached JSON:', err);
+    }
+  }
+
+  /**
    * Clears the entire cache
    */
   static async clear(): Promise<void> {
