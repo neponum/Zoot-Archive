@@ -57,6 +57,9 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "engines": {
-    "node": ">=24.22.1"
+    "node": "24.x"
+  },
+  "volta": {
+    "node": "24.22.1"
   }
 }

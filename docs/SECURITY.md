@@ -229,13 +229,21 @@ Node's bundled root store.
 - **Local runtime upgraded to Node 24.22.1** (LTS «Krypton»), installed in the user's own
   directory (`~/.local/node/node-v24.22.1-linux-x64`) with symlinks in `~/.local/bin` — no
   system-wide directories touched.
-- **`engines.node: ">=24.22.1"`** added to `package.json`, so a deployment on an outdated
-  runtime is rejected instead of silently running a vulnerable one.
+- **`engines.node: "24.x"`** in `package.json` — Vercel then always uses the newest patch
+  of the 24.x line in its image (i.e. a patched 24.22.1+), while a `>=` range would let
+  the platform silently jump to a new major and triggers a Vercel warning. The exact
+  version used for local development is pinned in `volta.node: "24.22.1"`.
+- The `builds` block in `vercel.json` is a legacy layout (SPA + Express function). Vercel
+  therefore ignores the Project Settings for that deployment — the Node.js runtime comes
+  from `engines`/`volta` and from the platform image, not from the dashboard.
 - **Startup warning** in `server.ts`: the server logs a `[SECURITY]` line when it detects a
   Node.js older than the patched release of its branch (22.23.4 / 24.22.1 / 26.12.1).
 - **`npm run check:runtime`** (script `scripts/check_runtime.mjs`) now checks both the Node
   version and the trusted root store; it exits with code 1 while either is unsafe, so the
   check can be wired into CI. After the upgrade it reports the runtime as clean: the
   compromised eMudhra root is gone from the bundled store (118 roots instead of 145).
+- **How to verify the production runtime**: the server logs a `[SECURITY]` line on start-up
+  if it runs an outdated Node.js, so a stale Vercel image is visible in the deployment
+  logs. `npm run check:runtime` can also be run against the deployed instance.
 - The system trust store (`ca-certificates` 20260816) and Python's `certifi` (2026.10.19)
   were updated as well.
