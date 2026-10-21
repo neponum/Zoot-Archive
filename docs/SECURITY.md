@@ -125,3 +125,72 @@ app.use((req, res, next) => {
 2. **Proxy Limiter**: 10,000 requests per 15 minutes per IP.
 3. **Bug Report Limiter**: 10 requests per 1 hour per IP (prevents Discord webhook spam).
 4. **Translate Limiter**: 120 requests per 15 minutes per IP (protects Gemini API quota).
+
+---
+
+## 6. Certificate Authority Compromise — eMudhra (2026-10-20)
+
+### What happened
+
+On 17 October 2026 a researcher reported to the Chrome Root Program, Mozilla, Apple and
+Microsoft that the private keys of **eight intermediate CA certificates** operated by
+**eMudhra** (Indian PKI provider, public TLS brand *emSign*) were compromised. The P-384
+keys had been generated with insufficient entropy: each private key is an integer below
+256 and can be recovered from the public certificate in under a second. A holder of such
+a key can issue a trusted certificate for **any** domain and mount a man-in-the-middle
+attack. The six TLS intermediates chain to `emSign Root TLS CA - G3` → `emSign ECC Root CA - G3`;
+two more were code-signing CAs.
+
+Response timeline:
+
+| Date (UTC) | Action |
+|---|---|
+| 17 Oct | Report received; Chrome lands a CRLSet block on the SPKI hashes (19:45), Mozilla blocks via OneCRL (22:59) |
+| 18 Oct | eMudhra revokes the eight CAs (`cACompromise`); Sectigo revokes its cross-certificates |
+| 19 Oct | Apple blocks; Python `certifi` 2026.10.19, Rust `webpki-roots` 1.0.10, Go 1.27.3 / 1.26.10 |
+| 20 Oct | Microsoft blocks; Mozilla ships Firefox 158.0.1 + ESR builds and removes `emSign ECC Root CA - G3` from NSS 3.131.1 |
+| 27 Oct | Chrome Root Store v43 removes `emSign ECC Root CA - G3` — **sites whose certificate chains to it stop working in Chrome** |
+
+No fraudulent certificate was found in Certificate Transparency logs, and the affected
+intermediates issued no public end-entity certificates (eMudhra confirmed this, Mozilla
+verified it independently). Chrome, Firefox, Apple and Microsoft users are already
+protected; the risk is concentrated in clients that never fetch revocation data.
+
+### What we checked on our side
+
+| Surface | Result |
+|---|---|
+| Our own certificate (`zoot-archive.vercel.app`) | `*.vercel.app` ← Google Trust Services **WR1** ← GTS Root R1 ← GlobalSign Root CA. **Does not touch emSign** — unaffected, including the 27 Oct Chrome Root Store change |
+| TLS versions | TLS 1.0/1.1 rejected, only 1.2/1.3 accepted |
+| HSTS | `max-age=63072000; includeSubDomains; preload` (Vercel edge) |
+| Node runtime trust store (`tls.rootCertificates`) | Still contains `emSign ECC Root CA - G3` — Node bundles its own Mozilla-derived store and ignores the OS one, `--use-openssl-ca` is a no-op in official builds |
+| OS trust store (`ca-certificates` 20260816) | Patched — the affected roots are already gone |
+| Python `certifi` | Updated to 2026.10.19 — `emSign ECC Root CA - G3`, `emSign Root TLS CA - G3` and `Comodo AAA Certificate Services` removed (the unaffected eMudhra roots were restored) |
+| Bundled CA files in the repo | None — no `.crt`/`.pem`, no `NODE_EXTRA_CA_CERTS`, no `rejectUnauthorized: false` |
+| User-facing code | No certificate installation prompts, no pinned roots, no third-party scripts in `index.html` |
+
+### Residual risk and how we handle it
+
+The only remaining exposure is **outbound** TLS from the server: `/api/proxy` fetches
+artwork, catalogs and lyrics from `torappu.prts.wiki`, `raw.githubusercontent.com`,
+`monster-siren.hypergryph.com` and `web.hycdn.cn`, and re-serves that content to
+visitors. A MITM attacker on the path could present a certificate for one of those
+hosts signed by a compromised intermediate. Mitigations in place:
+
+- the proxy only accepts an explicit allowlist of hosts (no open proxy, no user-supplied
+  hosts), so the blast radius is limited to four known origins;
+- all of them are served over plain public TLS with Certificate Transparency logging;
+- no certificate was ever issued under the compromised intermediates, so there is nothing
+  to replay today.
+
+`npm run check:ca` audits the trust store of the current runtime and of the OS and exits
+with code 1 while a compromised root is present — wire it into CI once a CI workflow
+exists, and re-run it after every Node/runtime upgrade:
+
+```bash
+npm run check:ca          # exit 1 if a compromised root is trusted
+npm run check:ca:warn     # same check, but only a warning
+```
+
+Once Node (and the Vercel runtime) ships its own store update, the check turns green
+and this section can be closed.

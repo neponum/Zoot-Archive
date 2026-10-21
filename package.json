@@ -11,6 +11,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "validate:data": "node scripts/validate_data.js",
+    "check:ca": "node scripts/check_ca_store.mjs",
+    "check:ca:warn": "node scripts/check_ca_store.mjs --warn",
     "sync:operators": "node scripts/sync_operators.js"
   },
   "dependencies": {
