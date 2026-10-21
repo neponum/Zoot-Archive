@@ -11,8 +11,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "validate:data": "node scripts/validate_data.js",
-    "check:ca": "node scripts/check_ca_store.mjs",
-    "check:ca:warn": "node scripts/check_ca_store.mjs --warn",
+    "check:runtime": "node scripts/check_runtime.mjs",
+    "check:runtime:warn": "node scripts/check_runtime.mjs --warn",
     "sync:operators": "node scripts/sync_operators.js"
   },
   "dependencies": {
@@ -56,5 +56,8 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=24.22.1"
   }
 }

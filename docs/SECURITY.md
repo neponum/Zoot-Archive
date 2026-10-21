@@ -183,14 +183,59 @@ hosts signed by a compromised intermediate. Mitigations in place:
 - no certificate was ever issued under the compromised intermediates, so there is nothing
   to replay today.
 
-`npm run check:ca` audits the trust store of the current runtime and of the OS and exits
+`npm run check:runtime` audits the trust store of the current runtime and of the OS and exits
 with code 1 while a compromised root is present — wire it into CI once a CI workflow
 exists, and re-run it after every Node/runtime upgrade:
 
 ```bash
-npm run check:ca          # exit 1 if a compromised root is trusted
-npm run check:ca:warn     # same check, but only a warning
+npm run check:runtime     # exit 1 if the runtime is unsafe
+npm run check:runtime:warn # same check, but only a warning
 ```
 
 Once Node (and the Vercel runtime) ships its own store update, the check turns green
 and this section can be closed.
+
+---
+
+## 7. Node.js Security Releases — 21 October 2026
+
+On 21 October 2026 the Node.js project published security releases for the **26.x, 24.x and
+22.x** lines. The highest severity is HIGH, and the most relevant for this codebase are the
+TLS hostname-validation bypasses — `/api/proxy` fetches third-party assets over HTTPS and
+validates the certificate chain, so a client that trusts a broken hierarchy could be served
+forged artwork, catalogs or lyrics.
+
+| CVE | Severity | Affected | Impact here |
+|---|---|---|---|
+| CVE-2026-105483 | HIGH | 26.x, 24.x | TLS hostname bypass (IP written with fullwidth digits) — affects our outbound fetches |
+| CVE-2026-106069 | HIGH | 26.x, 24.x, 22.x | TLS hostname bypass when a host loosely resolves to an IP — interacts with the SSRF guard in `/api/proxy` |
+| CVE-2026-111497 | HIGH | 26.x, 24.x, 22.x | Brotli decoder out-of-bounds write → remote code execution (undici decodes `br` responses) |
+| CVE-2026-105482 | HIGH | 26.x, 24.x, 22.x | `dns.resolve` truncates names containing a NUL character |
+| CVE-2026-106072 | MEDIUM | 26.x, 24.x, 22.x | Improper certificate validation for non-canonical IPv4 hostnames — directly relevant to the private-IP blacklist |
+| CVE-2026-105481 | MEDIUM | 26.x, 24.x, 22.x | keep-alive socket processes a response written before the request was sent |
+| CVE-2026-106074 | MEDIUM | 26.x, 24.x, 22.x | `crypto.randomUUID()` / `randomInt()` entropy cache is persisted into startup snapshots, so every process repeats the same values |
+| CVE-2026-106070 | LOW | 26.x | `ZipFile` returns attacker-controlled prefix bytes after failed ZIP header validation |
+| CVE-2026-106071 | LOW | 26.x | Permission Model filesystem over-grant via wildcard radix lookup |
+| CVE-2026-106073 | LOW | 26.x, 24.x, 22.x | Permission Model bypass with `fs.realpathSync` |
+
+The release also ships the **`ca-cert` update for the eMudhra compromise** described in
+section 6 — the compromised `emSign ECC Root CA - G3` and its cross-signs are removed from
+Node's bundled root store.
+
+**Fixed versions: 22.23.4, 24.22.1, 26.12.1.**
+
+### What we did
+
+- **Local runtime upgraded to Node 24.22.1** (LTS «Krypton»), installed in the user's own
+  directory (`~/.local/node/node-v24.22.1-linux-x64`) with symlinks in `~/.local/bin` — no
+  system-wide directories touched.
+- **`engines.node: ">=24.22.1"`** added to `package.json`, so a deployment on an outdated
+  runtime is rejected instead of silently running a vulnerable one.
+- **Startup warning** in `server.ts`: the server logs a `[SECURITY]` line when it detects a
+  Node.js older than the patched release of its branch (22.23.4 / 24.22.1 / 26.12.1).
+- **`npm run check:runtime`** (script `scripts/check_runtime.mjs`) now checks both the Node
+  version and the trusted root store; it exits with code 1 while either is unsafe, so the
+  check can be wired into CI. After the upgrade it reports the runtime as clean: the
+  compromised eMudhra root is gone from the bundled store (118 roots instead of 145).
+- The system trust store (`ca-certificates` 20260816) and Python's `certifi` (2026.10.19)
+  were updated as well.

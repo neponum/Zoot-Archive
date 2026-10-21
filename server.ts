@@ -14,6 +14,27 @@ import submitRoutes from "./server/routes/submit.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
+// Предупреждение о незакрытых уязвимостях Node.js (релиз безопасности 21.10.2026).
+// Подробности и список исправленных версий — docs/SECURITY.md, раздел 7.
+const PATCHED_NODE: Record<number, string> = { 22: '22.23.4', 24: '24.22.1', 26: '26.12.1' };
+const nodeVersion = process.versions.node;
+{
+  const [maj, min, pat] = nodeVersion.split('.').map(Number);
+  const required = PATCHED_NODE[maj];
+  const outdated = required
+    ? (() => {
+        const [rMaj, rMin, rPat] = required.split('.').map(Number);
+        return maj < rMaj || (maj === rMaj && (min < rMin || (min === rMin && pat < rPat)));
+      })()
+    : false;
+  if (outdated) {
+    console.warn(
+      `[SECURITY] Node.js ${nodeVersion} содержит неисправленные уязвимости ` +
+      `(CVE-2026-105483, CVE-2026-106069, CVE-2026-111497 и др.). Требуется ${required} или новее.`
+    );
+  }
+}
+
 process.on('uncaughtException', (err: any) => {
   // Suppress undici / stream termination disconnect errors
   if (err?.message?.includes('terminated') || err?.name === 'TypeError') {
