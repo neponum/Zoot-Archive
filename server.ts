@@ -50,7 +50,9 @@ process.on('unhandledRejection', (reason: any) => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  // Порт задаётся переменной окружения: локально порт 3000 может быть занят
+  // (например, контейнером Docker), и раньше сервер просто падал с EADDRINUSE.
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Trust proxy to get correct client IP behind reverse proxy
   app.set('trust proxy', 1);
