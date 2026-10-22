@@ -6,7 +6,6 @@ import { CacheService } from '../services/cacheService';
 import { DbService } from '../services/dbService';
 import { authService } from '../services/authService';
 import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators } from '../config/translationsRegistry';
-import { GoogleGenAI, Type } from "@google/genai";
 import Papa from 'papaparse';
 import { LogModal } from './story/LogModal';
 import { OperatorDossierModal } from './OperatorDossierModal';
@@ -32,6 +31,14 @@ interface TranslationInterfaceProps {
   initialEpisode?: StoryEpisode | null;
   initialOperator?: EnrichedOperator | null;
 }
+
+// Gemini schema type constants. The SDK itself stays server-side (AI Studio
+// requires GEMINI_API_KEY/Gemini calls to remain in the Node runtime).
+const SchemaType = {
+  STRING: 'STRING',
+  ARRAY: 'ARRAY',
+  OBJECT: 'OBJECT',
+} as const;
 
 // Constants
 // Discord submissions are proxied via /api/submit (server-side webhook).
@@ -1538,13 +1545,13 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
             config: {
               responseMimeType: "application/json",
               responseSchema: {
-                type: Type.ARRAY,
+                type: SchemaType.ARRAY,
                 items: {
-                  type: Type.OBJECT,
+                  type: SchemaType.OBJECT,
                   properties: {
-                    id: { type: Type.STRING },
-                    translatedText: { type: Type.STRING },
-                    translatedCharacter: { type: Type.STRING }
+                    id: { type: SchemaType.STRING },
+                    translatedText: { type: SchemaType.STRING },
+                    translatedCharacter: { type: SchemaType.STRING }
                   },
                   required: ["id", "translatedText", "translatedCharacter"]
                 }
@@ -2210,30 +2217,30 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                 config: {
                   responseMimeType: "application/json",
                   responseSchema: {
-                    type: Type.OBJECT,
+                    type: SchemaType.OBJECT,
                     properties: {
                       issues: {
-                        type: Type.ARRAY,
+                        type: SchemaType.ARRAY,
                         items: {
-                          type: Type.OBJECT,
+                          type: SchemaType.OBJECT,
                           properties: {
-                            id: { type: Type.STRING },
+                            id: { type: SchemaType.STRING },
                             type: { 
-                              type: Type.STRING,
+                              type: SchemaType.STRING,
                               description: "Must be: 'terminology', 'grammar_style', 'name_consistency', 'incomplete_translation', or 'generic'"
                             },
                             severity: {
-                              type: Type.STRING,
+                              type: SchemaType.STRING,
                               description: "Must be: 'error', 'warning', or 'suggestion'"
                             },
-                            title: { type: Type.STRING, description: "Short title in Russian" },
-                            description: { type: Type.STRING, description: "Detailed explanation in Russian" },
-                            originalValue: { type: Type.STRING, description: "Current incorrect value" },
-                            suggestedValue: { type: Type.STRING, description: "Correct suggested value" },
-                            targetField: { type: Type.STRING, description: "Must be 'name' or 'text'" },
+                            title: { type: SchemaType.STRING, description: "Short title in Russian" },
+                            description: { type: SchemaType.STRING, description: "Detailed explanation in Russian" },
+                            originalValue: { type: SchemaType.STRING, description: "Current incorrect value" },
+                            suggestedValue: { type: SchemaType.STRING, description: "Correct suggested value" },
+                            targetField: { type: SchemaType.STRING, description: "Must be 'name' or 'text'" },
                             blockIds: { 
-                              type: Type.ARRAY, 
-                              items: { type: Type.STRING },
+                              type: SchemaType.ARRAY, 
+                              items: { type: SchemaType.STRING },
                               description: "Array of block IDs"
                             }
                           },
@@ -2729,13 +2736,13 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
           config: {
             responseMimeType: "application/json",
             responseSchema: {
-              type: Type.ARRAY,
+              type: SchemaType.ARRAY,
               items: {
-                type: Type.OBJECT,
+                type: SchemaType.OBJECT,
                 properties: {
-                  id: { type: Type.STRING },
-                  translatedText: { type: Type.STRING },
-                  translatedCharacter: { type: Type.STRING }
+                  id: { type: SchemaType.STRING },
+                  translatedText: { type: SchemaType.STRING },
+                  translatedCharacter: { type: SchemaType.STRING }
                 },
                 required: ["id", "translatedText", "translatedCharacter"]
               }

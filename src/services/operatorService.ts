@@ -35,6 +35,42 @@ const GITHUB_HANDBOOK_URLS: Record<string, string> = {
   en_US: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/en_US/gamedata/excel/handbook_info_table.json',
 };
 
+interface RussianDossierSection {
+  index: number;
+  titleEn: string;
+  titleRu: string;
+  textRu: string;
+}
+
+interface RussianDossier {
+  operatorId: string;
+  sections: RussianDossierSection[];
+}
+
+const RU_DOSSIER_MODULES = import.meta.glob<{ default: RussianDossier }>('../data/dossiers_ru/*.json');
+const russianDossierCache: Record<string, RussianDossier | null> = {};
+
+async function loadRussianDossier(opId: string): Promise<RussianDossier | null> {
+  if (opId in russianDossierCache) return russianDossierCache[opId];
+
+  const loader = RU_DOSSIER_MODULES[`../data/dossiers_ru/${opId}.json`];
+  if (!loader) {
+    russianDossierCache[opId] = null;
+    return null;
+  }
+
+  try {
+    const mod = await loader();
+    const dossier = (mod.default || mod) as RussianDossier;
+    russianDossierCache[opId] = dossier;
+    return dossier;
+  } catch (err) {
+    console.warn(`Failed to load Russian dossier for ${opId}:`, err);
+    russianDossierCache[opId] = null;
+    return null;
+  }
+}
+
 const TITLE_TRANSLATIONS: Record<string, string> = {
   '基础档案': 'Basic Info',
   '综合性能检测结果': 'Physical Exam',
@@ -98,35 +134,52 @@ export async function fetchOperatorHandbookAsync(
   uiLang: Language = 'ru_RU'
 ): Promise<OperatorHandbookSection[]> {
   try {
-    const [zhDict, enDict] = await Promise.all([
+    const [zhDict, enDict, ruDossier] = await Promise.all([
       fetchHandbookTable('zh_CN'),
-      fetchHandbookTable('en_US')
+      fetchHandbookTable('en_US'),
+      loadRussianDossier(opId)
     ]);
 
     const hz = zhDict ? zhDict[opId] : null;
     const he = enDict ? enDict[opId] : null;
 
-    if (!hz && !he) return [];
+    if (!hz && !he && !ruDossier) return [];
+
+    if (!hz && !he && ruDossier) {
+      return ruDossier.sections.map((section) => ({
+        titleZh: '',
+        titleEn: section.titleEn,
+        textZh: '',
+        textEn: '',
+        titleRu: section.titleRu,
+        textRu: section.textRu
+      }));
+    }
 
     const handbookSections: OperatorHandbookSection[] = [];
     const storyTextAudio = hz?.storyTextAudio || he?.storyTextAudio || [];
+    const totalSections = Math.max(storyTextAudio.length, ruDossier?.sections.length || 0);
 
-    storyTextAudio.forEach((s: any, idx: number) => {
+    for (let idx = 0; idx < totalSections; idx++) {
+      const s = storyTextAudio[idx];
       const sEn = he && he.storyTextAudio ? he.storyTextAudio[idx] : null;
       const sZh = hz && hz.storyTextAudio ? hz.storyTextAudio[idx] : null;
+      const ruSection = ruDossier?.sections[idx];
 
       const titleZh = (sZh && sZh.storyTitle) || (s && s.storyTitle) || '';
-      const titleEn = (sEn && sEn.storyTitle) || TITLE_TRANSLATIONS[titleZh] || titleZh;
-      const textZh = (sZh && sZh.stories && sZh.stories[0] && sZh.stories[0].storyText) || (s.stories && s.stories[0] && s.stories[0].storyText) || '';
+      const titleEn = (sEn && sEn.storyTitle) || TITLE_TRANSLATIONS[titleZh] || titleZh || ruSection?.titleEn || '';
+      const textZh = (sZh && sZh.stories && sZh.stories[0] && sZh.stories[0].storyText) || (s && s.stories && s.stories[0] && s.stories[0].storyText) || '';
       const textEn = (sEn && sEn.stories && sEn.stories[0] && sEn.stories[0].storyText) || '';
 
       handbookSections.push({
         titleZh,
         titleEn,
         textZh,
-        textEn
+        textEn,
+        titleRu: ruSection?.titleRu,
+        textRu: ruSection?.textRu
       });
-    });
+    }
 
     return handbookSections;
   } catch (err) {
@@ -273,13 +326,16 @@ export function parseOperatorHandbook(
   const isZh = uiLang === 'zh_CN';
 
   return handbook.map((section, idx) => {
-    let rawText = (isZh ? section.textZh : (section.textEn || section.textZh)) || '';
+    const hasRussianTranslation = isRu && !!section.textRu;
+    let rawText = hasRussianTranslation
+      ? section.textRu!
+      : ((isZh ? section.textZh : (section.textEn || section.textZh)) || '');
     const originalTitle = section.titleEn || section.titleZh || `File ${idx + 1}`;
     
     // Translated Title
     let title = originalTitle;
     if (isRu) {
-      title = getCanonicalHandbookTitle(section.titleZh || section.titleEn || originalTitle, 'ru_RU');
+      title = section.titleRu || getCanonicalHandbookTitle(section.titleZh || section.titleEn || originalTitle, 'ru_RU');
     } else if (isZh && section.titleZh) {
       title = section.titleZh;
     }
@@ -311,8 +367,8 @@ export function parseOperatorHandbook(
       }
     }
 
-    // Translate narrative/clinical section text for Russian
-    if (isRu) {
+    // Translate narrative/clinical section text for Russian when no curated translation exists
+    if (isRu && !hasRussianTranslation) {
       rawText = translateDossierNarrative(rawText, type);
     }
 

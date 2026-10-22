@@ -46,10 +46,11 @@ Flat descriptor records for every playable operator (13 scalar fields per record
 - `displayNumber`: Skin/collection number (e.g. `B003`, `RE41`).
 - `drawName`, `infoName`: asset key names for the portrait/avatar.
 
-> Note: lore records and voice lines are **not** stored in this file. Dossier text
-> comes from the upstream data sources and is localized at runtime
-> (`src/services/dossierTranslationService.ts`, `src/data/dossiers_ru.json`);
-> voice lines are fetched from `charword_table.json` on demand
+> Note: lore records and voice lines are **not** stored in this file. Dossier
+> title/text structure is fetched from the upstream `handbook_info_table.json` on
+> demand, while curated Russian dossier texts live in `src/data/dossiers_ru/`
+> (see below) and are merged by `src/services/operatorService.ts`; voice lines are
+> fetched from `charword_table.json` on demand
 > (`src/services/operatorVoiceService.ts`).
 
 ### `operator_names_map.json` (Object, 1210 keys)
@@ -75,6 +76,18 @@ Manual Russian dossier labels and translations, keyed by operator; consumed by
 `src/services/dossierTranslationService.ts`. Contains the `_common_labels` dictionary
 shared across all dossiers.
 
+### `dossiers_ru/` (Directory, one JSON per operator)
+Curated Russian dossier translations, one file per operator ID (e.g.
+`char_002_amiya.json`). Each file contains `operatorId` and an ordered `sections`
+array of `{ index, titleEn, titleRu, textRu }`. Produced in the sibling
+`zoot-data` repository (`tools/build_dossier.py`) and copied here.
+- Loaded lazily at runtime via `import.meta.glob` in
+  `src/services/operatorService.ts` (`loadRussianDossier`).
+- When present, `titleRu`/`textRu` are attached to the matching
+  `OperatorHandbookSection` so `parseOperatorHandbook` renders the curated
+  Russian dossier instead of the glossary fallback. Operators without a file
+  keep the previous runtime glossary translation.
+
 ---
 
 ## 3. Maintenance Scripts & Validation Routines
@@ -86,7 +99,7 @@ Script: `scripts/validate_data.js` (path-independent — it resolves `src/data` 
 location, so it can be run from any working directory).
 
 Validates:
-1. Existence and JSON syntax of all five data files (`operators_database.json`,
+1. Existence and JSON syntax of all five top-level data files (`operators_database.json`,
    `operator_names_map.json`, `tags_database.json`, `translations.json`, `dossiers_ru.json`).
 2. Root type of each file (array vs object).
 3. Localization completeness of `ru_RU` and `en_US` in `translations.json`.

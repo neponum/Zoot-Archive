@@ -214,6 +214,8 @@ export interface OperatorHandbookSection {
   titleEn: string;
   textZh: string;
   textEn: string;
+  titleRu?: string;
+  textRu?: string;
 }
 
 export interface OperatorData {
