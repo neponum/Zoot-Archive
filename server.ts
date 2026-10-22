@@ -93,8 +93,10 @@ async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
   const hasBuiltApp = fs.existsSync(path.join(distPath, 'index.html'));
 
-  if (process.env.NODE_ENV !== "production" || !hasBuiltApp) {
-    console.log("No production build found or running in development mode. Starting Vite dev server middleware...");
+  const isDev = process.env.NODE_ENV === "development" || !hasBuiltApp;
+
+  if (isDev) {
+    console.log("Running in development mode. Starting Vite dev server middleware...");
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
