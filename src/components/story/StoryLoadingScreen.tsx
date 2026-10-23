@@ -8,6 +8,8 @@ interface StoryLoadingScreenProps {
   preloadProgress: { loaded: number; total: number; currentFile: string };
   lang: Language;
   t: Record<string, string>;
+  /** Скрипт показан в оригинале: русского перевода главы нет. */
+  isOriginalScript?: boolean;
   onStart: () => void;
   onBack: () => void;
 }
@@ -17,6 +19,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
   preloadProgress,
   lang,
   t,
+  isOriginalScript,
   onStart,
   onBack
 }) => {
@@ -56,7 +59,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
             >
               <p className="text-sm text-white/60 text-center leading-relaxed">
                 <span className="text-yellow-500/80 mr-2">💡</span>
-                {lang === 'ru_RU' ? (
+                {lang === 'ru_RU' || lang === 'ru_RU_CN' ? (
                   <>
                     Для пропуска удерживайте <strong className="text-white/90 bg-white/10 px-1.5 py-0.5 rounded text-xs mx-1">Ctrl</strong> или зажмите экран
                   </>
@@ -67,6 +70,21 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
                 )}
               </p>
             </motion.div>
+
+            {isOriginalScript && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="mt-4 bg-amber-500/10 border border-amber-500/30 px-4 py-3 rounded-xl max-w-sm"
+              >
+                <p className="text-xs text-amber-200/90 text-center leading-relaxed">
+                  {lang === 'ru_RU' || lang === 'ru_RU_CN'
+                    ? 'Русского перевода этой главы пока нет — показан оригинал (китайский).'
+                    : 'There is no Russian translation for this chapter yet — the original (Chinese) is shown.'}
+                </p>
+              </motion.div>
+            )}
           </>
         ) : (
           <button 

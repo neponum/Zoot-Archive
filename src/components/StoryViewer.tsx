@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useReducer, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages, clearUrlCache, AudioSnapshot } from '../services/storyService';
+import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages, clearUrlCache, AudioSnapshot, checkScriptExists } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { CacheService } from '../services/cacheService';
 import { StoryLine, StoryChapter } from '../types';
@@ -79,6 +79,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   const [preloadProgress, setPreloadProgress] = React.useState({ loaded: 0, total: 0, currentFile: '' });
   const [error, setError] = React.useState<string | null>(null);
   const [scriptContent, setScriptContent] = React.useState<string | null>(null);
+  /** Русского перевода главы нет — показываем оригинал и честно об этом говорим. */
+  const [isOriginalScript, setIsOriginalScript] = React.useState(false);
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
 
   const processToken = useRef({});
@@ -1434,6 +1436,24 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         
         const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
         setScriptContent(script);
+
+        // Если русского перевода нет, а показать пришлось оригинал — предупреждаем.
+        if (!customScript) {
+          const currentLang = getLanguage();
+          if (currentLang === 'ru_RU' || currentLang === 'ru_RU_CN') {
+            try {
+              const hasRu = await checkScriptExists(storyTxt, 'ru_RU', translator);
+              setIsOriginalScript(!hasRu);
+            } catch {
+              setIsOriginalScript(false);
+            }
+          } else {
+            setIsOriginalScript(false);
+          }
+        } else {
+          setIsOriginalScript(false);
+        }
+
         const parsed = parseStoryScript(script);
         
         // --- Inject end of chapter dialog ---
@@ -1501,6 +1521,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         preloadProgress={preloadProgress}
         lang={lang}
         t={t}
+        isOriginalScript={isOriginalScript}
         onStart={() => {
           audioManager.unlock();
           setIsReadyToStart(true);

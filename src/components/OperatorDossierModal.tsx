@@ -646,8 +646,8 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
                   <div className="space-y-2.5">
                     {operator.chapters.map((ch, idx) => {
                       const isRead = readChapters?.has(ch.id);
-                      const isChecking = checkingStories[ch.id];
-                      const isTranslated = storyTranslationStatus[ch.id] === true;
+                      const isChecking = isRussian && checkingStories[ch.id];
+                      const isTranslated = !isRussian || storyTranslationStatus[ch.id] === true;
 
                       return (
                         <div
@@ -667,6 +667,14 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
                                   <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-sm border border-emerald-500/30">
                                     <CheckCircle2 className="w-3 h-3" />
                                     {isRussian ? 'ПРОЧИТАНО' : 'READ'}
+                                  </span>
+                                )}
+                                {isRussian && !isChecking && !isTranslated && (
+                                  <span
+                                    className="text-[9px] font-mono text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded-sm border border-amber-500/30"
+                                    title="Русского перевода нет — будет показан оригинал"
+                                  >
+                                    ОРИГИНАЛ
                                   </span>
                                 )}
                               </div>
@@ -694,15 +702,17 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
                                 <span>{isRussian ? 'ЧИТАТЬ' : 'READ'}</span>
                               </button>
                             ) : (
-                              /* Not Translated: Read Button Blocked + Translate Button Shown */
+                              /* Нет русского перевода — но запись всё равно читается (оригинал) */
                               <>
                                 <button
-                                  disabled
-                                  className="px-3.5 py-1.5 bg-zinc-800/80 border border-white/10 text-white/30 font-mono text-xs uppercase tracking-wider rounded-sm flex items-center gap-1.5 cursor-not-allowed opacity-60"
-                                  title={isRussian ? 'Перевод на русский язык отсутствует' : 'No Russian translation available'}
+                                  onClick={() => handleStartStory(ch)}
+                                  className="px-3.5 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-white/15 hover:border-white/35 text-white/70 hover:text-white font-mono text-xs uppercase tracking-wider rounded-sm transition-all flex items-center gap-1.5"
+                                  title={isRussian
+                                    ? 'Русского перевода нет — будет показан китайский оригинал'
+                                    : 'No Russian translation yet — the Chinese original will be shown'}
                                 >
-                                  <Lock className="w-3 h-3 text-white/40" />
-                                  <span>{isRussian ? 'ЧИТАТЬ' : 'READ'}</span>
+                                  <Play className="w-3 h-3 fill-white" />
+                                  <span>{isRussian ? 'ЧИТАТЬ ОРИГИНАЛ' : 'READ ORIGINAL'}</span>
                                 </button>
 
                                 {onOpenTranslation && (
