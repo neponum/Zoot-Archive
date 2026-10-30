@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings, Mail, Calendar, Edit2, Plus, X, Search, ChevronLeft, 
-  Trash2, Play, BookOpen, AlertTriangle, User, Award, Layers, 
+  Trash2, Play, BookOpen, AlertTriangle, Award, Layers, 
   Database, RefreshCw, Check, ArrowRight, Heart, Star, Compass,
   Languages, Github, AlertCircle, Volume2, Type, RotateCcw, History,
-  Newspaper, Send, ExternalLink, MessageSquare, Lock
+  Newspaper, Send, MessageSquare, Lock
 } from 'lucide-react';
 import { getLanguage, fetchChapterList, wrapUrlWithProxy } from '../services/storyService';
 import { Language, StoryEpisode } from '../types';
@@ -17,7 +17,6 @@ import { audioManager } from '../services/audioManager';
 import { QRCodeSVG } from 'qrcode.react';
 import { CacheService } from '../services/cacheService';
 import { CUSTOM_QUOTES } from '../config/customQuotes';
-import { authService, DiscordUserData } from '../services/authService';
 import { useToast } from './ui/Toast';
 
 export interface NewsItem {
@@ -217,7 +216,6 @@ const OPERATORS_LIST: Operator[] = [
 interface MainMenuProps {
   onOpenTerminal: () => void;
   onOpenArchive?: () => void;
-  onOpenVote?: () => void;
   onOpenOperators?: () => void;
   lang: Language;
   setLang: (l: Language) => void;
@@ -242,7 +240,6 @@ interface StorySettings {
 export const MainMenu: React.FC<MainMenuProps> = ({ 
   onOpenTerminal, 
   onOpenArchive, 
-  onOpenVote, 
   onOpenOperators, 
   lang, 
   setLang, 
@@ -465,57 +462,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     ];
   });
 
-  // Discord Auth state
-  const [discordUser, setDiscordUser] = useState<DiscordUserData | null>(() => {
-    return authService.getState().user;
-  });
-  const [isDiscordMember, setIsDiscordMember] = useState(() => {
-    return authService.getState().isMember;
-  });
-  const [isCheckingDiscord, setIsCheckingDiscord] = useState(false);
-
-  const fetchDiscordUser = async () => {
-    setIsCheckingDiscord(true);
-    try {
-      const state = await authService.fetchUser();
-      setDiscordUser(state.user);
-      setIsDiscordMember(state.isMember);
-    } catch (error) {
-      console.error('Failed to fetch Discord user:', error);
-      setDiscordUser(null);
-      setIsDiscordMember(false);
-    } finally {
-      setIsCheckingDiscord(false);
-    }
-  };
-
-  const handleDiscordLogin = () => {
-    authService.login();
-  };
-
-  const handleDiscordLogout = async () => {
-    try {
-      await authService.logout();
-      setDiscordUser(null);
-      setIsDiscordMember(false);
-    } catch (error) {
-      console.error('Discord logout error:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchDiscordUser();
-
-    const unsubscribe = authService.subscribe((state) => {
-      setDiscordUser(state.user);
-      setIsDiscordMember(state.isMember);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
   // Current assistant object
   const assistant = OPERATORS_LIST.find(op => op.id === assistantId) || OPERATORS_LIST[0];
 
@@ -638,10 +584,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Discord authentication & report handling for Main Menu's report modal
+  // Report handling for Main Menu's report modal (anonymous, no auth)
   useEffect(() => {
     if (isReportOpen) {
-      fetchDiscordUser();
       setReportError(null);
       setReportSuccess(false);
       setReportDescription('');
@@ -655,11 +600,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     setIsReportSubmitting(true);
     setReportError(null);
     try {
-      const headers = authService.getAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/bug-report', {
         method: 'POST',
-        headers,
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           type: reportType, 
           description: reportDescription, 
@@ -1067,23 +1010,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </button>
               </div>
 
-                {/* 2. MUSIC */}
-                <button
-                  onClick={onOpenVote}
-                  className="group w-full max-w-[440px] h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-xl transition-all duration-300 overflow-hidden text-left flex cursor-pointer"
-                >
-                  <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <div className="flex-1 px-4 flex flex-col justify-center relative z-10 h-full">
-                    <span className="text-[11px] md:text-[13px] font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-wider font-mono">
-                      {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'МУЗЫКА' : 'MUSIC'}
-                    </span>
-                    <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest font-mono mt-0.5">
-                      {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// МУЗЫКАЛЬНЫЙ ПЛЕЕР' : '// SOUNDTRACK PLAYER'}
-                    </span>
-                  </div>
-                </button>
-
-                {/* 3. OPERATIVES & 4. ARCHIVE (ROW) */}
+                {/* 2. OPERATIVES & 3. ARCHIVE (ROW) */}
                 <div className="w-full max-w-[440px] flex items-center gap-2 md:gap-3">
                   {/* OPERATIVES */}
                   <button
@@ -2058,78 +1985,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </div>
             </section>
 
-            {/* 5. Account Settings */}
-            <section className="space-y-4">
-              <h3 className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-3 font-mono">
-                <User className="w-4 h-4 text-blue-500" />
-                {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ПРОФИЛЬ И СВЯЗЬ // ACCOUNT' : 'ACCOUNT & CONNECTIONS'}
-              </h3>
-
-              <div className="space-y-4 bg-zinc-950/40 p-4 border border-white/5 rounded-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-mono">
-                      {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АВТОРИЗАЦИЯ DISCORD' : 'DISCORD AUTHORIZATION'}
-                    </h4>
-                    <p className="text-[9px] text-white/40 uppercase tracking-wide mt-1 font-mono">
-                      {lang === 'ru_RU' || lang === 'ru_RU_CN' 
-                        ? 'Свяжите профиль с Discord для участия в жизни проекта.' 
-                        : 'Link your profile with Discord to participate in the project.'}
-                    </p>
-                  </div>
-
-                  <div>
-                    {isCheckingDiscord ? (
-                      <div className="flex items-center gap-2 text-xs font-bold text-white/40 uppercase font-mono px-4 py-2 border border-white/5 bg-white/5 rounded-sm">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Checking...</span>
-                      </div>
-                    ) : discordUser ? (
-                      <div className="flex items-center gap-3 bg-zinc-900/80 border border-white/10 p-2.5 rounded-sm">
-                        {discordUser.avatar ? (
-                          <img 
-                            src={discordUser.avatar} 
-                            alt={discordUser.username} 
-                            className="w-8 h-8 rounded-full border border-white/10" 
-                            referrerPolicy="no-referrer" 
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#5865F2]/20 flex items-center justify-center border border-[#5865F2]/40 text-xs font-bold font-mono">
-                            D
-                          </div>
-                        )}
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black text-white font-mono uppercase tracking-wider">
-                            {discordUser.username}
-                          </span>
-                          <span className="text-[7px] font-black text-white/40 font-mono uppercase tracking-wider">
-                            {isDiscordMember 
-                              ? (lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'УЧАСТНИК СЕРВЕРА' : 'SERVER MEMBER')
-                              : (lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'НЕ НА СЕРВЕРЕ' : 'NOT ON SERVER')}
-                          </span>
-                        </div>
-                        <button 
-                          onClick={handleDiscordLogout} 
-                          className="ml-4 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 hover:border-blue-500/40 text-blue-400 hover:text-blue-300 text-[8px] font-black uppercase tracking-widest font-mono rounded-sm cursor-pointer transition-all duration-200"
-                        >
-                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ВЫЙТИ' : 'LOGOUT'}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleDiscordLogin}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/40 hover:border-[#5865F2] text-white hover:shadow-[0_0_15px_rgba(88,101,242,0.2)] rounded-sm text-[10px] font-black uppercase tracking-widest font-mono transition-all duration-200 cursor-pointer"
-                      >
-                        <DiscordIcon size={14} className="text-white" />
-                        <span>{lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ВОЙТИ ЧЕРЕЗ DISCORD' : 'LOGIN WITH DISCORD'}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* 6. Reset button */}
+            {/* 5. Reset button */}
             <div className="pt-4 flex justify-end">
               <button
                 onClick={resetSettings}
@@ -2159,65 +2015,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column: Discord Bug Report */}
+              {/* Left Column: Anonymous Bug Report */}
               <div className="flex flex-col border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-8">
                 <span className="text-[10px] font-black tracking-[0.2em] text-blue-500 uppercase font-mono mb-4 block">
-                  DISCORD REPORT SERVICE
+                  {isRussian ? 'АНОНИМНЫЙ ОТЧЁТ' : 'ANONYMOUS REPORT'}
                 </span>
 
-                {isCheckingDiscord ? (
-                  <div className="flex flex-col items-center justify-center py-12 flex-1">
-                    <div className="w-8 h-8 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin mb-3" />
-                    <span className="text-[10px] text-white/40 font-mono uppercase tracking-widest">Checking Auth...</span>
-                  </div>
-                ) : !discordUser ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
-                    <MessageSquare className="w-8 h-8 text-white/20 mb-4" />
-                    <p className="text-[11px] text-white/70 uppercase tracking-wider mb-6 leading-relaxed">
-                      {isRussian 
-                        ? 'Авторизуйтесь через Discord для отправки репорта напрямую разработчикам.' 
-                        : 'Log in via Discord to submit a report directly to the developers.'}
-                    </p>
-                    <button
-                      onClick={handleDiscordLogin}
-                      className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-5 py-3 rounded-sm w-full transition-colors text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                    >
-                      <DiscordIcon className="w-4 h-4 fill-white" />
-                      {isRussian ? 'Войти через Discord' : 'Log in via Discord'}
-                    </button>
-                  </div>
-                ) : !isDiscordMember ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
-                    <MessageSquare className="w-8 h-8 text-red-500/50 mb-4 animate-pulse" />
-                    <p className="text-[11px] text-white/70 uppercase tracking-wider mb-6 leading-relaxed">
-                      {isRussian ? (
-                        <>
-                          Вы вошли как <strong className="text-blue-400">{discordUser.username}</strong>.<br />
-                          Но вы должны быть участником нашего сервера для отправки репортов.
-                        </>
-                      ) : (
-                        <>
-                          You are logged in as <strong className="text-blue-400">{discordUser.username}</strong>.<br />
-                          However, you must be a member of our Discord server to submit reports.
-                        </>
-                      )}
-                    </p>
-                    <a
-                      href="https://discord.gg/jYvWPeCjC3"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-5 py-3 rounded-sm w-full transition-colors text-[10px] font-black uppercase tracking-wider mb-3 cursor-pointer"
-                    >
-                      {isRussian ? 'Присоединиться к Discord' : 'Join Discord'} <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                    <button
-                      onClick={fetchDiscordUser}
-                      className="flex items-center justify-center border border-white/10 hover:border-white/20 hover:bg-white/5 text-white px-5 py-3 rounded-sm w-full transition-colors text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                    >
-                      {isRussian ? 'Проверить снова' : 'Check again'}
-                    </button>
-                  </div>
-                ) : reportSuccess ? (
+                {reportSuccess ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center flex-1">
                     <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mb-4">
                       <Send className="w-5 h-5" />
@@ -2237,10 +2041,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   </div>
                 ) : (
                   <form onSubmit={handleReportSubmit} className="space-y-4 flex flex-col flex-1">
-                    {/* Logged in as banner */}
-                    <div className="flex items-center justify-between bg-white/5 border border-white/5 px-3 py-2 rounded-sm text-[10px] font-mono">
-                      <span className="text-white/40">{isRussian ? 'ОТПРАВИТЕЛЬ:' : 'SENDER:'}</span>
-                      <span className="text-blue-400 font-bold">{discordUser.username}</span>
+                    {/* Privacy notice */}
+                    <div className="bg-white/5 border border-white/5 px-3 py-2 rounded-sm text-[9px] font-mono text-white/40 leading-relaxed">
+                      {isRussian
+                        ? 'Отчёт отправляется анонимно: без входа и без Discord-профиля. Не прикладывайте личные данные.'
+                        : 'Reports are sent anonymously: no login and no Discord profile. Please do not include personal data.'}
                     </div>
 
                     {/* Type selection */}
@@ -2308,7 +2113,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          {isRussian ? 'Отправить репорт в Discord' : 'Submit Report to Discord'}
+                          {isRussian ? 'Отправить анонимно' : 'Submit anonymously'}
                         </>
                       )}
                     </button>

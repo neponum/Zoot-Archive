@@ -9,7 +9,7 @@ This file is automatically loaded into the AI Studio agent environment. It serve
 For exhaustive subsystem specifications, consult the dedicated manuals in the `docs/` directory:
 - **[System Architecture & Topology](docs/ARCHITECTURE.md)**: Full-stack component composition, state lifecycle, dev/prod Express mounting, and audio subsystem details.
 - **[Visual Novel & Story Engine](docs/STORY_ENGINE.md)**: Arknights AST parser syntax, camera tweens, coordinate normalization math, scale-aware clamping, and character sprite resolution.
-- **[Security Architecture & Hardening](docs/SECURITY.md)**: SSRF defenses in `/api/proxy`, Discord OAuth2 state validation, rate-limiting tiers, and client XSS sanitization.
+- **[Security Architecture & Hardening](docs/SECURITY.md)**: SSRF defenses in `/api/proxy`, anonymous bug-report hardening, rate-limiting tiers, and client XSS sanitization.
 - **[Data Pipeline & Localization](docs/DATA_PIPELINE.md)**: Torappu PRTS data sources, JSON schemas, sync/validation routines, and the canonical Russian lore glossary.
 - **[Legal & Content Policy](docs/LEGAL.md)**: правовой контур (`/disclaimer`, `/privacy`, `/takedown`), запрет на скачивание аудио, правила обработки персональных данных и границы некоммерческого использования.
 
@@ -35,7 +35,7 @@ For exhaustive subsystem specifications, consult the dedicated manuals in the `d
 | `/operators` | `ChapterSelector` | Operator records list & dossiers overview |
 | `/operators/:operatorId` | `ChapterSelector` | Operator specific records and dossier modal |
 | `/operator/:operatorId` | `ChapterSelector` | Route alias for `/operators/:operatorId` |
-| `/music` | `ChapterSelector` | PRTS music player & track listing |
+| `/disclaimer`, `/privacy`, `/takedown` | `LegalPage` | Fan-project disclosures, privacy policy, takedown procedure |
 | `/story/*` | `StoryViewerRoute` (`StoryViewer`) | Visual novel engine reproducing in-game story scenarios |
 | `/translate/*` | `TranslationInterface` | Community translation workbench with live preview & AI assistance |
 
@@ -66,8 +66,9 @@ When modifying code in Zoot Archive, all AI agents **MUST** strictly adhere to t
 - **RULE**: Maintain strict protocol checks (`https:`/`http:`), block all private/loopback/cloud metadata IP ranges, and validate against `ALLOWED_PREFIXES`.
 - **WHY**: Protects internal server network surfaces and metadata endpoints from exploitation.
 
-### 6. Mandatory State & Cookie CSRF in OAuth (`server/routes/auth.ts`)
-- **RULE**: Discord OAuth callbacks must strictly require both query `state` and cookie `oauth_state` to match. Session cookies must always carry `httpOnly: true`, `sameSite: 'lax'`, and `secure: isSecureRequest(req)`.
+### 6. No Accounts, No Third-Party Login
+- **RULE**: Do not reintroduce Discord OAuth, user accounts, or any flow that stores personal data (IDs, usernames, avatars, emails) on the server. Bug reports are anonymous and rate-limited per IP.
+- **WHY**: The project must not process personal data in a way that triggers data-protection obligations (Belarus 99-З, GDPR). If a new feature needs identity, it requires explicit approval plus a `/privacy` update in the same commit.
 
 ### 7. Data Integrity Protocol
 - **RULE**: Before building or committing after modifying files in `src/data/`:

@@ -11,13 +11,11 @@ Zoot Archive operates a client-facing React frontend backed by an Express server
 1. **Server-Side Request Forgery (SSRF) & Open Proxy Abuse** via `/api/proxy`:
    - Risk: Attackers proxy arbitrary internal requests (e.g. `http://169.254.169.254/computeMetadata/v1/` on Cloud Run or internal port scans on `localhost`).
    - Risk: Malicious actors using the server as an open proxy for botnets or abusive content.
-2. **Cross-Site Request Forgery (CSRF)** on Discord OAuth2 endpoints:
-   - Risk: Login CSRF or state tampering forcing users into an attacker-controlled Discord session.
-3. **Session Hijacking & Cookie Theft**:
-   - Risk: Access token extraction via client-side script injection.
-4. **Cross-Site Scripting (XSS)** in Rich-Text Visual Novel Dialogue:
+2. **Abuse of Anonymous Write Endpoints**:
+   - Risk: Spamming the bug-report webhook or exhausting the Gemini quota through `/api/translate`.
+3. **Cross-Site Scripting (XSS)** in Rich-Text Visual Novel Dialogue:
    - Risk: Malicious scripts embedded into community translations, character names, or rich text tags.
-5. **Denial of Service (DoS) & API Abuse**:
+4. **Denial of Service (DoS) & API Abuse**:
    - Risk: Flooding translation endpoints (Gemini API quota exhaustion) or spamming Discord webhook channels with fake bug reports.
 
 ---
@@ -59,37 +57,37 @@ The `/api/proxy` endpoint exists strictly to bypass browser CORS for static Arkn
 
 ---
 
-## 3. Discord OAuth2 Security (`server/routes/auth.ts`)
+## 3. Anonymous Write Endpoints (`server/routes/bug.ts`, `server/routes/translate.ts`)
 
-### Cryptographic State Validation
-1. When initiating OAuth (`/api/auth/discord/url` or `/redirect`), a cryptographically secure 16-byte random token is generated:
-   ```typescript
-   const state = crypto.randomBytes(16).toString('hex');
-   ```
-2. The state is saved in a short-lived (15 min) cookie:
-   ```typescript
-   res.cookie("oauth_state", state, {
-     httpOnly: true,
-     secure: isSecureRequest(req),
-     sameSite: "lax",
-     path: "/",
-     maxAge: 15 * 60 * 1000,
-   });
-   ```
-3. In the OAuth callback (`/auth/discord/callback`):
-   ```typescript
-   if (!state || !cookieState || state !== cookieState) {
-     return res.status(403).send("CSRF validation failed: State parameter mismatch or expired session.");
-   }
-   ```
-   Both the query parameter and the cookie MUST be present and match. The state cookie is immediately cleared on arrival to prevent replay attacks.
+The project deliberately has **no accounts and no third-party login**. There is no
+Discord OAuth, no session cookie, and no server-side user store. All personal-data
+handling was removed in October 2026:
 
-### Session Cookie Flags
-- `httpOnly: true`: JavaScript cannot read or extract the authentication cookie.
-- `secure: true` (in production/HTTPS): Never sent across unencrypted HTTP connections.
-- `sameSite: "lax"`: Prevents CSRF while allowing seamless top-level navigation redirects.
+- `server/routes/auth.ts`, `server/routes/vote.ts`, `server/services/voteStorage.ts`,
+  `server/utils/authHelper.ts` and `src/services/authService.ts` are deleted.
+- `/api/auth/discord/*`, `/auth/discord/*` and `/api/vote` are no longer mounted.
+- `cookie-parser` is not used; the server issues no cookies.
 
----
+### Bug reports
+
+`POST /api/bug-report` accepts an anonymous payload (`type`, `description`, `context`).
+Inputs are validated and truncated, then forwarded to a private Discord webhook.
+
+- The endpoint does **not** accept or forward user identifiers, tokens, or IP addresses.
+- `reportLimiter` allows 5 reports per 10 minutes per IP (in-memory only).
+- The webhook URL stays server-side (`DISCORD_BUG_WEBHOOK_URL`); it is never shipped
+  to the client.
+
+### Translation proxy
+
+`POST /api/translate` forwards prompts to Gemini. It accepts an optional per-user
+`customApiKey`; otherwise the server key from `GEMINI_API_KEY` is used.
+
+- `translateLimiter` caps requests (200 per 15 minutes per IP).
+- No request body is persisted; nothing is logged beyond error messages.
+
+If identity is ever required again, it needs explicit approval, a new `/privacy`
+section in the same commit, and the legal review described in `docs/LEGAL.md`.
 
 ## 4. XSS Prevention & Client Sanitization
 
@@ -123,8 +121,8 @@ app.use((req, res, next) => {
 ### Rate Limiting Hierarchy
 1. **Global Limiter**: 1,000 requests per 15 minutes per IP across all endpoints.
 2. **Proxy Limiter**: 10,000 requests per 15 minutes per IP.
-3. **Bug Report Limiter**: 10 requests per 1 hour per IP (prevents Discord webhook spam).
-4. **Translate Limiter**: 120 requests per 15 minutes per IP (protects Gemini API quota).
+3. **Bug Report Limiter**: 5 requests per 10 minutes per IP (prevents webhook spam).
+4. **Translate Limiter**: 200 requests per 15 minutes per IP (protects Gemini API quota).
 
 ---
 

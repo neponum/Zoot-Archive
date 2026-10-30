@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
-import { extractDiscordToken } from '../utils/authHelper.js';
 
 export const router = Router();
 
@@ -14,7 +13,6 @@ const translateLimiter = rateLimit({
 
 router.post('/', translateLimiter, async (req: Request, res: Response) => {
   const customApiKey = req.body.customApiKey;
-  const token = extractDiscordToken(req);
 
   const apiKey = customApiKey || process.env.GEMINI_API_KEY;
   if (!apiKey) {

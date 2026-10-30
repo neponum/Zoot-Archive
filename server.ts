@@ -1,15 +1,12 @@
 import express from "express";
 import path from "path";
-import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import fs from "fs";
 import dns from "dns";
 import { config } from "./server/config.js";
-import authRoutes from "./server/routes/auth.js";
 import proxyRoutes from "./server/routes/proxy.js";
 import bugRoutes from "./server/routes/bug.js";
 import translateRoutes from "./server/routes/translate.js";
-import voteRoutes from "./server/routes/vote.js";
 import submitRoutes from "./server/routes/submit.js";
 
 dns.setDefaultResultOrder("ipv4first");
@@ -77,16 +74,12 @@ async function startServer() {
   });
   app.use(globalLimiter);
 
-  app.use(cookieParser());
   app.use(express.json());
 
   // API Routes FIRST
-  app.use("/api/auth/discord", authRoutes);
-  app.use("/auth/discord", authRoutes); // For the callback route
   app.use("/api/proxy", proxyRoutes);
   app.use("/api/bug-report", bugRoutes);
   app.use("/api/translate", translateRoutes);
-  app.use("/api/vote", voteRoutes);
   app.use("/api/submit", submitRoutes);
 
   // Vite middleware for development (or static serving for production)

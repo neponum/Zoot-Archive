@@ -4,7 +4,6 @@ import { StoryEpisode, Language, StoryChapter } from '../types';
 import { fetchChapterList, fetchStoryScript, checkScriptExists } from '../services/storyService';
 import { CacheService } from '../services/cacheService';
 import { DbService } from '../services/dbService';
-import { authService } from '../services/authService';
 import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators } from '../config/translationsRegistry';
 import Papa from 'papaparse';
 import { LogModal } from './story/LogModal';
@@ -599,10 +598,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   const [profileModalMode, setProfileModalMode] = useState<'add' | 'rename' | 'delete'>('add');
   const [profileModalValue, setProfileModalValue] = useState('');
 
-  // Discord Auth State
-  const [discordUser, setDiscordUser] = useState<{ id: string; username: string; avatar: string | null } | null>(null);
-  const [isDiscordMember, setIsDiscordMember] = useState(false);
-  const [isCheckingDiscord, setIsCheckingDiscord] = useState(true);
   const [availableTranslators, setAvailableTranslators] = useState<string[]>([]);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -868,105 +863,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
     const saved = localStorage.getItem('ak-chapter-stats');
     return saved ? JSON.parse(saved) : {};
   });
-
-  const fetchDiscordUser = async () => {
-    setIsCheckingDiscord(true);
-    try {
-      const state = await authService.fetchUser();
-      const user = state.user;
-      const isMember = state.isMember;
-
-      setDiscordUser(user);
-      setIsDiscordMember(isMember);
-
-      if (user && user.username) {
-        const currentProfile = localStorage.getItem('ak-current-profile') || 'Default';
-        const newName = user.username;
-        
-        if (currentProfile !== newName) {
-          const oldKey = currentProfile === 'Default' ? 'ak-translations-v3' : `ak-translations-v3-${currentProfile}`;
-          const newKey = `ak-translations-v3-${newName}`;
-          
-          let oldData = await DbService.get(oldKey);
-          if (!oldData) {
-            const savedLocal = localStorage.getItem(oldKey);
-            if (savedLocal) {
-              try { oldData = JSON.parse(savedLocal); } catch (e) {}
-            }
-          }
-          let newData = await DbService.get(newKey);
-          if (!newData) {
-            const savedLocal = localStorage.getItem(newKey);
-            if (savedLocal) {
-              try { newData = JSON.parse(savedLocal); } catch (e) {}
-            }
-          }
-          
-          // Migrate translations if discord profile is empty but current profile has data
-          if (oldData && Object.keys(oldData).length > 0 && (!newData || Object.keys(newData).length === 0)) {
-            await DbService.set(newKey, oldData);
-            const oldGlossary = localStorage.getItem(`ak-char-glossary-${currentProfile}`);
-            if (oldGlossary) {
-              localStorage.setItem(`ak-char-glossary-${newName}`, oldGlossary);
-            }
-          }
-
-          setProfiles((prev: string[]) => {
-            if (!prev.includes(newName)) {
-              const next = [...prev, newName];
-              localStorage.setItem('ak-profiles', JSON.stringify(next));
-              return next;
-            }
-            return prev;
-          });
-          
-          setActiveProfile(newName);
-          localStorage.setItem('ak-current-profile', newName);
-        }
-      } else {
-        setDiscordUser(null);
-        setIsDiscordMember(false);
-        setActiveProfile('Default');
-        localStorage.setItem('ak-current-profile', 'Default');
-      }
-    } catch (error) {
-      console.error('Failed to fetch Discord user:', error);
-      setDiscordUser(null);
-      setIsDiscordMember(false);
-      setActiveProfile('Default');
-      localStorage.setItem('ak-current-profile', 'Default');
-    } finally {
-      setIsCheckingDiscord(false);
-    }
-  };
-
-  const handleDiscordLogin = () => {
-    authService.login();
-  };
-
-  const handleDiscordLogout = async () => {
-    try {
-      await authService.logout();
-      setDiscordUser(null);
-      setIsDiscordMember(false);
-      setActiveProfile('Default');
-      localStorage.setItem('ak-current-profile', 'Default');
-    } catch (error) {
-      console.error('Discord logout error:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchDiscordUser();
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'DISCORD_AUTH_SUCCESS') {
-        fetchDiscordUser();
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1528,16 +1424,11 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
       if (cancelTranslationRef.current) return null;
 
       try {
-        if (!userApiKey && (!discordUser || !isDiscordMember)) {
-          throw new Error("GEMINI_API_KEY_MISSING");
-        }
-
         const res = await fetch('/api/translate', {
           method: 'POST',
-          headers: authService.getAuthHeaders({
+          headers: {
             'Content-Type': 'application/json'
-          }),
-          credentials: 'include',
+          },
           body: JSON.stringify({
             customApiKey: userApiKey || undefined,
             model: selectedModel,
@@ -1649,10 +1540,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   };
 
   const handleGeminiTranslateBlock = async (blockId: string, lang: Language = activeTargetLang) => {
-    if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
-      return;
-    }
     const block = blocks.find(b => b.id === blockId);
     if (!block || !block.content[sourceLang]?.text) return;
     
@@ -1794,11 +1681,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
   };
 
   const handleGeminiTranslateAll = async (lang: Language = activeTargetLang) => {
-    if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
-      return;
-    }
-    
     if (!selectedChapter || isTranslatingAll) return;
     
     // Use the latest blocks from ref
@@ -1904,11 +1786,6 @@ export function TranslationInterface({ onClose, onTestTranslation, initialChapte
 
   const handleAnalyzeTranslations = async () => {
     if (!selectedChapter || isEditorAnalyzing) return;
-
-    if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      toast.error("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API в настройках или войдите через Discord.");
-      return;
-    }
 
     setIsEditorAnalyzing(true);
     setEditorIssues([]);
@@ -2206,10 +2083,9 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
           try {
             const res = await fetch('/api/translate', {
               method: 'POST',
-              headers: authService.getAuthHeaders({
+              headers: {
                 'Content-Type': 'application/json'
-              }),
-              credentials: 'include',
+              },
               body: JSON.stringify({
                 customApiKey: userApiKey || undefined,
                 model: selectedModel,
@@ -2725,10 +2601,9 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: authService.getAuthHeaders({
+        headers: {
           'Content-Type': 'application/json'
-        }),
-        credentials: 'include',
+        },
         body: JSON.stringify({
           customApiKey: apiKey || undefined,
           model: modelName,
@@ -2849,17 +2724,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
   };
 
   const handleGeminiTranslateEpisode = async (lang: Language = activeTargetLang) => {
-    if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      toast.error("Вам необходимо авторизоваться в Discord и быть участником сервера, чтобы использовать перевод от ИИ.");
-      return;
-    }
-    
     if (!selectedEpisode || isTranslatingEpisode) return;
-
-    if (!userApiKey && (!discordUser || !isDiscordMember)) {
-      toast.error("Ключ Gemini API не указан. Пожалуйста, введите свой ключ API или войдите через Discord.");
-      return;
-    }
 
     const apiKey = userApiKey || '';
 
@@ -3314,11 +3179,6 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
   const handleSubmitToDiscord = async () => {
     if (!submissionEnabled) return;
 
-    if (discordUser && activeProfile !== discordUser.username) {
-      toast.error(`Отправка перевода возможна только под вашим Discord-именем (${discordUser.username}).\n\nПожалуйста, переименуйте текущий профиль или переключитесь на нужный перед отправкой.`);
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
@@ -3375,7 +3235,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
         const csvString = Papa.unparse(csvData);
         const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const csvFile = new File([csvBlob], `${baseFileName}.csv`);
-        const payloadContent = `🚀 **New Translation Submission (Chapter)**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode?.id || 'Unknown'}\n**Chapter:** ${selectedChapter.storyTxt}\n**Language:** ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}`;
+        const payloadContent = `🚀 **New Translation Submission (Chapter)**\n**Translator:** ${activeProfile}\n**Episode:** ${selectedEpisode?.id || 'Unknown'}\n**Chapter:** ${selectedChapter.storyTxt}\n**Language:** ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}`;
         filesToUpload.push({ file: csvFile, payloadContent });
       } else {
         if (!selectedEpisode) {
@@ -3439,7 +3299,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
           const csvString = Papa.unparse(chData.csvData);
           const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
           const csvFile = new File([csvBlob], `${chData.filename}_${safeTranslatorName}.csv`);
-          const payloadContent = `👑 **New Translation Submission (Entire Episode - part ${index + 1}/${filesWithContent.length})**\n**Translator:** ${activeProfile}${discordUser ? ` (<@${discordUser.id}>)` : ''}\n**Episode:** ${selectedEpisode.id} (${selectedEpisode.chapters.length} chapters)\n**Chapter:** ${chData.filename}\n**Language:** ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}`;
+          const payloadContent = `👑 **New Translation Submission (Entire Episode - part ${index + 1}/${filesWithContent.length})**\n**Translator:** ${activeProfile}\n**Episode:** ${selectedEpisode.id} (${selectedEpisode.chapters.length} chapters)\n**Chapter:** ${chData.filename}\n**Language:** ${LANGUAGES.find(l => l.id === activeTargetLang)?.label}`;
           filesToUpload.push({ file: csvFile, payloadContent });
         });
       }
@@ -3635,32 +3495,13 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
           <div className="h-6 w-px bg-white/10 mx-1 shrink-0" />
 
-          {/* Discord & Profile */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {isCheckingDiscord ? (
-              <div className="w-8 h-8 flex items-center justify-center bg-white/5 border border-white/10 rounded-sm">
-                <Loader2 className="w-4 h-4 text-white/20 animate-spin" />
-              </div>
-            ) : discordUser ? (
-              <div className="flex items-center gap-1.5 bg-white/5 pl-1 pr-2 py-1 border border-white/10 rounded-sm">
-                {discordUser.avatar ? (
-                  <img src={discordUser.avatar} alt={discordUser.username} className="w-5 h-5 rounded-full border border-white/10" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
-                    <User className="w-2.5 h-2.5 text-white/40" />
-                  </div>
-                )}
-                <span className="text-[10px] font-bold text-white max-w-[70px] truncate">{discordUser.username}</span>
-                <button onClick={handleDiscordLogout} className="text-[8px] text-red-400/60 hover:text-red-400 uppercase font-bold ml-1">Выйти</button>
-              </div>
-            ) : (
-              <button 
-                onClick={handleDiscordLogin}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[10px] font-bold rounded-sm transition-colors uppercase tracking-wider"
-              >
-                <MessageSquare className="w-3.5 h-3.5" /> Войти
-              </button>
-            )}
+          {/* Local profile */}
+          <div
+            className="flex items-center gap-1.5 shrink-0 bg-white/5 px-2 py-1 border border-white/10 rounded-sm"
+            title="Локальный профиль переводчика"
+          >
+            <User className="w-3 h-3 text-white/40" />
+            <span className="text-[10px] font-bold text-white max-w-[90px] truncate">{activeProfile}</span>
           </div>
         </div>
 
@@ -4131,63 +3972,29 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
                       <div className="flex flex-col gap-2">
                         <p className="text-[11px] text-white/60 leading-relaxed">
-                          Мы используем процесс проверки сообществом для обеспечения высокого качества. Пожалуйста, присоединяйтесь к нашему Discord-серверу для отправки экспортированного файла:
+                          Мы используем процесс проверки сообществом для обеспечения высокого качества. Экспортированный файл можно отправить на проверку прямо из студии:
                         </p>
                         
                         {submissionEnabled ? (
                           <div className="flex flex-col gap-2">
-                            {!discordUser ? (
-                              <button 
-                                onClick={handleDiscordLogin}
-                                className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest cursor-pointer"
-                              >
-                                <MessageSquare className="w-4 h-4" /> Войти для отправки
-                              </button>
-                            ) : !isDiscordMember ? (
-                              <div className="flex flex-col gap-2">
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
-                                  <p className="text-[10px] text-red-400 font-bold uppercase text-center">
-                                    Вы должны быть участником нашего Discord-сервера для отправки.
-                                  </p>
-                                </div>
-                                <a 
-                                  href="https://discord.gg/jYvWPeCjC3"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-center gap-2 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest"
-                                >
-                                  <MessageSquare className="w-4 h-4" /> Присоединиться к Discord
-                                </a>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col gap-2">
-                                {discordUser && activeProfile !== discordUser.username && (
-                                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
-                                    <p className="text-[10px] text-red-400 font-bold uppercase text-center">
-                                      Имя профиля должно совпадать с вашим Discord-именем ({discordUser.username}) для отправки.
-                                    </p>
-                                  </div>
-                                )}
-                                <button 
-                                  onClick={handleSubmitToDiscord}
-                                  disabled={isSubmitting || submitStatus === 'success' || (discordUser && activeProfile !== discordUser.username)}
-                                  className={`flex items-center justify-center gap-2 py-2.5 text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest ${
-                                    submitStatus === 'success' 
-                                      ? 'bg-green-600' 
-                                      : 'bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50'
-                                  }`}
-                                >
-                                  {isSubmitting ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : submitStatus === 'success' ? (
-                                    <Check className="w-4 h-4" />
-                                  ) : (
-                                    <MessageSquare className="w-4 h-4" />
-                                  )}
-                                  {submitStatus === 'success' ? 'Успешно отправлено' : isSubmitting ? 'Отправка...' : 'Отправить в Discord'}
-                                </button>
-                              </div>
-                            )}
+                            <button 
+                              onClick={handleSubmitToDiscord}
+                              disabled={isSubmitting || submitStatus === 'success'}
+                              className={`flex items-center justify-center gap-2 py-2.5 text-white text-xs font-bold rounded-sm transition-colors uppercase tracking-widest ${
+                                submitStatus === 'success' 
+                                  ? 'bg-green-600' 
+                                  : 'bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50'
+                              }`}
+                            >
+                              {isSubmitting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : submitStatus === 'success' ? (
+                                <Check className="w-4 h-4" />
+                              ) : (
+                                <MessageSquare className="w-4 h-4" />
+                              )}
+                              {submitStatus === 'success' ? 'Успешно отправлено' : isSubmitting ? 'Отправка...' : 'Отправить на проверку'}
+                            </button>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-2">
@@ -4630,7 +4437,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                             {/* Translate Entire Dossier Button */}
                             <button 
                               onClick={() => handleTranslateAllDossierSections()}
-                              disabled={isTranslatingDossier || !selectedOperator || (!userApiKey && (!discordUser || !isDiscordMember))}
+                              disabled={isTranslatingDossier || !selectedOperator}
                               className="relative flex flex-col gap-1 p-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 rounded-sm disabled:opacity-30 transition-colors text-left group cursor-pointer"
                             >
                               <div className="flex items-center gap-2">
@@ -4660,7 +4467,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                             {/* Translate Active Section Button */}
                             <button 
                               onClick={() => handleAiTranslateActiveSection()}
-                              disabled={isTranslatingDossier || !selectedOperator || (!userApiKey && (!discordUser || !isDiscordMember))}
+                              disabled={isTranslatingDossier || !selectedOperator}
                               className="flex flex-col gap-1 p-2.5 bg-white/5 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/30 rounded-sm disabled:opacity-30 transition-colors text-left group cursor-pointer"
                             >
                               <div className="flex items-center gap-2">
@@ -4680,7 +4487,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
                       <div className="grid grid-cols-1 gap-2">
                         <button 
                           onClick={() => handleGeminiTranslateAll()}
-                          disabled={isTranslatingAll || isTranslatingEpisode || !selectedChapter || (!userApiKey && (!discordUser || !isDiscordMember))}
+                          disabled={isTranslatingAll || isTranslatingEpisode || !selectedChapter}
                           className="relative flex flex-col gap-1 p-2.5 bg-white/5 hover:bg-purple-500/10 border border-white/5 hover:border-purple-500/30 rounded-sm disabled:opacity-30 transition-colors text-left group cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
@@ -4699,7 +4506,7 @@ Return ONLY valid, parsable JSON. No markdown blocks, no commentary.`;
 
                         <button 
                           onClick={() => handleGeminiTranslateEpisode()}
-                          disabled={isTranslatingAll || isTranslatingEpisode || !selectedEpisode || (!userApiKey && (!discordUser || !isDiscordMember))}
+                          disabled={isTranslatingAll || isTranslatingEpisode || !selectedEpisode}
                           className="flex flex-col gap-1 p-2.5 bg-white/5 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/30 rounded-sm disabled:opacity-30 transition-colors text-left group cursor-pointer"
                         >
                           <div className="flex items-center gap-2">

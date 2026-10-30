@@ -4,10 +4,8 @@ import { fetchChapterList, fetchCharacterMapping, getImageUrl, setLanguage, getL
 import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
 import { getChapterDisplayCode, cn } from '../lib/utils';
-import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, Users, LayoutGrid, Globe, History, Clock, Home, Settings, Music, Info, Search, Play, Flag, X, Check, ChevronDown, Languages, Bookmark, Archive, Github, SlidersHorizontal, Award, Compass, Sparkles, Layers } from 'lucide-react';
-import { DiscordIcon, SkportIcon } from './ui/Icons';
+import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, Star, Zap, User, Users, LayoutGrid, Globe, History, Clock, Home, Settings, Info, Search, Play, Flag, X, Check, ChevronDown, Languages, Bookmark, Archive, Github, SlidersHorizontal, Award, Compass, Sparkles, Layers } from 'lucide-react';
 import { UI_STRINGS } from '../translations';
-import { VotingInterface } from './VotingInterface';
 import { OperatorStoriesViewer } from './OperatorStoriesViewer';
 import { STORY_LINES_DATA, STORY_LINE_FILTERS } from '../config/storylines';
 import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators, getDefaultTranslator } from '../config/translationsRegistry';
@@ -622,8 +620,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
   useEffect(() => {
     if (location.pathname === '/' || location.pathname === '') {
       setActiveTab('HOME');
-    } else if (location.pathname.startsWith('/music') || location.pathname.startsWith('/vote')) {
-      setActiveTab('VOTE');
     } else if (location.pathname.startsWith('/operators') || location.pathname.startsWith('/operator')) {
       setActiveTab('OPERATORS');
     } else {
@@ -697,7 +693,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
     { id: 'HOME', label: uiLang === 'ru_RU' ? 'ГЛАВНАЯ' : (uiLang === 'zh_CN' ? '首页' : (uiLang === 'ja_JP' ? 'ホーム' : 'HOME')), subLabel: 'HOME', icon: Home, disabled: false },
     { id: 'STORY', label: t.story, subLabel: 'STORY', icon: BookOpen, disabled: false },
     { id: 'OPERATORS', label: uiLang === 'ru_RU' ? 'ОПЕРАТИВНИКИ' : (uiLang === 'zh_CN' ? '干员密录' : (uiLang === 'ja_JP' ? '回想秘録' : 'OPERATOR STORIES')), subLabel: 'OPERATOR STORIES', icon: Users, disabled: false },
-    { id: 'VOTE', label: uiLang === 'ru_RU' ? 'МУЗЫКА' : (uiLang === 'zh_CN' ? '音乐' : (uiLang === 'ja_JP' ? '音楽' : 'MUSIC')), subLabel: 'MUSIC', icon: Music, disabled: false },
   ];
 
   const filteredEpisodes = React.useMemo(() => {
@@ -1154,7 +1149,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
         {!selectedEpisode ? (
           <div className="flex-1 flex flex-col overflow-hidden h-full relative">
             {/* Top Floating Header & Controls */}
-            {activeTab !== 'HOME' && activeTab !== 'NONE' && activeTab !== 'VOTE' && activeTab !== 'OPERATORS' && (
+            {activeTab !== 'HOME' && activeTab !== 'NONE' && activeTab !== 'OPERATORS' && (
               <div className="absolute top-3 left-3 right-3 md:top-6 md:left-6 md:right-6 z-50 flex flex-row items-center justify-between gap-2 sm:gap-3 pointer-events-none">
                 {/* Top Left: Back & Home Group + Episode Voting Button */}
                 <div className="flex items-center gap-2 pointer-events-auto">
@@ -1330,10 +1325,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         setActiveTab('STORY');
                         navigate('/story');
                       }}
-                      onOpenVote={() => {
-                        setActiveTab('VOTE');
-                        navigate('/music');
-                      }}
                       onOpenOperators={() => {
                         setActiveTab('OPERATORS');
                         navigate('/operators');
@@ -1380,20 +1371,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         navigate('/');
                       }}
                     />
-                  </ErrorBoundary>
-                </div>
-              ) : activeTab === 'VOTE' ? (
-                <div className="flex-1 overflow-hidden h-full">
-                  <ErrorBoundary
-                    sectionName="Интерфейс голосования"
-                    fallbackTitle="Ошибка модуля голосования"
-                    fallbackMessage="Не удалось загрузить данные голосования или треки."
-                    onReset={() => {
-                      setActiveTab('HOME');
-                      navigate('/');
-                    }}
-                  >
-                    <VotingInterface episodes={episodes} uiLang={uiLang} initialMode="MUSIC_ONLY" />
                   </ErrorBoundary>
                 </div>
               ) : (
@@ -2054,7 +2031,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
       </div>
 
       {/* Bottom Navigation Bar */}
-      {activeTab !== 'HOME' && activeTab !== 'STORY' && activeTab !== 'NONE' && activeTab !== 'VOTE' && activeTab !== 'OPERATORS' && (
+      {activeTab !== 'HOME' && activeTab !== 'STORY' && activeTab !== 'NONE' && activeTab !== 'OPERATORS' && (
       <div className="h-20 md:h-24 border-t border-white/5 z-20 relative bg-black/80 backdrop-blur-xl flex items-center px-6 md:px-16 justify-between shrink-0">
         <div className="flex items-center gap-4 md:gap-8 lg:gap-12 overflow-x-auto no-scrollbar flex-1 md:flex-none">
           {tabs.map((tab) => (
@@ -2068,8 +2045,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                   navigate('/');
                 } else if (tab.id === 'STORY') {
                   navigate('/story');
-                } else if (tab.id === 'VOTE') {
-                  navigate('/music');
                 } else if (tab.id === 'NONE') {
                   navigate('/records');
                 }

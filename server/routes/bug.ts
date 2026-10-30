@@ -1,7 +1,20 @@
 import { Router, Request, Response } from 'express';
-import { extractDiscordToken } from '../utils/authHelper.js';
+import rateLimit from 'express-rate-limit';
 
 export const router = Router();
+
+/**
+ * Отчёты об ошибках отправляются анонимно: без Discord-авторизации и без
+ * идентификаторов пользователя. Единственное ограничение — частота запросов
+ * с одного IP, чтобы форма не превратилась в спам-канал.
+ */
+const reportLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много отчётов с этого адреса. Попробуйте позже.' },
+});
 
 interface HistoryEntry {
   speaker: string;
@@ -36,12 +49,7 @@ function getTranslatorDiscordIds(): Record<string, string> {
   return TRANSLATOR_DISCORD_IDS;
 }
 
-router.post('/', async (req: Request, res: Response) => {
-  const token = extractDiscordToken(req);
-  if (!token) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
+router.post('/', reportLimiter, async (req: Request, res: Response) => {
   const { type, description, context } = req.body as BugReportBody;
 
   // Strict Input Validation & Sanitization
@@ -78,26 +86,10 @@ router.post('/', async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Fetch user data (to attach to report)
-    const userRes = await fetch("https://discord.com/api/users/@me", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!userRes.ok) {
-      return res.status(401).json({ error: "Invalid or expired Discord session" });
-    }
-
-    const userData = (await userRes.json()) as { id?: string; username?: string };
-    if (!userData || !userData.id) {
-      return res.status(401).json({ error: "Failed to authenticate Discord user" });
-    }
-
-    // 2. Format mentions and roles
     const translatorMap = getTranslatorDiscordIds();
     const translatorMentionId = translatorMap[cleanTranslator.toLowerCase()] || translatorMap[cleanTranslator] || translatorMap['nep0num'];
     const translatorTag = translatorMentionId ? `<@${translatorMentionId}>` : `@${cleanTranslator}`;
 
-    // 3. Discord message embeds
     let historyText = cleanHistory.map((h) => `**${h.speaker}**: ${h.text}`).join('\n');
     if (historyText.length > 1000) historyText = historyText.slice(-1000) + '...';
 
@@ -109,7 +101,7 @@ router.post('/', async (req: Request, res: Response) => {
         { name: 'Глава', value: cleanChapter, inline: true },
         { name: 'Строка (Индекс)', value: cleanLine, inline: true },
         { name: 'Контекст (Лог)', value: historyText || 'Пусто' },
-        { name: 'Отправитель', value: `<@${userData.id}> (${userData.username || 'Неизвестный'})` }
+        { name: 'Отправитель', value: 'Анонимный отчёт (без авторизации)' }
       ],
       timestamp: new Date().toISOString()
     };

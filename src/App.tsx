@@ -127,21 +127,9 @@ function AppContent() {
                 </div>
               } 
             />
-            <Route 
-              path="/music" 
-              element={
-                <div className="h-full">
-                  <ChapterSelector 
-                    onSelect={translation.handleSelectChapter} 
-                    onOpenTranslation={translation.handleOpenTranslation}
-                    onTranslatorChange={translation.setSelectedTranslator}
-                    readChapters={reading.readChapters}
-                    onToggleRead={reading.handleToggleRead}
-                  />
-                </div>
-              } 
-            />
-            <Route path="/vote" element={<Navigate to="/music" replace />} />
+            {/* Музыкальный раздел убран: аудио принадлежит правообладателю. */}
+            <Route path="/music" element={<Navigate to="/" replace />} />
+            <Route path="/vote" element={<Navigate to="/" replace />} />
             <Route 
               path="/operators" 
               element={

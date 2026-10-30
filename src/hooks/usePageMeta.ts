@@ -18,8 +18,6 @@ export function usePageMeta() {
       pageTitle = `Эпизод ${eventId} — Сюжет Arknights | ZOOT Archive`;
     } else if (path.startsWith('/operators')) {
       pageTitle = 'Оперативники и личные истории | Operators — ZOOT Archive';
-    } else if (path.startsWith('/music')) {
-      pageTitle = 'Музыкальный плеер | Soundtrack — ZOOT Archive';
     } else if (path.startsWith('/privacy')) {
       pageTitle = 'Политика конфиденциальности — ZOOT Archive';
     } else if (path.startsWith('/takedown')) {

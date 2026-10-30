@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ExternalLink, AlertTriangle, MessageSquare, Send } from 'lucide-react';
-import { authService } from '../../services/authService';
+import { X, AlertTriangle, MessageSquare, Send } from 'lucide-react';
 
 interface BugReportModalProps {
   show: boolean;
@@ -15,9 +14,6 @@ interface BugReportModalProps {
 }
 
 export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, context }) => {
-  const [isCheckingDiscord, setIsCheckingDiscord] = useState(true);
-  const [discordUser, setDiscordUser] = useState<any>(null);
-  const [isDiscordMember, setIsDiscordMember] = useState(false);
   const [type, setType] = useState<'player' | 'translation'>('translation');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,39 +22,11 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
 
   useEffect(() => {
     if (show) {
-      checkDiscordAuth();
       setError(null);
       setSuccess(false);
       setDescription('');
     }
   }, [show]);
-
-  React.useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'DISCORD_AUTH_SUCCESS') {
-        checkDiscordAuth();
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  const checkDiscordAuth = async () => {
-    setIsCheckingDiscord(true);
-    try {
-      const state = await authService.fetchUser();
-      setDiscordUser(state.user);
-      setIsDiscordMember(state.isMember);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsCheckingDiscord(false);
-    }
-  };
-
-  const handleDiscordLogin = () => {
-    authService.login();
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,11 +35,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
     setIsSubmitting(true);
     setError(null);
     try {
-      const headers = authService.getAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/bug-report', {
         method: 'POST',
-        headers,
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, description, context })
       });
       if (res.ok) {
@@ -121,39 +87,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
             </div>
 
             <div className="p-6 overflow-y-auto">
-              {isCheckingDiscord ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                </div>
-              ) : !discordUser ? (
-                <div className="text-center py-8">
-                  <p className="text-white/80 mb-6">Для отправки репорта необходимо авторизоваться через Discord.</p>
-                  <button
-                    onClick={handleDiscordLogin}
-                    className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-6 py-3 rounded-lg w-full transition-colors font-medium"
-                  >
-                    Авторизоваться через Discord
-                  </button>
-                </div>
-              ) : !isDiscordMember ? (
-                <div className="text-center py-8">
-                  <p className="text-white/80 mb-6">Вы должны быть участником Discord-сервера, чтобы отправлять репорты об ошибках.</p>
-                  <a
-                    href="https://discord.gg/jYvWPeCjC3"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-6 py-3 rounded-lg w-full transition-colors font-medium mb-4"
-                  >
-                    Присоединиться к Discord <ExternalLink className="w-5 h-5" />
-                  </a>
-                  <button
-                    onClick={checkDiscordAuth}
-                    className="flex items-center justify-center border border-white/20 hover:border-white/40 text-white px-6 py-3 rounded-lg w-full transition-colors font-medium"
-                  >
-                    Я присоединился (проверить снова)
-                  </button>
-                </div>
-              ) : success ? (
+              {success ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Send className="w-8 h-8" />
@@ -169,6 +103,10 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/50 leading-relaxed">
+                    Отчёт отправляется анонимно — вход и Discord-профиль не нужны. Пожалуйста, не указывайте личные данные.
+                  </div>
+
                   {/* Readonly Context */}
                   <div className="bg-black/40 border border-white/10 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">

@@ -20,7 +20,7 @@ Zoot Archive is a full-stack web application designed to run seamlessly on conta
       │     ├── `/event/:eventId`       ──> Event Story Collection
       │     ├── `/operators`            ──> Operators Dossier List
       │     ├── `/operators/:operatorId`──> Operator Records & Handbook
-      │     ├── `/music`                ──> PRTS Music & OST Browser
+      │     ├── `/disclaimer`…         ──> LegalPage (disclaimer, privacy, takedown)
       │     ├── `/story/*`              ──> StoryViewerRoute (Visual Novel Engine)
       │     └── `/translate/*`          ──> Translation Workbench
       │
@@ -45,14 +45,13 @@ Zoot Archive is a full-stack web application designed to run seamlessly on conta
 │  Security Layer & Middlewares:                                         │
 │    • Custom Security Headers: nosniff, XSS protection, Referrer Policy │
 │    • Tiered Rate Limiting: Global (1000/15m), Proxy (10000/15m)        │
-│    • Cookie-Parser: HttpOnly, Secure, SameSite=Lax                     │
+│    • No cookies, no sessions, no third-party login                    │
 │                                                                        │
 │  API Route Endpoints:                                                  │
 │    ├── `/api/proxy?url=...`    ──> SSRF-guarded asset proxy            │
-│    ├── `/api/auth/discord/...` ──> Discord OAuth2 & member verification│
 │    ├── `/api/translate`        ──> Gemini 2.5 Flash assisted translation│
 │    ├── `/api/bug-report`       ──> Discord webhook payload validator   │
-│    └── `/api/vote`             ──> Local community poll storage        │
+│    └── `/api/submit`           ──> Community translation webhook       │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,7 +70,7 @@ const vite = await createViteServer({
 app.use(vite.middlewares);
 ```
 
-This architecture ensures that all API routes (`/api/*`) and OAuth callbacks (`/auth/discord/*`) are handled by Express first, while client assets and hot-reloaded modules are piped through Vite without requiring reverse proxy tools or multi-port orchestration.
+This architecture ensures that all API routes (`/api/*`) are handled by Express first, while client assets and hot-reloaded modules are piped through Vite without requiring reverse proxy tools or multi-port orchestration.
 
 ### Production Mode (`npm run build` -> `npm start`)
 1. `vite build` bundles the frontend into the `dist/` folder.
@@ -103,8 +102,8 @@ This architecture ensures that all API routes (`/api/*`) and OAuth callbacks (`/
 │ (In-Memory)             │                      │ camera, characters,│
 │                         │                      │ audio snapshot     │
 ├─────────────────────────┼──────────────────────┼────────────────────┤
-│ Server JSON Storage     │ `votes.json`         │ Community poll &   │
-│                         │                      │ translation votes  │
+│ Server Storage          │ —                    │ No user data, no   │
+│                         │                      │ votes, no sessions │
 └─────────────────────────┴──────────────────────┴────────────────────┘
 ```
 
