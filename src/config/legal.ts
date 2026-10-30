@@ -7,11 +7,10 @@
 export const LEGAL_CONFIG = {
   projectName: 'ZOOT Archive',
   /**
-   * TODO: заменить на реальный ящик после подключения почты к домену.
-   * Пока домен не куплен, этот адрес не принимает письма — в текстах
-   * рядом всегда указаны рабочие альтернативы (Discord и GitHub Issues).
+   * Почтового ящика пока нет: домен будет rhodes.monster, но почту ещё не
+   * подключили. Все обращения идут через Discord и GitHub Issues — не
+   * добавляйте сюда адрес, который не принимает письма.
    */
-  contactEmail: 'contact@zoot-archive.monster',
   discordInvite: 'https://discord.gg/jYvWPeCjC3',
   repository: 'https://github.com/neponum/zoot-archive',
   repositoryIssues: 'https://github.com/neponum/zoot-archive/issues',

@@ -4,7 +4,7 @@ import {
   ArrowLeft,
   ExternalLink,
   Gavel,
-  Mail,
+  Github,
   Scale,
   ShieldCheck,
 } from 'lucide-react';
@@ -256,7 +256,7 @@ const PrivacyContent: React.FC = () => (
       <p>
         Поскольку мы не собираем персональные данные, у нас нет профиля, к которому можно
         привязать запрос. Если вы считаете, что в отчёте или переписке остались ваши данные,
-        напишите на контактный адрес — мы удалим их в течение 30 дней.
+        напишите модераторам в Discord или создайте обращение в GitHub Issues — мы удалим их в течение 30 дней.
       </p>
       <p>
         Права предоставляются в объёме, предусмотренном применимым законодательством,
@@ -293,27 +293,23 @@ const TakedownContent: React.FC = () => (
 
     <Section index={2} title="Как отправить запрос">
       <p>
-        Письмо на{' '}
-        <a
-          href={`mailto:${LEGAL_CONFIG.contactEmail}?subject=Takedown%20request`}
-          className="text-[#BFFF00]/80 hover:text-[#BFFF00] underline decoration-[#BFFF00]/25 underline-offset-2 transition-colors"
-        >
-          {LEGAL_CONFIG.contactEmail}
-        </a>{' '}
-        с темой «Takedown: ссылка на страницу». В письме укажите:
+        Напишите модераторам в <OutLink href={LEGAL_CONFIG.discordInvite}>Discord</OutLink>{' '}
+        или создайте обращение в{' '}
+        <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink> с пометкой
+        «Takedown». В обращении укажите:
       </p>
       <List
         items={[
           'произведение, права на которое нарушены, и вашу роль (правообладатель, представитель, агент);',
           'точные URL страниц сайта;',
           'что именно, по вашему мнению, нарушает права;',
-          'контакт для ответа;',
+          'способ связи для ответа;',
           'желаемое действие: удалить, заменить ссылкой на официальный источник, ограничить доступ.',
         ]}
       />
       <p>
-        Электронная подпись не обязательна, но обращение должно исходить от правообладателя
-        или уполномоченного лица.
+        Обращение должно исходить от правообладателя или уполномоченного лица — подтвердите
+        свою роль, чтобы мы могли действовать без лишних уточнений.
       </p>
     </Section>
 
@@ -342,12 +338,13 @@ const TakedownContent: React.FC = () => (
       </p>
     </Section>
 
-    <Section index={6} title="Другие каналы связи">
+    <Section index={6} title="Если ответа нет">
       <p>
-        Если почта недоступна, напишите модераторам в{' '}
-        <OutLink href={LEGAL_CONFIG.discordInvite}>Discord</OutLink> или создайте обращение в{' '}
-        <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink>. Обращения по правам
-        имеют приоритет над остальными.
+        Продублируйте обращение во втором канале: в{' '}
+        <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink>, если писали в
+        Discord, или в <OutLink href={LEGAL_CONFIG.discordInvite}>Discord</OutLink>, если
+        создавали issue. Так обращение не потеряется. Запросы по правам имеют приоритет над
+        остальными.
       </p>
     </Section>
 
@@ -432,13 +429,6 @@ export const LegalPage: React.FC<LegalPageProps> = ({ doc }) => {
           </p>
           <div className="flex items-center gap-2">
             <a
-              href={`mailto:${LEGAL_CONFIG.contactEmail}`}
-              className="h-8 w-8 flex items-center justify-center border border-white/5 hover:border-white/25 rounded-sm text-white/30 hover:text-white transition-colors"
-              title="Почта"
-            >
-              <Mail className="w-3.5 h-3.5" />
-            </a>
-            <a
               href={LEGAL_CONFIG.discordInvite}
               target="_blank"
               rel="noopener noreferrer"
@@ -446,6 +436,15 @@ export const LegalPage: React.FC<LegalPageProps> = ({ doc }) => {
               title="Discord"
             >
               <DiscordIcon size={14} />
+            </a>
+            <a
+              href={LEGAL_CONFIG.repositoryIssues}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-8 w-8 flex items-center justify-center border border-white/5 hover:border-white/25 rounded-sm text-white/30 hover:text-white transition-colors"
+              title="GitHub Issues"
+            >
+              <Github className="w-3.5 h-3.5" />
             </a>
           </div>
         </footer>
