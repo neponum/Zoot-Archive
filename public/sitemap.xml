@@ -44,4 +44,24 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://zoot-archive.vercel.app/translate"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://zoot-archive.vercel.app/translate"/>
   </url>
+
+  <!-- Legal / Fan-project Disclosures -->
+  <url>
+    <loc>https://zoot-archive.vercel.app/disclaimer</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://zoot-archive.vercel.app/privacy</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://zoot-archive.vercel.app/takedown</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
 </urlset>

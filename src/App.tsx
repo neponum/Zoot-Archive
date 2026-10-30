@@ -10,6 +10,7 @@ import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { ToastProvider } from './components/ui/Toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LegalPage } from './components/LegalPage';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { useReadingProgress } from './hooks/useReadingProgress';
@@ -226,6 +227,11 @@ function AppContent() {
                 </div>
               } 
             />
+            {/* Legal / fan-project disclosures */}
+            <Route path="/disclaimer" element={<LegalPage doc="disclaimer" />} />
+            <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+            <Route path="/takedown" element={<LegalPage doc="takedown" />} />
+            <Route path="/legal" element={<Navigate to="/disclaimer" replace />} />
             {/* Fallback for other unmatched routes */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings, Mail, Calendar, Edit2, Plus, X, Search, ChevronLeft, 
@@ -1129,6 +1129,28 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   {lang === 'ru_RU'
                     ? "Данный проект является некоммерческим фан-архивом. Все права на персонажей, оригинальный сюжет, графику и звуковые материалы принадлежат Hypergryph и Yostar."
                     : "This project is a non-commercial fan-made archive. All rights to characters, story, graphics, and audio assets belong to Hypergryph Co., Ltd., Yostar, and their respective owners."}
+                  <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-white/5 normal-case tracking-normal">
+                    <Link
+                      to="/disclaimer"
+                      className="text-[8px] font-bold uppercase tracking-widest text-white/35 hover:text-[#BFFF00] transition-colors"
+                    >
+                      {lang === 'ru_RU' ? 'О проекте' : 'About'}
+                    </Link>
+                    <span className="text-white/10 text-[8px]">•</span>
+                    <Link
+                      to="/privacy"
+                      className="text-[8px] font-bold uppercase tracking-widest text-white/35 hover:text-[#BFFF00] transition-colors"
+                    >
+                      {lang === 'ru_RU' ? 'Приватность' : 'Privacy'}
+                    </Link>
+                    <span className="text-white/10 text-[8px]">•</span>
+                    <Link
+                      to="/takedown"
+                      className="text-[8px] font-bold uppercase tracking-widest text-white/35 hover:text-[#BFFF00] transition-colors"
+                    >
+                      {lang === 'ru_RU' ? 'Правообладателям' : 'Takedown'}
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Social Buttons & Report Issue Button Row */}

@@ -20,6 +20,12 @@ export function usePageMeta() {
       pageTitle = 'Оперативники и личные истории | Operators — ZOOT Archive';
     } else if (path.startsWith('/music')) {
       pageTitle = 'Музыкальный плеер | Soundtrack — ZOOT Archive';
+    } else if (path.startsWith('/privacy')) {
+      pageTitle = 'Политика конфиденциальности — ZOOT Archive';
+    } else if (path.startsWith('/takedown')) {
+      pageTitle = 'Правообладателям — ZOOT Archive';
+    } else if (path.startsWith('/disclaimer')) {
+      pageTitle = 'Дисклеймер — ZOOT Archive';
     }
 
     document.title = pageTitle;

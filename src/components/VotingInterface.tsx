@@ -2,13 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   loadCatalog,
   fetchSongDetail as loadSongDetail,
-  downloadAudio,
-  saveBlob,
-  safeFileName,
-  extensionForContentType,
-  estimateAlbumBytes,
-  formatBytes,
-  fetchAlbumTracks as fetchAlbumTracksSafe,
+  officialSongUrl,
   AlbumData as CatalogAlbumData,
   SongData as CatalogSongData
 } from '../services/sirenCatalog';
@@ -33,7 +27,6 @@ import {
   Activity,
   Search,
   Heart,
-  Download,
   Disc,
   FolderOpen,
   ChevronLeft,
@@ -171,7 +164,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const [loading, setLoading] = useState(true);
   const [loadingMusic, setLoadingMusic] = useState(true);
   const [musicCatalogError, setMusicCatalogError] = useState<string | null>(null);
-  const [songDownloadProgress, setSongDownloadProgress] = useState<Record<string, { loaded: number; total: number }>>({});
   
   // Real-time voting tallies from database
   const [votes, setVotes] = useState<VotingResults>({
@@ -182,9 +174,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
   // Music portal states
   const [musicSearchQuery, setMusicSearchQuery] = useState('');
   const [selectedAlbumCid, setSelectedAlbumCid] = useState<string | null>(null);
-  const [downloadingSongCid, setDownloadingSongCid] = useState<string | null>(null);
-  const [downloadingAlbumCid, setDownloadingAlbumCid] = useState<string | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number } | null>(null);
   const [audioProgress, setAudioProgress] = useState({ currentTime: 0, duration: 0 });
 
   // Dynamic Lists aligned with user's custom GitHub repository
@@ -945,129 +934,11 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
     }
   };
 
-  // 7c. Скачивание трека: потоком с прогрессом и расширением по фактическому
-  // формату. Раньше весь файл (WAV по 35–58 МБ) читался в Blob без прогресса
-  // и сохранялся с расширением .mp3, хотя приходил audio/wav.
-  const downloadSingleTrack = async (song: SongData, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-
-    setDownloadingSongCid(song.cid);
-    setSongDownloadProgress({});
-    try {
-      const detail = await loadSongDetail(song.cid);
-      const safeName = safeFileName(song.name);
-
-      const { blob, extension } = await downloadAudio(detail.sourceUrl, ({ loaded, total }) => {
-        setSongDownloadProgress({ [song.cid]: { loaded, total } });
-      });
-
-      saveBlob(blob, `${safeName}${extension}`);
-
-      // Обложка отдельным файлом — раньше она качалась всегда и второй кнопкой
-      // через setTimeout; теперь только если реально есть.
-      const coverUrl = getSongCoverUrl(song);
-      if (coverUrl) {
-        try {
-          const coverRes = await fetch(coverUrl);
-          if (coverRes.ok) saveBlob(await coverRes.blob(), `${safeName}_cover.jpg`);
-        } catch (coverErr) {
-          console.warn('Обложка не скачалась:', coverErr);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to download track:', err);
-      toast.error(isRu ? 'Не удалось скачать трек' : 'Failed to download track');
-    } finally {
-      setSongDownloadProgress((prev) => {
-        const next = { ...prev };
-        delete next[song.cid];
-        return next;
-      });
-      setDownloadingSongCid(null);
-    }
-  };
-
-  // Скачивание альбома. Раньше все треки и zip целиком собирались в памяти —
-  // альбом это сотни мегабайт, браузер на телефоне это не переживает.
-  // Теперь треки качаются по одному потоком, а перед стартом показывается
-  // предупреждение с оценкой размера.
-  const downloadAlbum = async (album: AlbumData, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-
-    setDownloadingAlbumCid(album.cid);
-    try {
-      let albumTracks: { cid: string; name: string }[] = await fetchAlbumTracksSafe(album.cid);
-      if (!albumTracks.length) {
-        albumTracks = songs.filter(s => s.albumCid === album.cid).map(s => ({ cid: s.cid, name: s.name }));
-      }
-
-      if (!albumTracks.length) {
-        toast.info(isRu ? 'В этом альбоме нет треков' : 'No tracks found in this album');
-        return;
-      }
-
-      const estimate = estimateAlbumBytes(albumTracks.length);
-      const confirmed = window.confirm(
-        isRu
-          ? `Альбом «${album.name}» — примерно ${formatBytes(estimate)}. Браузер будет удерживать файлы в памяти, пока собирает архив. Продолжить?`
-          : `Album "${album.name}" is about ${formatBytes(estimate)}. The browser will hold the files in memory while packing. Continue?`
-      );
-      if (!confirmed) return;
-
-      setDownloadProgress({ current: 0, total: albumTracks.length });
-
-      const { default: JSZip } = await import('jszip');
-      const zip = new JSZip();
-
-      if (album.coverUrl) {
-        try {
-          const coverRes = await fetch(album.coverUrl);
-          if (coverRes.ok) zip.file('cover.jpg', await coverRes.blob());
-        } catch (coverErr) {
-          console.warn('Не удалось положить обложку в архив:', coverErr);
-        }
-      }
-
-      const skipped: string[] = [];
-      for (let i = 0; i < albumTracks.length; i++) {
-        const songItem = albumTracks[i];
-        setDownloadProgress({ current: i + 1, total: albumTracks.length });
-
-        try {
-          const detail = await loadSongDetail(songItem.cid);
-          const { blob, extension } = await downloadAudio(detail.sourceUrl, ({ loaded, total }) => {
-            setDownloadProgress({ current: i + 1, total: albumTracks.length });
-            setSongDownloadProgress({ [album.cid]: { loaded, total } });
-          });
-          zip.file(`${i + 1}. ${safeFileName(songItem.name, `track_${i + 1}`)}${extension}`, blob);
-        } catch (err) {
-          console.warn(`Трек ${songItem.name} пропущен:`, err);
-          skipped.push(songItem.name);
-        }
-      }
-
-      setSongDownloadProgress((prev) => {
-        const next = { ...prev };
-        delete next[album.cid];
-        return next;
-      });
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveBlob(zipBlob, `${safeFileName(album.name, 'album')}.zip`);
-
-      if (skipped.length) {
-        toast.info(isRu
-          ? `Архив собран без ${skipped.length} трек(ов): ${skipped.join(', ')}`
-          : `Archive built without ${skipped.length} track(s): ${skipped.join(', ')}`);
-      }
-    } catch (err) {
-      console.error('Failed to download album:', err);
-      toast.error(isRu ? 'Не удалось скачать альбом' : 'Failed to download album');
-    } finally {
-      setDownloadingAlbumCid(null);
-      setDownloadProgress(null);
-    }
-  };
+  /**
+   * Скачивание треков отключено: аудио принадлежит Monster Siren Records,
+   * поэтому мы только воспроизводим поток с официального CDN и отправляем
+   * слушателя на официальную страницу трека.
+   */
 
   const handleCoverError = (ep: any, e: React.SyntheticEvent<HTMLImageElement>) => {
     const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
@@ -1722,7 +1593,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                     {plSongs.map((song, idx) => {
                                       const isPlaying = playingSongCid === song.cid;
                                       const artist = getSongArtist(song);
-                                      const isDownloadingSingle = downloadingSongCid === song.cid;
 
                                       return (
                                         <div
@@ -1763,14 +1633,16 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                           </div>
 
                                           <div className="flex items-center gap-2 shrink-0">
-                                            <button
-                                              onClick={(e) => downloadSingleTrack(song, e)}
-                                              disabled={isDownloadingSingle}
+                                            <a
+                                              href={officialSongUrl(song.cid)}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              onClick={(e) => e.stopPropagation()}
                                               className="w-7 h-7 rounded-sm bg-zinc-950 border border-white/5 hover:border-blue-500/50 text-white/40 hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer"
-                                              title={isRu ? 'Скачать трек' : 'Download track'}
+                                              title={isRu ? 'Открыть на Monster Siren' : 'Open on Monster Siren'}
                                             >
-                                              {isDownloadingSingle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                                            </button>
+                                              <ExternalLink className="w-3.5 h-3.5" />
+                                            </a>
 
                                             <button
                                               onClick={(e) => {
@@ -1807,7 +1679,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                             const selectedAlbum = albums.find(a => a.cid === selectedAlbumCid);
                             if (!selectedAlbum) return null;
                             const albumSongs = songs.filter(s => s.albumCid === selectedAlbumCid);
-                            const isDownloading = downloadingAlbumCid === selectedAlbumCid;
 
                             return (
                               <div className="mb-4 bg-gradient-to-r from-blue-950/30 via-blue-950/5 to-transparent border border-blue-500/20 p-3 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -1828,32 +1699,21 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                       {selectedAlbum.name}
                                     </h4>
                                     <span className="text-[8px] text-white/40 tracking-widest uppercase font-bold leading-none block mt-0.5">
-                                      {albumSongs.length} {isRu ? 'треков (Обложка входит в ZIP)' : 'tracks (Cover art included in ZIP)'}
+                                      {albumSongs.length} {isRu ? 'треков' : 'tracks'}
                                     </span>
                                   </div>
                                 </div>
 
-                                <button
-                                  onClick={(e) => downloadAlbum(selectedAlbum, e)}
-                                  disabled={!!downloadingAlbumCid}
-                                  className={`px-3 py-1.5 rounded-sm text-[8px] font-black tracking-widest uppercase border transition-all flex items-center gap-1.5 select-none cursor-pointer ${
-                                    isDownloading 
-                                      ? 'bg-blue-600/20 border-blue-500/50 text-blue-400' 
-                                      : 'bg-blue-600 border-transparent hover:bg-blue-500 text-white hover:shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                  }`}
+                                <a
+                                  href="https://monster-siren.hypergryph.com"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 rounded-sm text-[8px] font-black tracking-widest uppercase border border-white/10 hover:border-white/30 bg-zinc-950/80 hover:bg-white/[0.04] text-white/70 hover:text-white transition-all flex items-center gap-1.5 select-none cursor-pointer"
+                                  title={isRu ? 'Слушать альбом на официальном сайте' : 'Listen on the official site'}
                                 >
-                                  {isDownloading ? (
-                                    <>
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                      {isRu ? `СКАЧИВАНИЕ (${downloadProgress?.current}/${downloadProgress?.total})` : `DOWNLOADING (${downloadProgress?.current}/${downloadProgress?.total})`}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Download className="w-3 h-3" />
-                                      {isRu ? 'СКАЧАТЬ АЛЬБОМ + ОБЛОЖКУ (ZIP)' : 'DOWNLOAD ALBUM + COVER (ZIP)'}
-                                    </>
-                                  )}
-                                </button>
+                                  <ExternalLink className="w-3 h-3" />
+                                  {isRu ? 'ОТКРЫТЬ НА MONSTER SIREN' : 'OPEN ON MONSTER SIREN'}
+                                </a>
                               </div>
                             );
                           })()}
@@ -1892,7 +1752,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                 const isPlaying = playingSongCid === song.cid;
                                 const isFav = isSongFavorite(song.cid);
                                 const artist = getSongArtist(song);
-                                const isDownloadingSingle = downloadingSongCid === song.cid;
 
                                 return (
                                   <div 
@@ -1912,22 +1771,6 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                           className="w-full h-full object-cover"
                                           referrerPolicy="no-referrer"
                                         />
-                                        {isDownloadingSingle && (
-                                          <div className="absolute inset-0 bg-black/75 flex items-center justify-center">
-                                            <div className="w-full h-1 bg-white/15 rounded-full overflow-hidden">
-                                              <div
-                                                className="h-full bg-blue-400 transition-all duration-200"
-                                                style={{
-                                                  width: (() => {
-                                                    const p = songDownloadProgress[song.cid];
-                                                    if (!p?.total) return '15%';
-                                                    return `${Math.min(100, Math.round((p.loaded / p.total) * 100))}%`;
-                                                  })()
-                                                }}
-                                              />
-                                            </div>
-                                          </div>
-                                        )}
                                         {isPlaying && (
                                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                             <div className="flex gap-[2px] items-end h-3">
@@ -1950,23 +1793,17 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                                     </div>
 
                                     <div className="flex items-center gap-2 shrink-0">
-                                      {/* Download button */}
-                                      <button
-                                        onClick={(e) => downloadSingleTrack(song, e)}
-                                        disabled={isDownloadingSingle}
-                                        className={`w-7 h-7 rounded-sm border flex items-center justify-center transition-all cursor-pointer ${
-                                          isDownloadingSingle 
-                                            ? 'bg-blue-500/25 border-blue-500 text-blue-400' 
-                                            : 'bg-zinc-950 border-white/5 hover:border-blue-500/50 text-white/40 hover:text-blue-400 hover:bg-blue-500/5'
-                                        }`}
-                                        title={isRu ? 'Скачать трек' : 'Download track'}
+                                      {/* Official link (downloads disabled) */}
+                                      <a
+                                        href={officialSongUrl(song.cid)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-7 h-7 rounded-sm border bg-zinc-950 border-white/5 hover:border-blue-500/50 text-white/40 hover:text-blue-400 hover:bg-blue-500/5 flex items-center justify-center transition-all cursor-pointer"
+                                        title={isRu ? 'Открыть на Monster Siren' : 'Open on Monster Siren'}
                                       >
-                                        {isDownloadingSingle ? (
-                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                        ) : (
-                                          <Download className="w-3.5 h-3.5" />
-                                        )}
-                                      </button>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                      </a>
 
                                       {/* Add to Playlist button */}
                                       <button
@@ -2851,13 +2688,15 @@ export const VotingInterface: React.FC<VotingInterfaceProps> = ({
                 </p>
 
                 <div className="flex items-center gap-3 mb-6">
-                  <button
-                    onClick={(e) => downloadSingleTrack({ cid: playingSongCid, name: playingSongDetail.name, albumCid: playingSongDetail.albumCid }, e)}
+                  <a
+                    href={officialSongUrl(playingSongCid)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="px-3 py-1.5 rounded-sm border border-white/10 hover:border-blue-500 bg-zinc-900 text-white/70 hover:text-white text-[9px] font-black tracking-widest uppercase transition-all flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    {isRu ? 'СКАЧАТЬ MP3' : 'DOWNLOAD MP3'}
-                  </button>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {isRu ? 'ОТКРЫТЬ НА MONSTER SIREN' : 'OPEN ON MONSTER SIREN'}
+                  </a>
                 </div>
               </div>
 
