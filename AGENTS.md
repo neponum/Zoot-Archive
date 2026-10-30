@@ -11,6 +11,7 @@ For exhaustive subsystem specifications, consult the dedicated manuals in the `d
 - **[Visual Novel & Story Engine](docs/STORY_ENGINE.md)**: Arknights AST parser syntax, camera tweens, coordinate normalization math, scale-aware clamping, and character sprite resolution.
 - **[Security Architecture & Hardening](docs/SECURITY.md)**: SSRF defenses in `/api/proxy`, Discord OAuth2 state validation, rate-limiting tiers, and client XSS sanitization.
 - **[Data Pipeline & Localization](docs/DATA_PIPELINE.md)**: Torappu PRTS data sources, JSON schemas, sync/validation routines, and the canonical Russian lore glossary.
+- **[Legal & Content Policy](docs/LEGAL.md)**: правовой контур (`/disclaimer`, `/privacy`, `/takedown`), запрет на скачивание аудио, правила обработки персональных данных и границы некоммерческого использования.
 
 ---
 
