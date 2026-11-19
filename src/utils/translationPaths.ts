@@ -53,6 +53,8 @@ export function getTranslationCsvCandidates(
   const candidates: string[] = [];
 
   if (episode) {
+    // С 2026-11-19 эпизоды в zoot-data сгруппированы в `story/`.
+    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${file}`);
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${file}`);
   }
   candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${file}`);
@@ -61,6 +63,7 @@ export function getTranslationCsvCandidates(
   if (translatorSuffix) {
     const communityFile = `${baseName}.csv`;
     if (episode) {
+      candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${communityFile}`);
       candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${communityFile}`);
     }
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${communityFile}`);
