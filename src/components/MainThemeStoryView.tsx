@@ -712,6 +712,10 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
 }) => {
   const uiLang = getUiLanguage();
   const t = UI_STRINGS[uiLang];
+  // Русские описания и названия — оверлей поверх английской базы из
+  // STORYMAP_DATA/index.json. На других языках сайта он не применяется,
+  // иначе английский интерфейс показывает русский текст.
+  const isRussianUi = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
   const localizedLineName = (L: StoryLineData): string => {
     const lineId = STORY_LINE_ID_BY_NAME[L.name];
     return (lineId && t.story_lines?.[lineId]) || L.name;
@@ -720,12 +724,18 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
   const [storyIndex, setStoryIndex] = useState<StoryIndexPayload | null>(null);
   const { lines, sets } = useMemo(() => {
     const merged = mergeStoryIndex(STORYMAP_DATA, storyIndex);
-    const descriptions = STORY_DESCRIPTIONS_RU as Record<string, string>;
-    const operationDescriptions = STORY_OPERATION_DESCRIPTIONS_RU as Record<string, string>;
-    const titles = STORY_TITLES_RU as {
-      chapters?: Record<string, string>;
-      episodes?: Record<string, string>;
-    };
+    const descriptions = isRussianUi
+      ? (STORY_DESCRIPTIONS_RU as Record<string, string>)
+      : {};
+    const operationDescriptions = isRussianUi
+      ? (STORY_OPERATION_DESCRIPTIONS_RU as Record<string, string>)
+      : {};
+    const titles = isRussianUi
+      ? (STORY_TITLES_RU as {
+          chapters?: Record<string, string>;
+          episodes?: Record<string, string>;
+        })
+      : {};
     const localizedSets: Record<string, StorySetData> = {};
     for (const [id, set] of Object.entries(merged.sets)) {
       const translated = set.group ? descriptions[set.group] : undefined;
@@ -748,7 +758,7 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
       };
     }
     return { lines: merged.lines, sets: localizedSets };
-  }, [storyIndex]);
+  }, [storyIndex, isRussianUi]);
 
   const [lineIdx, setLineIdx] = useState<number>(0);
 

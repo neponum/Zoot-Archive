@@ -18,6 +18,7 @@ import { useReadingProgress } from './hooks/useReadingProgress';
 import { useTranslationState } from './hooks/useTranslationState';
 import { usePageMeta } from './hooks/usePageMeta';
 import { operatorShortIdFromMemoryStory } from './utils/operatorUtils';
+import { getUiLanguage } from './utils/uiLanguage';
 import { platform } from './platform';
 import {
   fetchStoryOperations,
@@ -130,10 +131,16 @@ function StoryViewerRoute({
     handleBack(storyTxt ?? '');
   }, [routeChapter, parentChapter, operation, navigate, handleBack, storyTxt, stateBackTo, testScript]);
 
-  /** Русское описание операции, если оно есть: `chapter|code`. */
+  /**
+   * Русское описание операции, если оно есть: `chapter|code`.
+   * Применяется только к русскому интерфейсу — на английском остаётся
+   * оригинальное описание из архива.
+   */
   const withRussianDesc = useCallback(
     (brief?: StoryOperationBrief): StoryOperationBrief | undefined => {
       if (!brief) return brief;
+      const uiLang = getUiLanguage();
+      if (uiLang !== 'ru_RU' && uiLang !== 'ru_RU_CN') return brief;
       const key = brief.code && params.chapter ? `${params.chapter}|${brief.code}` : '';
       const operationDesc = key
         ? (STORY_OPERATION_DESCRIPTIONS_RU as Record<string, string>)[key]
@@ -229,7 +236,7 @@ function StoryViewerRoute({
       }
     }).catch(() => {});
     return () => { isMounted = false; };
-  }, [storyTxt, operation]);
+  }, [storyTxt, operation, withRussianDesc]);
 
   if (!storyTxt) {
     // Сцена не разрешилась (например, у операции нет end-сцены) — не
