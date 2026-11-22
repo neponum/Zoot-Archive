@@ -1,9 +1,12 @@
 /**
- * CacheService provides persistent caching for scripts, images, and audio
- * using the browser's Cache Storage API and IndexedDB.
+ * Кэш текстов, JSON и медиа.
+ *
+ * Раньше всё держалось напрямую в Cache Storage. Теперь записи идут через
+ * `assetStore`, который сам выбирает доступный бэкенд: Cache Storage на сайте,
+ * IndexedDB в Android WebView, память как последний резерв.
  */
 
-const CACHE_NAME = 'arknights-story-cache-v1';
+import { assetStore } from './assetStore';
 
 export class CacheService {
   /**
@@ -12,11 +15,7 @@ export class CacheService {
   static async cacheText(url: string, text: string): Promise<void> {
     if (url.startsWith('blob:')) return;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = new Response(text, {
-        headers: { 'Content-Type': 'text/plain', 'X-Cache-Date': new Date().toISOString() }
-      });
-      await cache.put(url, response);
+      await assetStore.put(url, new Blob([text], { type: 'text/plain' }), 'text/plain');
     } catch (err) {
       console.warn('Failed to cache text:', err);
     }
@@ -28,11 +27,8 @@ export class CacheService {
   static async getCachedText(url: string): Promise<string | null> {
     if (url.startsWith('blob:')) return null;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(url);
-      if (response) {
-        return await response.text();
-      }
+      const blob = await assetStore.get(url);
+      if (blob) return await blob.text();
     } catch (err) {
       console.warn('Failed to get cached text:', err);
     }
@@ -45,15 +41,7 @@ export class CacheService {
   static async cacheBlob(url: string, blob: Blob): Promise<void> {
     if (url.startsWith('blob:')) return;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = new Response(blob, {
-        headers: { 
-          'Content-Type': blob.type,
-          'Content-Length': blob.size.toString(),
-          'X-Cache-Date': new Date().toISOString()
-        }
-      });
-      await cache.put(url, response);
+      await assetStore.put(url, blob, blob.type || 'application/octet-stream');
     } catch (err) {
       console.warn('Failed to cache blob:', err);
     }
@@ -67,15 +55,11 @@ export class CacheService {
       return this.blobUrlCache.get(url)!;
     }
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(url);
-      if (response && (response.ok || response.status === 200 || response.status === 0)) {
-        const blob = await response.blob();
-        if (blob && blob.size > 0) {
-          const blobUrl = URL.createObjectURL(blob);
-          this.blobUrlCache.set(url, blobUrl);
-          return blobUrl;
-        }
+      const blob = await assetStore.get(url);
+      if (blob && blob.size > 0) {
+        const blobUrl = URL.createObjectURL(blob);
+        this.blobUrlCache.set(url, blobUrl);
+        return blobUrl;
       }
     } catch (err) {
       console.warn('Failed to get cached blob:', err);
@@ -154,10 +138,8 @@ export class CacheService {
   static async has(url: string): Promise<boolean> {
     if (url.startsWith('blob:')) return false;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(url);
-      return !!response;
-    } catch (err) {
+      return await assetStore.has(url);
+    } catch {
       return false;
     }
   }
@@ -168,11 +150,11 @@ export class CacheService {
   static async cacheJson<T = unknown>(url: string, data: T): Promise<void> {
     if (url.startsWith('blob:')) return;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = new Response(JSON.stringify(data), {
-        headers: { 'Content-Type': 'application/json', 'X-Cache-Date': new Date().toISOString() }
-      });
-      await cache.put(url, response);
+      await assetStore.put(
+        url,
+        new Blob([JSON.stringify(data)], { type: 'application/json' }),
+        'application/json'
+      );
     } catch (err) {
       console.warn('Failed to cache JSON:', err);
     }
@@ -184,11 +166,8 @@ export class CacheService {
   static async getCachedJson<T = unknown>(url: string): Promise<T | null> {
     if (url.startsWith('blob:')) return null;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(url);
-      if (response) {
-        return (await response.json()) as T;
-      }
+      const blob = await assetStore.get(url);
+      if (blob) return JSON.parse(await blob.text()) as T;
     } catch (err) {
       console.warn('Failed to get cached JSON:', err);
     }
@@ -201,10 +180,20 @@ export class CacheService {
   static async deleteCachedJson(url: string): Promise<void> {
     if (url.startsWith('blob:')) return;
     try {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.delete(url);
+      await assetStore.delete(url);
     } catch (err) {
       console.warn('Failed to delete cached JSON:', err);
+    }
+  }
+
+  /**
+   * Размер кэша: количество записей и суммарный объём.
+   */
+  static async getStats(): Promise<{ entries: number; bytes: number }> {
+    try {
+      return await assetStore.stats();
+    } catch {
+      return { entries: 0, bytes: 0 };
     }
   }
 
@@ -213,7 +202,7 @@ export class CacheService {
    */
   static async clear(): Promise<void> {
     try {
-      await caches.delete(CACHE_NAME);
+      await assetStore.clear();
       console.log('Cache cleared successfully');
     } catch (err) {
       console.warn('Failed to clear cache:', err);

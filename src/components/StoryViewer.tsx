@@ -1,9 +1,9 @@
-import React, { useEffect, useCallback, useReducer, useRef, useMemo } from 'react';
+import React, { useEffect, useCallback, useReducer, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, getLanguage, getCharacterAssetInfo, clearPreloadedImages, clearUrlCache, AudioSnapshot, checkScriptExists } from '../services/storyService';
+import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, prefetchStoryImages, prefetchStoryAudio, getLanguage, setLanguage, getCharacterAssetInfo, warmCharacterData, clearPreloadedImages, releasePreloadedMedia, clearUrlCache, AudioSnapshot, checkScriptExists } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { CacheService } from '../services/cacheService';
-import { StoryLine, StoryChapter } from '../types';
+import { StoryLine, StoryChapter, Language } from '../types';
 import { UI_STRINGS } from '../translations';
 import { BackgroundLayer, normalizeCoordX, normalizeCoordY } from './story/BackgroundLayer';
 import { CssTransformBox } from './story/CssTransformBox';
@@ -14,14 +14,41 @@ import { ControlsOverlay } from './story/ControlsOverlay';
 import { CinematicEffectsLayer } from './story/CinematicEffectsLayer';
 import { StickerLayer } from './story/StickerLayer';
 import { BackConfirmation } from './story/BackConfirmation';
+import { SkipConfirmation } from './story/SkipConfirmation';
+import { AssetPreloadDialog } from './story/AssetPreloadDialog';
+import { prioritizeStoryText } from '../services/storyTextSync';
+import type { PreloadFailure } from '../services/story/storyAssetService';
 import { SettingsModal } from './story/SettingsModal';
 import { LogModal } from './story/LogModal';
 import { BugReportModal } from './story/BugReportModal';
+import { StoryHelpModal } from './story/StoryHelpModal';
 import { StoryLoadingScreen } from './story/StoryLoadingScreen';
+import { StoryBgEffectLayer } from './story/StoryBgEffectLayer';
+import { ensureStoryFx, prefetchStoryFx } from '../services/story/storyFxAssets';
+import type { StoryOperationBrief } from './MainThemeStoryView';
 import { StoryErrorScreen } from './story/StoryErrorScreen';
-import { storyReducer, initialState, CharacterSlotData } from '../hooks/useStoryReducer';
+import { useToast } from './ui/Toast';
+import {
+  storyReducer,
+  initialState,
+  CharacterSlotData,
+  StoryActiveEffect,
+} from '../hooks/useStoryReducer';
 import { useStoryControls } from '../hooks/useStoryControls';
 import { AUTO_ADVANCE_DELAY, SKIP_SPEEDS } from '../constants';
+
+/** Сколько первых строк главы грузим до старта (остальное — по мере чтения). */
+const PRELOAD_LINE_LIMIT = 12;
+
+/** Имена эффектов из строк сценария (`[bgeffect]`, `[effect]`). */
+const effectNames = (lines: StoryLine[]): string[] =>
+  lines
+    .map((line) => {
+      if (line.type === 'bgeffect') return line.assetName || '';
+      if (line.type === 'playeffect') return line.effect || '';
+      return '';
+    })
+    .filter(Boolean);
 
 import { OrientationOverlay } from './story/OrientationOverlay';
 import { getChapterDisplayCode, getChapterFullDisplayCode } from '../lib/utils';
@@ -30,16 +57,46 @@ interface StoryViewerProps {
   storyTxt: string;
   customScript?: string;
   translator?: string;
+  /** Брифинг операции, из которой открыта глава (показывается на загрузке). */
+  operation?: StoryOperationBrief;
   isRead?: boolean;
   onToggleRead?: () => void;
   onBack: () => void;
   onComplete?: () => void;
+  /** Сцены операции «до боя» / «после боя» — выбор на стартовом экране. */
+  sceneOptions?: { beg?: string | null; end?: string | null };
+  /** Начальное состояние переключателей (из URL). */
+  scenePart?: 'beg' | 'end' | 'both';
+  /** Сразу начать загрузку (переход «обе сцены» → после боя). */
+  autoStart?: boolean;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript, translator, isRead, onToggleRead, onBack, onComplete }) => {
-  const lang = getLanguage();
+export const StoryViewer: React.FC<StoryViewerProps> = ({
+  storyTxt,
+  customScript,
+  translator,
+  operation,
+  isRead,
+  onToggleRead,
+  onBack,
+  onComplete,
+  sceneOptions,
+  scenePart,
+  autoStart = false,
+}) => {
+  // Язык чтения выбирается на экране загрузки и сохраняется в localStorage.
+  const [lang, setLangState] = useState<Language>(() => getLanguage());
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const t = UI_STRINGS[lang];
-  
+
+  /** Смена языка до старта: перезагружаем сцену в новом языке. */
+  const handleSelectLang = useCallback((next: Language) => {
+    if (next === getLanguage()) return;
+    setLanguage(next);
+    setLangState(next);
+    setIsReadyToStart(false);
+  }, []);
+
   const [state, dispatch] = useReducer(storyReducer, initialState);
   const {
     lines,
@@ -59,6 +116,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     shakeConfig,
     isFlashing,
     cameraEffect,
+    bgEffects,
+    activeEffects,
     cameraTransform,
     blocker,
     isAuto,
@@ -74,20 +133,42 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     settings
   } = state;
 
-  const [loading, setLoading] = React.useState(true);
+  // Переключатели сцен: можно включить обе, одну или ни одной.
+  const [sceneSelection, setSceneSelection] = React.useState(() => ({
+    beg: scenePart === 'beg' || scenePart === 'both' || !sceneOptions?.end,
+    end: scenePart === 'end' || scenePart === 'both' || !sceneOptions?.beg,
+  }));
+  const [activeStoryTxt, setActiveStoryTxt] = React.useState(storyTxt);
+
+  // Загрузка сцены начинается только после нажатия «Загрузить историю».
+  const [started, setStarted] = React.useState(autoStart);
+  const [loading, setLoading] = React.useState(false);
   const [isReadyToStart, setIsReadyToStart] = React.useState(false);
   const [preloadProgress, setPreloadProgress] = React.useState({ loaded: 0, total: 0, currentFile: '' });
+  const [preloadFailures, setPreloadFailures] = React.useState<PreloadFailure[]>([]);
+  const toast = useToast();
+  const audioWarningShownRef = React.useRef(false);
+  const backgroundWarningShownRef = React.useRef(false);
+  const prefetchWindowRef = React.useRef<AbortController | null>(null);
+  const parsedLinesRef = useRef<StoryLine[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [scriptContent, setScriptContent] = React.useState<string | null>(null);
   /** Русского перевода главы нет — показываем оригинал и честно об этом говорим. */
   const [isOriginalScript, setIsOriginalScript] = React.useState(false);
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
+  const [activeVideo, setActiveVideo] = React.useState<string | null>(null);
+  const [videoPaused, setVideoPaused] = React.useState(false);
+  const [videoProgress, setVideoProgress] = React.useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoNextIndexRef = useRef(0);
 
   const processToken = useRef({});
   const currentIndexRef = useRef(0);
+  /** Прерывает повторную предзагрузку при уходе из читалки. */
+  const retryControllerRef = useRef<AbortController | null>(null);
   const characterSlotsRef = useRef(characterSlots);
   const currentBgmRef = useRef<AudioSnapshot | null>(null);
-  
+
   // Update characterSlotsRef whenever characterSlots changes
   useEffect(() => {
     characterSlotsRef.current = characterSlots;
@@ -171,6 +252,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   }, []);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showBugReport, setShowBugReport] = React.useState(false);
+  /** Памятка «как читать»: открывается с экрана загрузки и из верхней панели. */
+  const [showHelp, setShowHelp] = React.useState(false);
 
   // Effective nickname resolution: checks settings, localStorage, and language default
   const effectiveNickname = useMemo(() => {
@@ -181,9 +264,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     if (savedDocName && savedDocName !== 'NUM' && savedDocName.trim() !== '') {
       return savedDocName.trim();
     }
-    const lang = getLanguage();
     return lang === 'ru_RU' ? 'Доктор' : lang === 'zh_CN' ? '博士' : lang === 'ja_JP' ? 'ドクター' : 'Doctor';
-  }, [settings.nickname]);
+  }, [settings.nickname, lang]);
 
   // Replacement logic for user nickname
   const replaceNickname = useCallback((text: string | null | undefined): string => {
@@ -201,10 +283,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const processedCurrentText = useMemo(() => replaceNickname(currentText), [currentText, replaceNickname]);
   const processedSpeaker = useMemo(() => replaceNickname(currentSpeaker), [currentSpeaker, replaceNickname]);
-  const processedHistory = useMemo(() => history.map(h => ({ 
-    ...h, 
+  const processedHistory = useMemo(() => history.map(h => ({
+    ...h,
     speaker: replaceNickname(h.speaker),
-    text: replaceNickname(h.text) 
+    text: replaceNickname(h.text)
   })), [history, replaceNickname]);
   const fullScriptText = useMemo(() => {
     return lines
@@ -237,7 +319,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
-    
+
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch(err => {
         console.error(`Error attempting to enable full-screen mode: ${err.message}`);
@@ -265,7 +347,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     processToken.current = token;
     clearAudioTimeouts();
     isProcessing.current = true;
-    
+
     try {
       let index = startIndex;
       let lastDispatchedIndex = startIndex;
@@ -284,9 +366,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         const safeDuration = isNaN(duration) ? 0 : Math.max(duration, 0);
         const ms = safeDuration * 1000;
         if (ms <= 0 || skipBlockerRef.current || isSkippingRef.current) return true;
-        
+
         const start = Date.now();
-        
+
         while (Date.now() - start < ms) {
           if (skipBlockerRef.current || isSkippingRef.current) break;
           await new Promise(r => setTimeout(r, 16));
@@ -294,13 +376,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         }
         return true;
       };
-      
+
       while (index < lines.length) {
         if (processToken.current !== token) return;
         currentIndexRef.current = index;
         const isSkipping = isSkippingRef.current;
         const line = lines[index];
-        
+
         if (line.type === 'predicate') {
           if (line.references && line.references.length > 0) {
             localPredicateMismatch = !line.references.some(ref => selectedChoicesRef.current.has(ref));
@@ -319,6 +401,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         }
 
         switch (line.type) {
+          case 'playvideo': {
+            if (!line.src || isSkipping) break;
+            const src = /^https?:\/\//i.test(line.src)
+              ? line.src
+              : `https://torappu.prts.wiki/assets/${line.src.replace(/^\/+/, '')}`;
+            videoNextIndexRef.current = index + 1;
+            dispatch({ type: 'SET_CINEMATIC', payload: true });
+            setActiveVideo(src);
+            return;
+          }
+
           case 'decision':
             skipBlockerRef.current = false;
             selectedChoicesRef.current.clear();
@@ -342,6 +435,16 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
             break;
 
+          case 'popup':
+            if (line.text && line.text.trim().length > 0) {
+              skipBlockerRef.current = false;
+              dispatch({ type: 'ADD_TO_HISTORY', payload: { speaker: line.title || null, text: line.text, lineIndex: index, audioSnapshot: currentBgmRef.current } });
+              dispatch({ type: 'SET_DIALOGUE', payload: { speaker: line.title || null, text: line.text, index, isSubtitle: true, line } });
+              currentIndexRef.current = index;
+              return;
+            }
+            break;
+
           case 'dialogue':
             if (line.text && line.text.trim().length > 0) {
               skipBlockerRef.current = false;
@@ -354,7 +457,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_TYPEWRITER_FINISHED', payload: true });
             }
             break;
-        
+
           case 'background':
             if (line.assetName) {
               const isBlack = line.assetName.toLowerCase().includes('black') || line.assetName.toLowerCase() === 'bg_black';
@@ -389,7 +492,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_BLOCKING', payload: false });
             }
             break;
-            
+
           case 'character':
             if (line.assetName || line.assetName2) {
               const getSlotName = (rawSlot: string | undefined): string => {
@@ -402,11 +505,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
               const slot1 = getSlotName(line.slot);
               const charsToLoad: { name: string, slot: string, focus: boolean }[] = [];
-              
+
               if (line.assetName) {
                 charsToLoad.push({ name: line.assetName, slot: slot1, focus: line.focus === 1 });
               }
-              
+
               if (line.assetName2) {
                 const slot2 = slot1 === 'left' ? 'right' : slot1 === 'right' ? 'left' : 'right';
                 charsToLoad.push({ name: line.assetName2, slot: slot2, focus: line.focus === 2 });
@@ -426,14 +529,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 const assetInfo = assetInfos[index];
                 const existingSlot = characterSlotsRef.current[char.slot];
                 const hasNewAnim = line.posFrom || line.posTo || line.aFrom !== undefined || line.aTo !== undefined;
-                
-                slotUpdates[char.slot] = { 
+
+                slotUpdates[char.slot] = {
                   url: assetInfo.bodyUrl,
                   faceUrl: assetInfo.faceUrl,
                   faceRect: assetInfo.faceRect,
                   size: assetInfo.size,
                   pos: assetInfo.pos,
-                  focus: char.focus, 
+                  focus: char.focus,
                   name: char.name,
                   animation: hasNewAnim ? {
                     posFrom: line.posFrom,
@@ -456,10 +559,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               const targetSlot = getSlotName(line.slot);
               const currentSlot = characterSlotsRef.current[targetSlot];
               if (currentSlot?.url) {
-                dispatch({ 
-                  type: 'UPDATE_CHARACTER_SLOT', 
-                  payload: { 
-                    slot: targetSlot, 
+                dispatch({
+                  type: 'UPDATE_CHARACTER_SLOT',
+                  payload: {
+                    slot: targetSlot,
                     data: {
                       ...currentSlot,
                       animation: {
@@ -470,7 +573,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                         duration: line.duration
                       }
                     }
-                  } 
+                  }
                 });
               }
             } else if (line.focus !== undefined) {
@@ -483,14 +586,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 if (s === '3' || s === 'r') return 'right';
                 return ['left', 'center', 'right'].includes(s) ? s : 'center';
               };
-              dispatch({ 
-                type: 'CLEAR_CHARACTER_SLOTS', 
-                payload: { slot: getSlotName(line.slot), duration: isSkipping ? 0 : line.duration } 
+              dispatch({
+                type: 'CLEAR_CHARACTER_SLOTS',
+                payload: { slot: getSlotName(line.slot), duration: isSkipping ? 0 : line.duration }
               });
             } else {
-              dispatch({ 
-                type: 'CLEAR_CHARACTER_SLOTS', 
-                payload: { duration: isSkipping ? 0 : line.duration } 
+              dispatch({
+                type: 'CLEAR_CHARACTER_SLOTS',
+                payload: { duration: isSkipping ? 0 : line.duration }
               });
             }
             if (line.block && line.duration !== undefined && !isSkipping) {
@@ -503,7 +606,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'charactertween': {
             const cleanSearchName = line.assetName?.split(/[#$]/)[0]?.toLowerCase();
             let resolvedSlot = 'center';
-            
+
             if (cleanSearchName) {
               const foundSlotEntry = Object.entries(characterSlotsRef.current).find(([_, slotData]) => {
                 const typedData = slotData as CharacterSlotData;
@@ -560,7 +663,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
             break;
           }
-            
+
           case 'image':
             if (line.assetName) {
               const url = await getImageUrl('image', line.assetName);
@@ -572,15 +675,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                 scaleX: line.xScale ?? 1,
                 scaleY: line.yScale ?? 1
               };
-              dispatch({ 
-                type: 'SET_IMAGE', 
-                payload: { 
-                  url, 
-                  tween: { 
-                    ...line, 
-                    tweenId: `${index}-${Date.now()}` 
-                  } 
-                } 
+              dispatch({
+                type: 'SET_IMAGE',
+                payload: {
+                  url,
+                  tween: {
+                    ...line,
+                    tweenId: `${index}-${Date.now()}`
+                  }
+                }
               });
             } else {
               imageUrlRef.current = null;
@@ -595,7 +698,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_CINEMATIC', payload: false });
             }
             break;
-            
+
           case 'charactercutin':
             if (line.assetName) {
               const { bodyUrl, faceUrl } = await getCharacterAssetInfo(line.assetName);
@@ -639,11 +742,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
               currentBgStateRef.current = { x: targetX, y: targetY, scaleX: targetScaleX, scaleY: targetScaleY };
 
-              dispatch({ 
-                type: 'SET_BG', 
-                payload: { 
-                  bgUrl: bgUrlRef.current, 
-                  assetName: currentBgRef.current, 
+              dispatch({
+                type: 'SET_BG',
+                payload: {
+                  bgUrl: bgUrlRef.current,
+                  assetName: currentBgRef.current,
                   tween: {
                     ...line,
                     xScale: targetScaleX,
@@ -659,8 +762,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                     xFrom: fromX,
                     yFrom: fromY,
                     tweenId: `${index}-${Date.now()}`
-                  } 
-                } 
+                  }
+                }
               });
             }
             if (line.block && line.duration && !isSkipping) {
@@ -669,7 +772,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_BLOCKING', payload: false });
             }
             break;
-            
+
           case 'imagetween':
             {
               const prevImg = { ...currentImageStateRef.current };
@@ -689,10 +792,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               if (processToken.current !== token) return;
               if (url) {
                 imageUrlRef.current = url;
-                dispatch({ 
-                  type: 'SET_IMAGE', 
-                  payload: { 
-                    url, 
+                dispatch({
+                  type: 'SET_IMAGE',
+                  payload: {
+                    url,
                     tween: {
                       ...line,
                       xScale: targetScaleX,
@@ -713,7 +816,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
                       type: 'imagetween',
                       tweenId: `${index}-${Date.now()}`
                     }
-                  } 
+                  }
                 });
               }
             }
@@ -725,7 +828,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               dispatch({ type: 'SET_CINEMATIC', payload: false });
             }
             break;
-            
+
           case 'music':
             if (line.assetName) {
               const url = await getImageUrl('music', line.assetName);
@@ -750,7 +853,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               }
             }
             break;
-            
+
           case 'sound':
             if (line.assetName) {
               const url = await getImageUrl('sound', line.assetName);
@@ -788,7 +891,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               }
             }
             break;
-            
+
           case 'voice':
             if (line.assetName) {
               const url = await getImageUrl('voice', line.assetName);
@@ -796,7 +899,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               if (url) audioManager.playVoice(url, line.volume || 1);
             }
             break;
-            
+
           case 'stop_voice':
             audioManager.stopVoice();
             break;
@@ -806,9 +909,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
 
           case 'clearchars':
-            dispatch({ 
-              type: 'CLEAR_CHARACTER_SLOTS', 
-              payload: { duration: isSkipping ? 0 : line.duration } 
+            dispatch({
+              type: 'CLEAR_CHARACTER_SLOTS',
+              payload: { duration: isSkipping ? 0 : line.duration }
             });
             break;
 
@@ -823,11 +926,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             currentBgmRef.current = null;
             audioManager.stopBGM(line.duration !== undefined ? line.duration * 1000 : 1000);
             break;
-            
+
           case 'stop_sound':
             audioManager.stopSFX(line.channel, line.duration !== undefined ? line.duration * 1000 : 0);
             break;
-            
+
           case 'delay':
             if (index !== lastDispatchedIndex) {
                dispatch({ type: 'SET_INDEX', payload: index });
@@ -897,15 +1000,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             if (line.effect === 'none' || !line.effect) {
               dispatch({ type: 'SET_CAMERA_EFFECT', payload: null });
             } else {
-              dispatch({ 
-                type: 'SET_CAMERA_EFFECT', 
-                payload: { 
-                  effect: line.effect, 
-                  duration: line.duration || 0, 
-                  amount: line.a || 1 
-                } 
+              dispatch({
+                type: 'SET_CAMERA_EFFECT',
+                payload: {
+                  effect: line.effect,
+                  duration: line.duration || 0,
+                  amount: line.a || 1
+                }
               });
-              
+
               if (!line.keep && line.duration && line.duration > 0 && !isSkipping) {
                 const currentToken = token;
                 setTimeout(() => {
@@ -980,9 +1083,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             }
 
             if (line.actionType === 'exit') {
-              dispatch({ 
-                type: 'CLEAR_CHARACTER_SLOTS', 
-                payload: { slot: resolvedSlot, duration: isSkipping ? 0 : line.duration } 
+              dispatch({
+                type: 'CLEAR_CHARACTER_SLOTS',
+                payload: { slot: resolvedSlot, duration: isSkipping ? 0 : line.duration }
               });
             } else if (line.actionType === 'move' && line.assetName) {
               const currentSlot = characterSlotsRef.current[resolvedSlot];
@@ -1017,8 +1120,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           }
 
           case 'blocker':
-            dispatch({ 
-              type: 'SET_BLOCKER', 
+            dispatch({
+              type: 'SET_BLOCKER',
               payload: {
                 a: line.a ?? 1,
                 r: line.r ?? 0,
@@ -1060,7 +1163,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
           case 'sticker': {
             dispatch({ type: 'ADD_STICKER', payload: line });
-            
+
             // If the sticker has text, we MUST wait for the player to click to proceed to the next script line.
             // This is exactly how dialogue and subtitle commands work.
             if (line.text && !line.isExiting) {
@@ -1070,14 +1173,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
               currentIndexRef.current = index;
               return;
             }
-            
+
             // For clearing stickers or cinematic stickers with explicit block
             if (line.block && line.duration !== undefined && !isSkipping) {
               dispatch({ type: 'SET_BLOCKING', payload: true });
               if (!await waitForCompletion(line.duration)) return;
               dispatch({ type: 'SET_BLOCKING', payload: false });
             }
-            
+
             break;
           }
           case 'stickerclear':
@@ -1085,24 +1188,76 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
             break;
 
           case 'soundvolume':
-            if (line.channel) {
+            if (line.channel === 'music') {
+              const fadetime = line.duration !== undefined ? line.duration * 1000 : 0;
+              audioManager.setBGMVolume(line.volume ?? 1, fadetime);
+            } else if (line.channel) {
               const fadetime = line.duration !== undefined ? line.duration * 1000 : 0;
               audioManager.setSFXVolume(line.channel, line.volume ?? 1, fadetime);
             }
             break;
 
           case 'avgdisplay':
-            if (line.style === 'bgeffect' && line.assetName === '$eb_distorsion') {
+            break;
+
+          case 'playeffect': {
+            const rawName = (line.effect || '').trim();
+            // `[effect]` без имени снимает все наложенные эффекты.
+            if (!rawName) {
+              dispatch({ type: 'CLEAR_EFFECTS' });
+              break;
+            }
+            // Часть переменных `$e_*` — это звуки (`Sound_Beta_2/...`),
+            // а не префабы: рисовать для них нечего.
+            if (rawName.includes('/') || /^sound_/i.test(rawName)) break;
+            dispatch({
+              type: 'ADD_EFFECT',
+              payload: {
+                id: `${rawName}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                name: rawName.replace(/^\$/, ''),
+                layer: line.layer ?? 1,
+                x: line.x,
+                y: line.y,
+                xto: line.xTo,
+                yto: line.yTo,
+                moveTime: line.moveTime,
+              },
+            });
+            break;
+          }
+
+          case 'stopeffect': {
+            const rawName = (line.effect || '').trim();
+            if (rawName) {
               dispatch({
-                type: 'SET_CAMERA_EFFECT',
-                payload: {
-                  effect: 'Blur',
-                  duration: line.duration || 1.5,
-                  amount: 3
-                }
+                type: 'REMOVE_EFFECT',
+                payload: rawName.replace(/^\$/, ''),
               });
+            } else {
+              dispatch({ type: 'CLEAR_EFFECTS' });
             }
             break;
+          }
+
+          case 'bgeffect': {
+            const rawName = (line.assetName || '').trim();
+            if (!rawName) {
+              dispatch({ type: 'SET_BG_EFFECT', payload: null });
+              break;
+            }
+            // `$eb_snow` → `eb_snow`: префикс — синтаксис скрипта, не имя файла.
+            dispatch({
+              type: 'SET_BG_EFFECT',
+              payload: {
+                id: `${rawName}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                name: rawName.replace(/^\$/, ''),
+                layer: line.layer ?? 1,
+                x: line.x,
+                y: line.y,
+              },
+            });
+            break;
+          }
 
           case 'cgitem':
             if (line.assetName) {
@@ -1222,7 +1377,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           case 'multiline':
             break;
         }
-        
+
         index++;
         if (index >= lines.length) {
           dispatch({ type: 'SET_INDEX', payload: lines.length - 1 });
@@ -1246,7 +1401,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       clearTimeout(autoAdvanceTimer.current);
       autoAdvanceTimer.current = null;
     }
-    
+
     // Parse the snapshot
     let parsedState;
     try {
@@ -1261,11 +1416,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     currentBgmRef.current = audioSnapshot || null;
     if (audioSnapshot && audioSnapshot.url) {
       audioManager.playBGM(
-        audioSnapshot.url, 
-        audioSnapshot.volume, 
-        1000, 
-        audioSnapshot.introUrl, 
-        audioSnapshot.assetName, 
+        audioSnapshot.url,
+        audioSnapshot.volume,
+        1000,
+        audioSnapshot.introUrl,
+        audioSnapshot.assetName,
         audioSnapshot.introAssetName
       );
     }
@@ -1277,8 +1432,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     dispatch({ type: 'SET_SHAKE', payload: { isShaking: false, config: null } });
 
     // 3. update react state
-    dispatch({ 
-      type: 'RESTORE_STATE', 
+    dispatch({
+      type: 'RESTORE_STATE',
       payload: {
         ...parsedState,
         isSkipping: false,
@@ -1286,13 +1441,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         shouldSkipTypewriter: false,
         isTypewriterFinished: false,
         historyIndex
-      } 
+      }
     });
     currentIndexRef.current = lineIndex;
     currentBgStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
     currentImageStateRef.current = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
 
-    // 4. close log implicitly handled by restoring the state snapshot where showLog is usually false, 
+    // 4. close log implicitly handled by restoring the state snapshot where showLog is usually false,
     // but just in case:
     dispatch({ type: 'SET_SHOW_LOG', payload: false });
 
@@ -1302,7 +1457,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   const advance = useCallback(() => {
     if (currentDecision) return;
-    
+
     // If we are currently in a blocking effect, signal to skip it and let processLine continue naturally
     if (isBlocking) {
       skipBlockerRef.current = true;
@@ -1312,7 +1467,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       }
       return;
     }
-    
+
     if (!isTypewriterFinished && !isSkipping) {
       dispatch({ type: 'SET_SKIP_TYPEWRITER', payload: true });
       lastSkipTime.current = Date.now();
@@ -1328,14 +1483,32 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     const now = Date.now();
     if (!isSkipping && now - lastAdvanceTime.current < 250) return;
     lastAdvanceTime.current = now;
-    
+
     if (currentIndexRef.current >= lines.length - 1) {
       dispatch({ type: 'SET_SKIPPING', payload: false });
       dispatch({ type: 'SET_AUTO', payload: false });
       processToken.current = {};
       clearAudioTimeouts();
       audioManager.stopAll();
-      localStorage.removeItem(`ak-story-index-${storyTxt}`);
+      localStorage.removeItem(`ak-story-index-${activeStoryTxt}`);
+
+      // Выбраны обе сцены: после «до боя» автоматически идёт «после боя».
+      const nextScene =
+        sceneSelection.beg &&
+        sceneSelection.end &&
+        sceneOptions?.beg &&
+        sceneOptions?.end &&
+        activeStoryTxt === sceneOptions.beg
+          ? sceneOptions.end
+          : null;
+
+      if (nextScene) {
+        setIsReadyToStart(false);
+        setStarted(true);
+        setActiveStoryTxt(nextScene);
+        return;
+      }
+
       onComplete?.();
       onBack();
       return;
@@ -1345,7 +1518,22 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     if (!isSkipping && now - lastSkipTime.current < 250) return;
 
     processLine(currentIndexRef.current + 1);
-  }, [lines, processLine, isSkipping, onBack, currentDecision, isTypewriterFinished, isBlocking, clearAudioTimeouts, storyTxt, onComplete]);
+  }, [
+    lines,
+    processLine,
+    isSkipping,
+    onBack,
+    currentDecision,
+    isTypewriterFinished,
+    isBlocking,
+    clearAudioTimeouts,
+    activeStoryTxt,
+    onComplete,
+    sceneSelection.beg,
+    sceneSelection.end,
+    sceneOptions?.beg,
+    sceneOptions?.end,
+  ]);
 
   const controls = useStoryControls({
     isAuto,
@@ -1356,6 +1544,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     showSettings,
     showLog,
     showBugReport,
+    showHelp,
     showUI,
     isTypewriterFinished,
     setShowUI: (val) => dispatch({ type: 'SET_SHOW_UI', payload: val }),
@@ -1372,6 +1561,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       if (showSettings) dispatch({ type: 'SET_SHOW_SETTINGS', payload: false });
       if (showLog) dispatch({ type: 'SET_SHOW_LOG', payload: false });
       if (showBugReport) setShowBugReport(false);
+      if (showHelp) setShowHelp(false);
       if (showBackConfirm) dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: false });
     },
     onOpenBackConfirm: () => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true }),
@@ -1380,7 +1570,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
   // Auto advance logic
   useEffect(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    if (isAuto && showUI && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && !showBugReport && isTypewriterFinished) {
+    if (isAuto && showUI && !isSkipping && !currentDecision && !showBackConfirm && !showSettings && !showLog && !showBugReport && !showHelp && isTypewriterFinished) {
       autoAdvanceTimer.current = setTimeout(() => {
         advance();
       }, settings.autoDelay);
@@ -1388,7 +1578,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     };
-  }, [isAuto, showUI, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog, showBugReport, settings.autoDelay]);
+  }, [isAuto, showUI, isSkipping, isTypewriterFinished, advance, currentDecision, showBackConfirm, showSettings, showLog, showBugReport, showHelp, settings.autoDelay]);
 
   // Clear camera shake and flashes when skipping is active
   useEffect(() => {
@@ -1409,32 +1599,41 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
 
   // Skip logic
   useEffect(() => {
-    if (isSkipping && !showSettings && !showLog && !showBugReport && !showBackConfirm && !currentDecision) {
+    if (isSkipping && !showSettings && !showLog && !showBugReport && !showHelp && !showBackConfirm && !currentDecision) {
       const delay = 100 / (settings.skipSpeed || 4);
       const timer = setTimeout(() => {
         advance();
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isSkipping, currentIndex, advance, settings.skipSpeed, showSettings, showLog, showBugReport, showBackConfirm, currentDecision]);
+  }, [isSkipping, currentIndex, advance, settings.skipSpeed, showSettings, showLog, showBugReport, showHelp, showBackConfirm, currentDecision]);
 
   useEffect(() => {
+    if (!started) return;
+    let cancelled = false;
+    // Уход из читалки (в т.ч. «Назад в меню») должен обрывать докачку:
+    // иначе она конкурирует с загрузкой следующей операции.
+    const controller = new AbortController();
     const loadStory = async () => {
       try {
         setLoading(true);
         setError(null);
         clearPreloadedImages();
+        // character.json (1.7 МБ) грузим параллельно со сценарием: иначе
+        // первый спрайт ждёт его уже во время сцены.
+        warmCharacterData();
         selectedChoicesRef.current.clear();
         predicateMismatchRef.current = false;
-        
+
         // Full state reset
         dispatch({ type: 'RESET_STATE' });
         currentIndexRef.current = 0;
-        
+
         processToken.current = {};
         isProcessing.current = false;
-        
-        const script = customScript || await fetchStoryScript(storyTxt, undefined, false, translator);
+
+        const script = customScript || await fetchStoryScript(activeStoryTxt, undefined, false, translator);
+        if (cancelled) return;
         setScriptContent(script);
 
         // Если русского перевода нет, а показать пришлось оригинал — предупреждаем.
@@ -1442,7 +1641,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           const currentLang = getLanguage();
           if (currentLang === 'ru_RU' || currentLang === 'ru_RU_CN') {
             try {
-              const hasRu = await checkScriptExists(storyTxt, 'ru_RU', translator);
+              const hasRu = await checkScriptExists(activeStoryTxt, 'ru_RU', translator);
               setIsOriginalScript(!hasRu);
             } catch {
               setIsOriginalScript(false);
@@ -1455,7 +1654,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         }
 
         const parsed = parseStoryScript(script);
-        
+        parsedLinesRef.current = parsed;
+
         // --- Inject end of chapter dialog ---
         parsed.push({
           type: 'dialogue',
@@ -1464,31 +1664,100 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         });
 
         dispatch({ type: 'SET_LINES', payload: parsed });
-        
-        await preloadAssets(parsed, (loaded, total, currentFile) => {
-          setPreloadProgress({ loaded, total, currentFile: currentFile || '' });
-        });
-        
+
+        // К старту грузим начало главы: спрайты, фоны и звук первых сцен
+        // не должны появляться с задержкой посреди реплики.
+        setPreloadFailures([]);
+        // Эффекты первых сцен грузим параллельно с картинками: к экрану
+        // старта они должны быть готовы, иначе `[bgeffect]` догоняет сцену
+        // через несколько секунд (в TL-ST-1 их два подряд).
+        const fxReady = ensureStoryFx(effectNames(parsed.slice(0, PRELOAD_LINE_LIMIT)));
+        // Перед стартом грузим только начало главы: у больших событий
+        // (например, act55side — 136 файлов) полная предзагрузка упирается
+        // в бюджет и выглядит как «история не запускается». Остальное
+        // догружается prefetchStoryImages по мере чтения.
+        // Стартуем, как только готовы картинки первой сцены. Поиск музыки в
+        // манифесте PRTS иногда занимает 10–20 секунд: держать из-за него
+        // экран загрузки нельзя. Музыку догружаем параллельно, к моменту
+        // первой команды `[Music]` она уже готова.
+        const imagePreload = preloadAssets(
+          parsed.slice(0, PRELOAD_LINE_LIMIT),
+          (loaded, total, currentFile) => {
+            setPreloadProgress({ loaded, total, currentFile: currentFile || '' });
+          },
+          controller.signal,
+          45000,
+          { images: true, audio: 'none' }
+        );
+        const musicWarm = preloadAssets(
+          parsed.slice(0, PRELOAD_LINE_LIMIT),
+          undefined,
+          controller.signal,
+          20000,
+          { images: false, audio: 'music' }
+        );
+        const failures = await imagePreload;
+        if (cancelled) return;
+        // Медиаплееры предзагрузки больше не нужны: Chrome лимитирует их
+        // число, и без освобождения следующая история остаётся без звука.
+        // Освобождаем после того, как музыка первой сцены догрузится сама.
+        void musicWarm
+          .then((audioFailures) => {
+            const missing = audioFailures.filter((failure) => failure.type === 'audio');
+            if (missing.length === 0 || audioWarningShownRef.current) return;
+            audioWarningShownRef.current = true;
+            const isRu = getLanguage() === 'ru_RU' || getLanguage() === 'ru_RU_CN';
+            toast.info(
+              isRu
+                ? `Аудио недоступно: ${missing.length}. Музыка или звуки в начале главы могут отсутствовать.`
+                : `Audio unavailable: ${missing.length}. Some music or sounds at the start may be missing.`
+            );
+          })
+          .catch(() => undefined)
+          .finally(() => releasePreloadedMedia());
+        // Аудио на PRTS часто отсутствует (BGM/звуки 404). Это не повод
+        // держать историю на экране загрузки: картинки важнее, а звук
+        // просто не заиграет. Диалог показываем только по изображениям.
+        const blocking = failures.filter((failure) => failure.type !== 'audio');
+        if (failures.length > blocking.length) {
+          console.warn(
+            `[preload] без аудио: ${failures.length - blocking.length} файл(ов)`
+          );
+        }
+        if (blocking.length > 0) {
+          setPreloadFailures(blocking);
+          return;
+        }
+        // Ждём эффекты первых сцен до экрана старта: иначе сцена начинается,
+        // а `[bgeffect]` догоняет её через несколько секунд (в TL-ST-1 их два
+        // подряд, и они должны появиться вместе с картинкой).
+        await fxReady;
         setLoading(false);
+        setIsReadyToStart(true);
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load story');
         setLoading(false);
       }
     };
-    
+
     loadStory();
-  }, [storyTxt, customScript, translator]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [activeStoryTxt, customScript, translator, lang, started]);
 
   // Initialize volumes from audioManager
   useEffect(() => {
     const volumes = audioManager.getVolumes();
-    dispatch({ 
-      type: 'UPDATE_SETTINGS', 
-      payload: { 
-        bgmVolume: volumes.bgm, 
-        sfxVolume: volumes.sfx, 
-        voiceVolume: volumes.voice 
-      } 
+    dispatch({
+      type: 'UPDATE_SETTINGS',
+      payload: {
+        bgmVolume: volumes.bgm,
+        sfxVolume: volumes.sfx,
+        voiceVolume: volumes.voice
+      }
     });
   }, []);
 
@@ -1497,8 +1766,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     return () => {
       processToken.current = {};
       isProcessing.current = false;
+      retryControllerRef.current?.abort();
       clearAudioTimeouts();
       audioManager.stopAll();
+      releasePreloadedMedia();
       CacheService.revokeBlobUrls();
       clearUrlCache();
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
@@ -1514,29 +1785,127 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     }
   }, [lines, loading, isReadyToStart, processLine, storyTxt]);
 
-  if (loading || !isReadyToStart) {
-    return (
-      <StoryLoadingScreen 
-        loading={loading}
-        preloadProgress={preloadProgress}
-        lang={lang}
-        t={t}
-        isOriginalScript={isOriginalScript}
-        onStart={() => {
-          audioManager.unlock();
-          setIsReadyToStart(true);
-        }}
-        onBack={() => {
-          audioManager.stopAll();
-          onBack();
-        }}
-      />
-    );
-  }
+  // Подгружаем картинки ближайших строк, чтобы следующие сцены открывались
+  // без ожидания (фон, CG, персонажи). Окно в 30 строк: при обычном темпе
+  // чтения этого хватает с запасом даже на быстрые клики.
+  useEffect(() => {
+    if (loading || !isReadyToStart || lines.length === 0) return;
+    const upcoming = lines.slice(currentIndex + 1, currentIndex + 31);
+    prefetchStoryImages(upcoming);
+    // Звук следующей сцены (музыка/реплики) тоже должен быть в кэше.
+    prefetchStoryAudio(upcoming);
+    // Эффекты тяжелее картинок (index.json + десяток текстур), поэтому берём
+    // окно шире: к моменту `[bgeffect]` они уже лежат в кэше.
+    prefetchStoryFx(effectNames(lines.slice(currentIndex + 1, currentIndex + 81)));
+  }, [currentIndex, lines, loading, isReadyToStart]);
+
+  // Окно предзагрузки впереди текущей реплики: 80 строк. Не тянем всю
+  // главу целиком — на больших событиях это сотни мегабайт и лишняя
+  // память/трафик на телефоне. При чтении окно сдвигается каждые 25 строк.
+  useEffect(() => {
+    if (loading || !isReadyToStart) return;
+    if (currentIndex !== 0 && currentIndex % 25 !== 0) return;
+    const all = parsedLinesRef.current;
+    if (!all || all.length <= PRELOAD_LINE_LIMIT) return;
+
+    prefetchWindowRef.current?.abort();
+    const controller = new AbortController();
+    prefetchWindowRef.current = controller;
+    const start = Math.min(all.length, currentIndex + 1);
+    const end = Math.min(all.length, start + 80);
+
+    const timer = setTimeout(() => {
+      void preloadAssets(
+        all.slice(start, end),
+        undefined,
+        controller.signal,
+        30000,
+        { images: true, audio: 'none' }
+      )
+        .then((chunkFailures) => {
+          const missingImages = chunkFailures.filter((failure) => failure.type !== 'audio');
+          if (missingImages.length === 0 || backgroundWarningShownRef.current) return;
+          backgroundWarningShownRef.current = true;
+          const isRu = getLanguage() === 'ru_RU' || getLanguage() === 'ru_RU_CN';
+          toast.info(
+            isRu
+              ? `Не удалось загрузить ${missingImages.length} материал(ов) главы. Они могут не появиться в отдельных сценах.`
+              : `${missingImages.length} chapter asset(s) could not be loaded and may be missing in some scenes.`
+          );
+        })
+        .catch(() => undefined);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, loading, isReadyToStart, storyTxt]);
+
+  useEffect(
+    () => () => {
+      prefetchWindowRef.current?.abort();
+    },
+    []
+  );
+
+  // Если выбраны обе сцены операции, заранее тянем начало второй. Переход
+  // «до боя → после боя» не должен показывать экран загрузки посреди чтения.
+  useEffect(() => {
+    if (loading || !isReadyToStart) return;
+    if (!sceneSelection.end || !sceneOptions?.beg || !sceneOptions?.end) return;
+    if (activeStoryTxt !== sceneOptions.beg) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const nextScript = await fetchStoryScript(
+          sceneOptions.end!,
+          undefined,
+          false,
+          translator
+        );
+        if (controller.signal.aborted) return;
+        const nextLines = parseStoryScript(nextScript);
+        await preloadAssets(
+          nextLines.slice(0, PRELOAD_LINE_LIMIT),
+          undefined,
+          controller.signal,
+          30000,
+          { images: true, audio: 'none' }
+        );
+        await preloadAssets(
+          nextLines.slice(0, PRELOAD_LINE_LIMIT),
+          undefined,
+          controller.signal,
+          20000,
+          { images: false, audio: 'music' }
+        );
+      } catch {
+        /* вторая сцена догрузится при переходе */
+      }
+    }, 2500);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    loading,
+    isReadyToStart,
+    activeStoryTxt,
+    sceneOptions?.beg,
+    sceneOptions?.end,
+    sceneSelection.end,
+    translator,
+  ]);
+
+  // Текущая глава получает приоритет в фоновой синхронизации текста.
+  useEffect(() => {
+    if (!activeStoryTxt) return;
+    prioritizeStoryText(activeStoryTxt);
+  }, [activeStoryTxt]);
 
   if (error) {
     return (
-      <StoryErrorScreen 
+      <StoryErrorScreen
         error={error}
         t={t}
         onBack={() => {
@@ -1548,13 +1917,164 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
     );
   }
 
-  const isAnyModalOpen = showSettings || showBackConfirm || showLog || showBugReport;
+  const retryPreload = async () => {
+    const parsed = parsedLinesRef.current;
+    if (!parsed) return;
+    retryControllerRef.current?.abort();
+    const controller = new AbortController();
+    retryControllerRef.current = controller;
+    setPreloadFailures([]);
+    setPreloadProgress({ loaded: 0, total: 0, currentFile: '' });
+    const failures = await preloadAssets(
+      parsed.slice(0, PRELOAD_LINE_LIMIT),
+      (loaded, total, currentFile) => {
+        setPreloadProgress({ loaded, total, currentFile: currentFile || '' });
+      },
+      controller.signal,
+      45000,
+      { images: true, audio: 'none' }
+    );
+    if (controller.signal.aborted) return;
+    releasePreloadedMedia();
+    void preloadAssets(
+      parsed.slice(0, PRELOAD_LINE_LIMIT),
+      undefined,
+      controller.signal,
+      20000,
+      { images: false, audio: 'music' }
+    ).catch(() => []);
+    const blocking = failures.filter((failure) => failure.type !== 'audio');
+    if (blocking.length > 0) {
+      setPreloadFailures(blocking);
+      return;
+    }
+    setLoading(false);
+    setIsReadyToStart(true);
+  };
+
+  const continueWithoutFailures = () => {
+    setPreloadFailures([]);
+    setLoading(false);
+    setIsReadyToStart(true);
+  };
+
+  // Первый запуск истории: короткая подсказка больше не всплывает поверх сцены;
+  // текст остаётся только на экране загрузки и в памятке «Как читать».
+
+  if (loading || !isReadyToStart) {
+    return (
+      <>
+      <StoryLoadingScreen
+        loading={loading}
+        started={started}
+        preloadProgress={preloadProgress}
+        lang={lang}
+        t={t}
+        isOriginalScript={isOriginalScript}
+        operation={operation}
+        onSelectLang={handleSelectLang}
+        settings={settings}
+        sceneOptions={sceneOptions}
+        sceneSelection={sceneSelection}
+        onToggleScene={(part) =>
+          setSceneSelection((prev) => ({ ...prev, [part]: !prev[part] }))
+        }
+        onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
+        onStartLoading={() => {
+          audioManager.unlock();
+          // Первая выбранная сцена: до боя, иначе — после боя.
+          const first = sceneSelection.beg
+            ? sceneOptions?.beg
+            : sceneOptions?.end;
+          if (first && first !== activeStoryTxt) {
+            setActiveStoryTxt(first);
+          }
+          setStarted(true);
+        }}
+        onBack={() => {
+          audioManager.stopAll();
+          onBack();
+        }}
+        onShowHelp={() => setShowHelp(true)}
+      />
+      <StoryHelpModal
+        show={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
+      {preloadFailures.length > 0 && (
+        <AssetPreloadDialog
+          failures={preloadFailures}
+          isRu={lang === 'ru_RU' || lang === 'ru_RU_CN'}
+          onRetry={retryPreload}
+          onContinue={continueWithoutFailures}
+        />
+      )}
+      </>
+    );
+  }
+
+  const finishVideo = () => {
+    const nextIndex = videoNextIndexRef.current;
+    if (nextIndex < 0) return;
+    videoNextIndexRef.current = -1;
+    setActiveVideo(null);
+    setVideoPaused(false);
+    setVideoProgress(0);
+    dispatch({ type: 'SET_CINEMATIC', payload: false });
+    processLine(nextIndex);
+  };
+
+  const isAnyModalOpen = showSettings || showBackConfirm || showLog || showBugReport || showHelp;
   const shouldShake = isShaking && !isAnyModalOpen && (settings.shakeIntensity ?? 1) > 0;
 
+  const renderBgEffect = (effect: {
+    id: string;
+    name: string;
+    layer: number;
+    x?: number;
+    y?: number;
+  }) => (
+    <div
+      key={effect.id}
+      // Эффект всегда выше картинок: у CG-слоя `z-24`, поэтому слой эффекта
+      // стоит на том же уровне и выигрывает по порядку в DOM. Ниже блокера
+      // кадра (`z-25`) и интерфейса.
+      className="pointer-events-none absolute inset-0 z-[24]"
+      style={{
+        transform: `translate(${((effect.x ?? 0) / 1280) * 100}%, ${(-(effect.y ?? 0) / 720) * 100}%)`,
+      }}
+    >
+      <StoryBgEffectLayer
+        effect={{ name: effect.name, layer: effect.layer }}
+      />
+    </div>
+  );
+
+  const renderActiveEffect = (effect: StoryActiveEffect) => (
+    <motion.div
+      key={effect.id}
+      className="pointer-events-none absolute inset-0 z-[24]"
+      initial={{
+        x: `${((effect.x ?? 0) / 1280) * 100}%`,
+        y: `${(-(effect.y ?? 0) / 720) * 100}%`,
+      }}
+      animate={{
+        x: `${((effect.xto ?? effect.x ?? 0) / 1280) * 100}%`,
+        y: `${(-(effect.yto ?? effect.y ?? 0) / 720) * 100}%`,
+      }}
+      transition={{ duration: Math.max(0, effect.moveTime ?? 0), ease: 'linear' }}
+    >
+      <StoryBgEffectLayer
+        effect={{ name: effect.name, layer: effect.layer }}
+      />
+    </motion.div>
+  );
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center select-none touch-none"
+      onPointerDownCapture={() => audioManager.unlock()}
       onPointerDown={controls.handlePointerDown}
       onPointerMove={controls.handlePointerMove}
       onPointerUp={controls.handlePointerUp}
@@ -1562,7 +2082,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
       onPointerCancel={controls.handlePointerUp}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <motion.div 
+      <motion.div
         animate={shouldShake ? (shakeConfig ? {
           x: [-shakeConfig.x * (settings.shakeIntensity ?? 1), shakeConfig.x * (settings.shakeIntensity ?? 1), -shakeConfig.x * (settings.shakeIntensity ?? 1), shakeConfig.x * (settings.shakeIntensity ?? 1), 0],
           y: [-shakeConfig.y * (settings.shakeIntensity ?? 1), shakeConfig.y * (settings.shakeIntensity ?? 1), -shakeConfig.y * (settings.shakeIntensity ?? 1), shakeConfig.y * (settings.shakeIntensity ?? 1), 0],
@@ -1586,31 +2106,51 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           unit="%"
           className="absolute inset-0 origin-center pointer-events-none"
         >
-          <BackgroundLayer 
-            bgUrl={bgUrl} 
-            imageUrl={imageUrl} 
-            imageTween={imageTween} 
+          <BackgroundLayer
+            bgUrl={bgUrl}
+            imageUrl={imageUrl}
+            imageTween={imageTween}
             bgTween={state.bgTween}
           />
 
-          <CharacterLayer 
-            characterSlots={characterSlots} 
+          {bgEffects
+            .filter((effect) => effect.layer <= 1)
+            .map(renderBgEffect)}
+
+          {activeEffects
+            .filter((effect) => effect.layer <= 2)
+            .map(renderActiveEffect)}
+
+          <CharacterLayer
+            characterSlots={characterSlots}
           />
-          
-          <CharacterCutinLayer 
-            characterCutin={state.characterCutin} 
+
+          {bgEffects
+            .filter((effect) => effect.layer >= 2)
+            .map(renderBgEffect)}
+
+          {activeEffects
+            .filter((effect) => effect.layer === 3)
+            .map(renderActiveEffect)}
+
+          <CharacterCutinLayer
+            characterCutin={state.characterCutin}
           />
+
+          {activeEffects
+            .filter((effect) => effect.layer >= 4)
+            .map(renderActiveEffect)}
         </CssTransformBox>
 
-        <CinematicEffectsLayer 
-          isFlashing={isFlashing} 
+        <CinematicEffectsLayer
+          isFlashing={isFlashing}
           cameraEffect={cameraEffect}
-          blocker={blocker} 
-          activeAnimText={processedAnimText} 
+          blocker={blocker}
+          activeAnimText={processedAnimText}
         />
-        
-        <StickerLayer 
-          stickers={processedStickers} 
+
+        <StickerLayer
+          stickers={processedStickers}
           isSkipping={isSkipping}
           shouldSkipTypewriter={shouldSkipTypewriter}
           skipSpeed={settings.skipSpeed || 4}
@@ -1618,7 +2158,62 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           onTypewriterFinished={() => dispatch({ type: 'SET_TYPEWRITER_FINISHED', payload: true })}
         />
 
-        <DialogueUI 
+        {activeVideo && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black">
+            <video
+              key={activeVideo}
+              ref={videoRef}
+              src={activeVideo}
+              autoPlay
+              playsInline
+              className="h-full w-full object-contain"
+              onClick={() => {
+                const video = videoRef.current;
+                if (!video) return;
+                if (video.paused) video.play().catch(() => {});
+                else video.pause();
+              }}
+              onPlay={() => setVideoPaused(false)}
+              onPause={() => setVideoPaused(true)}
+              onTimeUpdate={(event) => {
+                const video = event.currentTarget;
+                if (video.duration > 0) {
+                  setVideoProgress((video.currentTime / video.duration) * 100);
+                }
+              }}
+              onEnded={finishVideo}
+              onError={finishVideo}
+            />
+
+            {videoPaused && (
+              <button
+                type="button"
+                onClick={() => videoRef.current?.play().catch(() => {})}
+                aria-label="Play"
+                className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-white/80"
+              >
+                <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/30 bg-black/35 text-2xl backdrop-blur-xs">
+                  ▶
+                </span>
+              </button>
+            )}
+
+            {/* Та же SKIP-кнопка, что в читалке: сверху справа, без рамки */}
+            <button
+              type="button"
+              onClick={finishVideo}
+              className="absolute right-3 top-3 z-20 p-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-white/60 drop-shadow-lg transition-colors hover:text-white sm:right-6 sm:top-5 sm:p-2 sm:text-sm md:text-base"
+            >
+              SKIP
+            </button>
+
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.06]">
+              <div className="h-full bg-white/25 transition-[width]" style={{ width: `${videoProgress}%` }} />
+            </div>
+          </div>
+        )}
+
+        <DialogueUI
           showUI={showUI && !isCinematic}
           currentIndex={currentIndex}
           currentSpeaker={processedSpeaker}
@@ -1658,7 +2253,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           )}
         </AnimatePresence>
 
-        <ControlsOverlay 
+        <ControlsOverlay
           showUI={showUI}
           isAuto={isAuto}
           isSkipping={isSkipping}
@@ -1672,7 +2267,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
           isRead={isRead}
           onToggleRead={onToggleRead}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
-          onToggleSkip={() => dispatch({ type: 'SET_SKIPPING', payload: !isSkipping })}
+          onToggleSkip={() => {
+            if (isSkipping) {
+              dispatch({ type: 'SET_SKIPPING', payload: false });
+              return;
+            }
+            setShowSkipConfirm(true);
+          }}
           onBackClick={() => dispatch({ type: 'SET_SHOW_BACK_CONFIRM', payload: true })}
           onSettingsClick={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })}
           onLogClick={() => dispatch({ type: 'SET_SHOW_LOG', payload: true })}
@@ -1696,7 +2297,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         }}
       />
 
-      <LogModal 
+      <LogModal
         show={showLog}
         history={processedHistory}
         fullScript={fullScriptText}
@@ -1705,7 +2306,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         t={t}
       />
 
-      <SettingsModal 
+      <SettingsModal
         show={showSettings}
         settings={settings}
         onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
@@ -1713,7 +2314,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         t={t}
       />
 
-      <BackConfirmation 
+      <BackConfirmation
         show={showBackConfirm}
         onConfirm={() => {
           audioManager.stopAll();
@@ -1723,7 +2324,20 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ storyTxt, customScript
         t={t}
       />
 
-      <OrientationOverlay />
+      <SkipConfirmation
+        show={showSkipConfirm}
+        operation={operation}
+        lang={lang}
+        onCancel={() => setShowSkipConfirm(false)}
+        onConfirm={() => {
+          setShowSkipConfirm(false);
+          // «Пропустить историю» = выйти из сцены в список глав.
+          audioManager.stopAll();
+          onBack();
+        }}
+      />
+
+      <OrientationOverlay lang={lang} />
     </div>
   );
 };

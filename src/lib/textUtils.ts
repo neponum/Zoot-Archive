@@ -16,8 +16,53 @@ export interface TextSegment {
  * - <size=...>...</size>
  * Strips raw internal tags while preserving character stream for typewriter effect.
  */
-export const parseTags = (input: string): TextSegment[] => {
-  if (!input) return [];
+/**
+ * Приводит игровые inline-теги к обычному тексту.
+ *
+ * - `<p=1>строка</><p=2>строка</>` — это разбивка на строки (подписи места
+ *   и времени, двуязычные цитаты), а не rich-text. Превращаем в `\n`.
+ * - `<@tu.kw>слово</>` — подсветка термина в туториале; теги убираем,
+ *   `</>` не должен становиться переносом строки.
+ *
+ * Важно: `</>` закрывает и `<p=N>`, и `<@tu.*>`. Поэтому перенос ставим
+ * только между `<p>`-блоками, а не после каждого `</>`.
+ */
+export const normalizeInlineTags = (input: string): string => {
+  if (!input) return '';
+
+  let text = input;
+
+  if (/<p=\d+>/i.test(text)) {
+    text = text
+      .split(/<p=\d+>/i)
+      .map((part) => {
+        // Последний `</>` в блоке закрывает сам <p>, остальные — inline-теги.
+        const lastClose = part.lastIndexOf('</>');
+        const withoutParagraphClose =
+          lastClose === -1
+            ? part
+            : part.slice(0, lastClose) + part.slice(lastClose + 3);
+        return withoutParagraphClose
+          .replace(/<\/>/g, '')
+          .replace(/<@tu\.[a-z]+>/gi, '')
+          .trim();
+      })
+      .filter((part, index) => index > 0 || part.length > 0)
+      .join('\n');
+  } else {
+    text = text.replace(/<\/>/g, '').replace(/<@tu\.[a-z]+>/gi, '');
+  }
+
+  return text.replace(/\n{3,}/g, '\n\n').trim();
+};
+
+export const parseTags = (rawInput: string): TextSegment[] => {
+  if (!rawInput) return [];
+
+  // `<p=1>строка</><p=2>строка</>` — это разбивка на строки, а не rich-text.
+  // Обрабатываем и здесь, чтобы теги не просачивались в компоненты, которые
+  // рендерят текст без парсера сценария (стикеры, субтитры).
+  const input = normalizeInlineTags(rawInput);
 
   const segments: TextSegment[] = [];
   // Regex matching color, bold, italic, underline, size and closing tags

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { CssTransformBox } from './CssTransformBox';
-import { cleanAndUnwrapUrl } from '../../services/storyService';
+import { handleImageFallback } from '../../lib/imageFallback';
 
 interface BackgroundLayerProps {
   bgUrl: string | null;
@@ -71,14 +71,19 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
   const rawScaleX = imageTween ? (imageTween.xScaleTo !== undefined ? imageTween.xScaleTo : (imageTween.xScale ?? 1)) : 1;
   const rawScaleY = imageTween ? (imageTween.yScaleTo !== undefined ? imageTween.yScaleTo : (imageTween.yScale ?? 1)) : 1;
 
-  const imgScaleX = normalizeScale(rawScaleX);
-  const imgScaleY = normalizeScale(rawScaleY);
+  // CG всегда должен закрывать экран: масштаб меньше 1 даёт «рамку» вокруг
+  // картинки и просвет фона, чего в игре нет. Уменьшать можно только зумом
+  // внутри (scale > 1), поэтому нижнюю границу держим на 1.
+  const coverScale = (value: number): number => Math.max(1, value);
+
+  const imgScaleX = coverScale(normalizeScale(rawScaleX));
+  const imgScaleY = coverScale(normalizeScale(rawScaleY));
   const rawImgX = imageTween ? (imageTween.xTo !== undefined ? imageTween.xTo : (imageTween.x ?? 0)) : 0;
   const rawImgY = imageTween ? (imageTween.yTo !== undefined ? imageTween.yTo : (imageTween.y ?? 0)) : 0;
   const imgX = normalizeCoordX(rawImgX, imgScaleX);
   const imgY = normalizeCoordY(rawImgY, imgScaleY);
-  const imgScaleXFrom = imageTween?.xScaleFrom !== undefined ? normalizeScale(imageTween.xScaleFrom) : undefined;
-  const imgScaleYFrom = imageTween?.yScaleFrom !== undefined ? normalizeScale(imageTween.yScaleFrom) : undefined;
+  const imgScaleXFrom = imageTween?.xScaleFrom !== undefined ? coverScale(normalizeScale(imageTween.xScaleFrom)) : undefined;
+  const imgScaleYFrom = imageTween?.yScaleFrom !== undefined ? coverScale(normalizeScale(imageTween.yScaleFrom)) : undefined;
   const imgXFrom = imageTween?.xFrom !== undefined ? normalizeCoordX(imageTween.xFrom, imgScaleXFrom ?? imgScaleX) : undefined;
   const imgYFrom = imageTween?.yFrom !== undefined ? normalizeCoordY(imageTween.yFrom, imgScaleYFrom ?? imgScaleY) : undefined;
   const imgDuration = isImageTween ? (imageTween?.duration !== undefined ? imageTween.duration : 1.0) : 0;
@@ -125,13 +130,9 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
                     onLoad={(e) => {
                       e.currentTarget.style.display = 'block';
                     }}
+                    decoding="async"
                     onError={(e) => {
-                      const currentSrc = e.currentTarget.src;
-                      const cleanUrl = cleanAndUnwrapUrl(bgUrl || '');
-                      if (!currentSrc.includes('/api/proxy') && cleanUrl) {
-                        e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
-                        return;
-                      }
+                      if (handleImageFallback(e, bgUrl || '')) return;
                       e.currentTarget.style.display = 'none';
                     }}
                   />
@@ -178,13 +179,9 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
                 onLoad={(e) => {
                   e.currentTarget.style.display = 'block';
                 }}
+                decoding="async"
                 onError={(e) => {
-                  const currentSrc = e.currentTarget.src;
-                  const cleanUrl = cleanAndUnwrapUrl(imageUrl || '');
-                  if (!currentSrc.includes('/api/proxy') && cleanUrl) {
-                    e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
-                    return;
-                  }
+                  if (handleImageFallback(e, imageUrl || '')) return;
                   e.currentTarget.style.display = 'none';
                 }}
               />

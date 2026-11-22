@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Smartphone } from 'lucide-react';
+import { UI_STRINGS } from '../../translations';
+import type { Language } from '../../types';
 
-export const OrientationOverlay: React.FC = () => {
+interface OrientationOverlayProps {
+  /** Язык интерфейса: подсказка переводится на все языки проекта. */
+  lang?: Language;
+}
+
+export const OrientationOverlay: React.FC<OrientationOverlayProps> = ({ lang = 'en_US' }) => {
   const [showOverlay, setShowOverlay] = useState(false);
+  const t = UI_STRINGS[lang] as Record<string, string>;
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -56,10 +64,10 @@ export const OrientationOverlay: React.FC = () => {
             <Smartphone className="w-24 h-24 text-white/40" />
           </motion.div>
           <h2 className="text-white text-2xl font-bold tracking-[0.2em] mb-4 uppercase">
-            Please Rotate Your Device
+            {t.rotate_title || 'Please rotate your device'}
           </h2>
           <p className="text-white/60 text-lg max-w-xs leading-relaxed">
-            This experience is optimized for landscape orientation.
+            {t.rotate_body || 'This experience is optimized for landscape orientation.'}
           </p>
         </motion.div>
       )}

@@ -1,4 +1,5 @@
 import { StoryLine } from '../../types';
+import { normalizeInlineTags } from '../../lib/textUtils';
 import { resolveStoryValue, resolveStoryVariablesInText } from './storyVariablesService';
 
 export enum TokenType {
@@ -168,6 +169,7 @@ export class StoryParser {
     let hasSticker = false;
     let hasHeader = false;
     let hasDelay = false;
+    let hasPopup = false;
     const tagsOnThisLine: { name: string; params: Record<string, string>; original: string }[] = [];
 
     while (!this.isType(TokenType.NEWLINE) && !this.isType(TokenType.EOF)) {
@@ -178,6 +180,7 @@ export class StoryParser {
         if (tag.name.toLowerCase() === 'sticker') hasSticker = true;
         if (tag.name.toLowerCase() === 'header') hasHeader = true;
         if (tag.name.toLowerCase() === 'delay') hasDelay = true;
+        if (tag.name.toLowerCase() === 'popupdialog' || tag.name.toLowerCase() === 'narration') hasPopup = true;
       } else if (this.isType(TokenType.TEXT)) {
         lineText += this.eat(TokenType.TEXT).value;
       } else {
@@ -200,13 +203,13 @@ export class StoryParser {
 
     // Process dialogue
     const rawDialogueText = lineText.trim();
-    if (rawDialogueText && rawDialogueText !== 'undefined' && !hasAnimText && !hasHeader && !hasDelay) {
+    if (rawDialogueText && rawDialogueText !== 'undefined' && !hasAnimText && !hasHeader && !hasDelay && !hasPopup) {
       const resolvedText = resolveStoryVariablesInText(rawDialogueText);
       const resolvedCharName = this.currentCharacterName ? resolveStoryVariablesInText(this.currentCharacterName) : undefined;
       lineObjects.push({
         type: 'dialogue',
         characterName: resolvedCharName,
-        text: resolvedText
+        text: normalizeInlineTags(resolvedText)
       });
     }
 
@@ -666,7 +669,9 @@ export class StoryParser {
       case 'decision':
         return {
           type: 'decision',
-          options: params.options ? params.options.split(';').map(s => s.trim()) : [],
+          options: params.options
+            ? params.options.split(';').map((option) => normalizeInlineTags(option.trim()))
+            : [],
           values: params.values ? params.values.split(';').map(s => s.trim()) : [],
           originalTag: original
         };
@@ -723,8 +728,8 @@ export class StoryParser {
 
       case 'animtext': {
         let processedText = lineText.trim();
-        processedText = processedText.replace(/<\/>\s*<P=\d+>/g, '\\n');
-        processedText = processedText.replace(/<\/>/g, '\\n');
+        processedText = processedText.replace(/<\/>\s*<p=\d+>/gi, '\\n');
+        processedText = processedText.replace(/<\/>/gi, '\\n');
         processedText = processedText.replace(/<[^>]*>/g, '');
         processedText = processedText.replace(/(\\n)+$/, '');
         
@@ -752,7 +757,29 @@ export class StoryParser {
         return {
           type: lowerTagName === 'playeffect' ? 'playeffect' : 'stopeffect',
           effect: params.effect || params.name,
+          layer: params.layer ? parseInt(params.layer, 10) : undefined,
+          x: params.x !== undefined ? parseFloat(params.x) : undefined,
+          y: params.y !== undefined ? parseFloat(params.y) : undefined,
+          xTo: params.xto !== undefined ? parseFloat(params.xto) : undefined,
+          yTo: params.yto !== undefined ? parseFloat(params.yto) : undefined,
+          moveTime: params.movetime !== undefined ? parseFloat(params.movetime) : undefined,
           duration: params.duration ? parseFloat(params.duration) : (params.fadetime ? parseFloat(params.fadetime) : undefined),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'effect':
+        // `[effect]` без имени снимает эффекты того же слоя.
+        return {
+          type: 'playeffect',
+          effect: params.effect || params.name,
+          layer: params.layer ? parseInt(params.layer, 10) : undefined,
+          x: params.x !== undefined ? parseFloat(params.x) : undefined,
+          y: params.y !== undefined ? parseFloat(params.y) : undefined,
+          xTo: params.xto !== undefined ? parseFloat(params.xto) : undefined,
+          yTo: params.yto !== undefined ? parseFloat(params.yto) : undefined,
+          moveTime: params.movetime !== undefined ? parseFloat(params.movetime) : undefined,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
           block: params.block === 'true',
           originalTag: original
         };
@@ -761,7 +788,9 @@ export class StoryParser {
       case 'video':
         return {
           type: 'playvideo',
-          src: params.src || params.name,
+          src: params.res || params.src || params.name || params.file,
+          duration: this.parseTimeParam(params.fadeoutdelay, params.duration, params.time),
+          block: params.block !== 'false',
           originalTag: original
         };
 
@@ -876,6 +905,239 @@ export class StoryParser {
           duration: this.parseTimeParam(params.duration, params.time),
           aFrom: params.afrom !== undefined ? parseFloat(params.afrom) : undefined,
           aTo: params.ato !== undefined ? parseFloat(params.ato) : undefined,
+          originalTag: original
+        };
+
+      case 'narration':
+        return {
+          type: 'subtitle',
+          text: normalizeInlineTags(
+            (params.text || lineText.trim() || '').replace(/<[^>]*>/g, '')
+          ),
+          originalTag: original
+        };
+
+      case 'popupdialog':
+        return {
+          type: 'popup',
+          title: params.dialoghead || params.title,
+          text: normalizeInlineTags(
+            (params.text || lineText.trim() || '').replace(/<[^>]*>/g, '')
+          ),
+          originalTag: original
+        };
+
+      case 'musicvolume':
+        return {
+          type: 'soundvolume',
+          volume: params.volume !== undefined ? parseFloat(params.volume) : 1,
+          channel: 'music',
+          duration: this.parseTimeParam(params.fadetime, params.time, params.duration),
+          originalTag: original
+        };
+
+      case 'bgeffect':
+        // `[bgeffect(name="$eb_snow", layer=1)]` включает фоновый эффект,
+        // пустой `[bgeffect]` его снимает.
+        return {
+          type: 'bgeffect',
+          assetName: params.name || params.effect || undefined,
+          layer: params.layer ? parseInt(params.layer, 10) : 1,
+          x: params.x !== undefined ? parseFloat(params.x) : undefined,
+          y: params.y !== undefined ? parseFloat(params.y) : undefined,
+          duration: this.parseTimeParam(params.fadetime, params.duration, params.time),
+          originalTag: original
+        };
+
+      case 'gridbg':
+      case 'largebg':
+      case 'verticalbg':
+        return {
+          type: 'background',
+          assetName: params.image || params.name || params.bgid || params.id || params._direct,
+          duration: this.parseTimeParam(params.fadetime, params.time, params.duration),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'largebgtween':
+        return {
+          type: 'backgroundtween',
+          assetName: params.image || params.name || params.bgid || params.id || params._direct,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          ease: params.ease,
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'playanim':
+        return {
+          type: 'characteraction',
+          assetName: params.name,
+          actionType: params.anim || params.type || 'play',
+          duration: this.parseTimeParam(params.fadetime, params.duration, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'camerafocusto':
+      case 'camerascale':
+        return {
+          type: 'cameratween',
+          scale: params.scale ? parseFloat(params.scale) : undefined,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          ease: params.ease,
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'div':
+        return {
+          type: 'header',
+          originalTag: original
+        };
+
+      case 'emoji':
+      case 'stickertween':
+      case 'timersticker':
+        return {
+          type: 'sticker',
+          id: params.id,
+          text: params.text || params.emoji || params.id,
+          x: params.x ? parseFloat(params.x) : undefined,
+          y: params.y ? parseFloat(params.y) : undefined,
+          size: params.size ? parseFloat(params.size) : undefined,
+          duration: this.parseTimeParam(params.duration, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'theater':
+        return {
+          type: 'cameraeffect',
+          effect: 'Theater',
+          duration: this.parseTimeParam(params.duration, params.fadetime),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'imagerotate':
+        return {
+          type: 'imagetween',
+          assetName: params.image || params.name,
+          duration: this.parseTimeParam(params.duration, params.fadetime),
+          ease: params.ease,
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'foginview':
+      case 'fognotinview':
+        return {
+          type: 'cameraeffect',
+          effect: lowerTagName === 'foginview' ? 'FogIn' : 'FogOut',
+          duration: this.parseTimeParam(params.duration, params.fadetime),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'finisheffect':
+        // `[finisheffect(key="...")]` гасит конкретный эффект `[effect]`.
+        return {
+          type: 'stopeffect',
+          effect: params.key || params.name || params.effect,
+          layer: params.layer ? parseInt(params.layer, 10) : undefined,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'createeffect':
+      case 'glitchtween':
+        // Боевые привязки (`id=`/`key=`) — без визуального префаба.
+        if (!params.effect && !params.name && !params.type) {
+          return { type: 'unknown', originalTag: original };
+        }
+        return {
+          type: 'playeffect',
+          effect: params.effect || params.name || params.type,
+          layer: params.layer ? parseInt(params.layer, 10) : undefined,
+          x: params.x !== undefined ? parseFloat(params.x) : undefined,
+          y: params.y !== undefined ? parseFloat(params.y) : undefined,
+          xTo: params.xto !== undefined ? parseFloat(params.xto) : undefined,
+          yTo: params.yto !== undefined ? parseFloat(params.yto) : undefined,
+          moveTime: params.movetime !== undefined ? parseFloat(params.movetime) : undefined,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'resetcamera':
+        return {
+          type: 'cameraset',
+          x: 0,
+          y: 0,
+          z: 0,
+          scale: 1,
+          originalTag: original
+        };
+
+      case 'move':
+        return {
+          type: 'characteraction',
+          assetName: params.name || params.target,
+          actionType: 'move',
+          xpos: params.x !== undefined ? parseFloat(params.x) : (params.xpos !== undefined ? parseFloat(params.xpos) : undefined),
+          ypos: params.y !== undefined ? parseFloat(params.y) : (params.ypos !== undefined ? parseFloat(params.ypos) : undefined),
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'title':
+        return {
+          type: 'header',
+          originalTag: original
+        };
+
+      case 'spellsticker':
+        return {
+          type: 'sticker',
+          id: params.id,
+          text: normalizeInlineTags(params.text || params.name || params.id || ''),
+          x: params.x ? parseFloat(params.x) : undefined,
+          y: params.y ? parseFloat(params.y) : undefined,
+          size: params.size ? parseFloat(params.size) : undefined,
+          duration: this.parseTimeParam(params.duration, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'spellstickerclear':
+        return {
+          type: 'stickerclear',
+          originalTag: original
+        };
+
+      case 'imgeffect':
+      case 'warp':
+      case 'focusparam':
+        return {
+          type: 'cameraeffect',
+          effect: params.effect || params.type || lowerTagName,
+          duration: this.parseTimeParam(params.duration, params.fadetime, params.time),
+          block: params.block === 'true',
+          originalTag: original
+        };
+
+      case 'setposition':
+        return {
+          type: 'characteraction',
+          assetName: params.name,
+          actionType: 'move',
+          xpos: params.x !== undefined ? parseFloat(params.x) : undefined,
+          ypos: params.y !== undefined ? parseFloat(params.y) : undefined,
+          slot: params.slot,
           originalTag: original
         };
 

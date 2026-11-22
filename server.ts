@@ -6,7 +6,6 @@ import dns from "dns";
 import { config } from "./server/config.js";
 import proxyRoutes from "./server/routes/proxy.js";
 import bugRoutes from "./server/routes/bug.js";
-import translateRoutes from "./server/routes/translate.js";
 import submitRoutes from "./server/routes/submit.js";
 
 dns.setDefaultResultOrder("ipv4first");
@@ -64,30 +63,33 @@ async function startServer() {
     next();
   });
 
-  // Global rate limiter to prevent general abuse
-  const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: "Too many requests from this IP, please try again after 15 minutes"
-  });
-  app.use(globalLimiter);
+  // Глобальный лимитер — страховка от флуда в проде и только для API:
+  // статика (в dev это вообще каждый ассет) не должна съедать квоту,
+  // иначе обычное тестирование упирается в «Too many requests».
+  const distPath = path.join(process.cwd(), 'dist');
+  const hasBuiltApp = fs.existsSync(path.join(distPath, 'index.html'));
+  const isDev = process.env.NODE_ENV === 'development' || !hasBuiltApp;
+
+  if (!isDev) {
+    const globalLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 3000,
+      standardHeaders: true,
+      legacyHeaders: false,
+      skip: (req) => !req.path.startsWith('/api'),
+      message: { error: 'Too many requests from this IP, please try again later' }
+    });
+    app.use(globalLimiter);
+  }
 
   app.use(express.json());
 
   // API Routes FIRST
   app.use("/api/proxy", proxyRoutes);
   app.use("/api/bug-report", bugRoutes);
-  app.use("/api/translate", translateRoutes);
   app.use("/api/submit", submitRoutes);
 
   // Vite middleware for development (or static serving for production)
-  const distPath = path.join(process.cwd(), 'dist');
-  const hasBuiltApp = fs.existsSync(path.join(distPath, 'index.html'));
-
-  const isDev = process.env.NODE_ENV === "development" || !hasBuiltApp;
-
   if (isDev) {
     console.log("Running in development mode. Starting Vite dev server middleware...");
     const { createServer: createViteServer } = await import("vite");

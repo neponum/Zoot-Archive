@@ -14,6 +14,11 @@ import { CacheService } from '../cacheService';
  *
  * Игровые пути выглядят как `audio/sound_beta_2/music/<папка>/<файл>`, а
  * раздаются как `assets/audio/music/<папка>/<файл>.mp3`.
+ *
+ * Важно: поиск сериализован. Если запускать десятки запросов разом (как это
+ * делала предзагрузка главы), хост отвечает 429/5xx, резолвер молча уходил в
+ * перебор папок и отдавал 404-URL. Теперь запросы идут по одному, с
+ * повторами, а неудачный запрос не считается «трека нет».
  */
 
 const API_BASE = 'https://torappu.prts.wiki/api/v1';
@@ -22,6 +27,7 @@ const VERSION_CACHE_KEY = 'prts_asset_version_v1';
 const MANIFEST_CACHE_KEY = 'prts_audio_manifest_v1';
 /** Сколько живёт отрицательный ответ: трек могут добавить на хосте позже. */
 const NEGATIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SEARCH_ATTEMPTS = 3;
 
 interface ManifestHit {
   name: string;
@@ -29,8 +35,29 @@ interface ManifestHit {
   nodeType: string;
 }
 
+interface SearchResult {
+  hit: ManifestHit | null;
+  /** Запрос не удался (429/5xx/сеть) — это не «файла нет». */
+  failed: boolean;
+}
+
 let versionPromise: Promise<number | null> | null = null;
-let negativeHits = new Map<string, number>();
+const negativeHits = new Map<string, number>();
+const pendingSearches = new Map<string, Promise<string | null>>();
+
+/** Очередь запросов к манифесту: хост не любит параллельные пачки. */
+let searchChain: Promise<unknown> = Promise.resolve();
+
+function enqueueSearch<T>(task: () => Promise<T>): Promise<T> {
+  const result = searchChain.then(task, task);
+  searchChain = result.then(
+    () => undefined,
+    () => undefined
+  );
+  return result;
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** `audio/sound_beta_2/music/beta1/x.mp3` → `assets/audio/music/beta1/x.mp3` */
 function manifestPathToUrl(path: string): string {
@@ -90,15 +117,17 @@ async function fetchLatestVersionId(): Promise<number | null> {
   return versionPromise;
 }
 
-async function searchManifest(versionId: number, query: string): Promise<ManifestHit | null> {
+async function searchManifestOnce(versionId: number, query: string): Promise<SearchResult> {
   try {
     const response = await fetch(
       `${API_BASE}/manifest/${versionId}/search?q=${encodeURIComponent(query)}`,
       { headers: { Accept: 'application/json' } }
     );
-    if (!response.ok) return null;
+    if (!response.ok) {
+      return { hit: null, failed: response.status !== 404 };
+    }
     const hits = (await response.json()) as ManifestHit[];
-    if (!Array.isArray(hits)) return null;
+    if (!Array.isArray(hits)) return { hit: null, failed: true };
 
     const files = hits.filter((hit) => hit.nodeType === 'file');
     // В манифесте путь и имя БЕЗ расширения (`.../m_dia_babel_loop`), поэтому
@@ -107,45 +136,84 @@ async function searchManifest(versionId: number, query: string): Promise<Manifes
     // Короткое имя вроде `midautumn` совпадает и с артом магазина, и с треком:
     // сперва пробуем папку music/, затем любой аудиофайл. Не-аудио не берём никогда —
     // иначе в плеер уедет URL картинки.
-    return (
-      audio.find((hit) => hit.path.toLowerCase().includes('/music/')) ??
+    const hit =
+      audio.find((item) => item.path.toLowerCase().includes('/music/')) ??
       audio[0] ??
-      null
-    );
+      null;
+    return { hit, failed: false };
   } catch {
-    return null;
+    return { hit: null, failed: true };
+  }
+}
+
+async function searchManifest(versionId: number, query: string): Promise<SearchResult> {
+  return enqueueSearch(async () => {
+    for (let attempt = 0; attempt < SEARCH_ATTEMPTS; attempt += 1) {
+      const result = await searchManifestOnce(versionId, query);
+      if (!result.failed) return result;
+      await delay(350 * (attempt + 1));
+    }
+    return { hit: null, failed: true };
+  });
+}
+
+async function readManifestCache(): Promise<Record<string, string>> {
+  try {
+    return (await CacheService.getCachedJson<Record<string, string>>(MANIFEST_CACHE_KEY)) ?? {};
+  } catch {
+    return {};
   }
 }
 
 /**
  * Ищет трек в манифесте хоста. Возвращает прямой URL либо null.
- * Результат (включая отрицательный) кэшируется локально.
+ * Положительный результат кэшируется навсегда, отрицательный — на неделю;
+ * сетевые сбои отрицательным ответом не считаются.
  */
-export async function resolveAudioViaManifest(
-  rawName: string
-): Promise<string | null> {
+export async function resolveAudioViaManifest(rawName: string): Promise<string | null> {
   const cleanName = cleanAudioName(rawName);
   if (!cleanName) return null;
 
-  const negativeAt = negativeHits.get(cleanName);
-  if (negativeAt && Date.now() - negativeAt < NEGATIVE_TTL_MS) return null;
+  const pending = pendingSearches.get(cleanName);
+  if (pending) return pending;
 
-  const versionId = await fetchLatestVersionId();
-  if (!versionId) return null;
+  const task = (async (): Promise<string | null> => {
+    const cached = await readManifestCache();
+    if (cached[cleanName]) return cached[cleanName];
 
-  for (const query of queryVariants(cleanName)) {
-    const hit = await searchManifest(versionId, query);
-    if (!hit) continue;
-    const url = manifestPathToUrl(hit.path);
-    if (!url) continue;
-    negativeHits.delete(cleanName);
-    const cache = await CacheService.getCachedJson<Record<string, string>>(MANIFEST_CACHE_KEY);
-    CacheService.cacheJson(MANIFEST_CACHE_KEY, { ...(cache ?? {}), [cleanName]: url }).catch(() => {});
-    return url;
+    const negativeAt = negativeHits.get(cleanName);
+    if (negativeAt && Date.now() - negativeAt < NEGATIVE_TTL_MS) return null;
+
+    const versionId = await fetchLatestVersionId();
+    if (!versionId) return null;
+
+    let failed = false;
+    for (const query of queryVariants(cleanName)) {
+      const result = await searchManifest(versionId, query);
+      if (result.failed) {
+        failed = true;
+        continue;
+      }
+      if (!result.hit) continue;
+      const url = manifestPathToUrl(result.hit.path);
+      if (!url) continue;
+      negativeHits.delete(cleanName);
+      CacheService.cacheJson(MANIFEST_CACHE_KEY, { ...cached, [cleanName]: url }).catch(() => {});
+      return url;
+    }
+
+    // Если хост ответил ошибкой, не запоминаем «трека нет»: при следующем
+    // заходе попробуем снова.
+    if (!failed) negativeHits.set(cleanName, Date.now());
+    return null;
+  })();
+
+  pendingSearches.set(cleanName, task);
+  try {
+    return await task;
+  } finally {
+    pendingSearches.delete(cleanName);
   }
-
-  negativeHits.set(cleanName, Date.now());
-  return null;
 }
 
 /** Сброс отрицательного кэша — например, при ручной перезагрузке. */

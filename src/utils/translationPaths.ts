@@ -4,10 +4,10 @@ const ZOOT_DATA_RAW_BASE = 'https://raw.githubusercontent.com/neponum/zoot-data/
 
 /**
  * Translation CSVs live in the zoot-data repo grouped by episode:
- *   translation/<lang>/<episode>/<storyBaseName>_<translator>.csv
- * Older revisions of the repo kept every CSV flat in `translation/<lang>/`,
- * so that layout stays as a fallback — the Discord bot still uploads new
- * translations there.
+ *   translation/<lang>/story/<episode>/<storyBaseName>_<translator>.csv
+ * Older revisions kept episodes directly under `translation/<lang>/<episode>/`
+ * and even older ones kept every CSV flat in `translation/<lang>/`, so both
+ * stay as fallbacks — the Discord bot still uploads new translations there.
  */
 export function getEpisodeFolderForStory(baseName: string): string | null {
   if (!baseName) return null;
@@ -20,6 +20,9 @@ export function getEpisodeFolderForStory(baseName: string): string | null {
 
   // ui_<episode>_<screen>
   if (baseName.startsWith('ui_')) return 'ui';
+
+  // 密录 / operator records: obt/memory/story_<operator>_<set>_<part>
+  if (baseName.startsWith('story_')) return 'memory';
 
   // act19side_sub-1-1
   const subMatch = baseName.match(/^([a-z0-9]+?)_(?:sub-)?\d/);
@@ -53,8 +56,9 @@ export function getTranslationCsvCandidates(
   const candidates: string[] = [];
 
   if (episode) {
-    // С 2026-11-19 эпизоды в zoot-data сгруппированы в `story/`.
+    // Основной layout с 2026-11-19: эпизоды сгруппированы в `story/`.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${file}`);
+    // Старый плоский layout — у ботов и старых загрузок.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${file}`);
   }
   candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${file}`);

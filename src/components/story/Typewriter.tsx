@@ -116,7 +116,12 @@ export const Typewriter: React.FC<TypewriterProps> = ({
             fontSize: seg.size ? seg.size : undefined,
           }}
         >
-          {textToShow}
+          {textToShow.split('\n').map((chunk, lineIndex) => (
+            <React.Fragment key={lineIndex}>
+              {lineIndex > 0 && <br />}
+              {chunk}
+            </React.Fragment>
+          ))}
         </span>
       );
     });

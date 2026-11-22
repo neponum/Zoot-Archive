@@ -124,23 +124,48 @@ router.get('/', proxyLimiter, async (req, res) => {
   // Construct safe request URL
   const safeUrl = parsedUrl.toString();
 
+  // CDN отдаёт 200 с HTML-заглушкой, когда срабатывает антибот: для картинки
+  // или mp3 это заведомо не тот ответ, и его нужно перезапросить.
+  const looksLikeHtml = (response: Response): boolean => {
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    return contentType.includes('text/html');
+  };
+
+  const withCacheBuster = (rawUrl: string, attempt: number): string => {
+    const separator = rawUrl.includes('?') ? '&' : '?';
+    return `${rawUrl}${separator}_cb=${Date.now()}-${attempt}`;
+  };
+
   // Helper for robust fetching with retries and timeout
-  async function fetchWithRetry(url: string, fetchOptions: any, retries = 2, timeoutMs = 8000, delay = 300): Promise<Response> {
+  async function fetchWithRetry(
+    url: string,
+    fetchOptions: any,
+    retries = 2,
+    timeoutMs = 8000,
+    delay = 300,
+    expectBinary = false
+  ): Promise<Response> {
     let lastError: any;
     for (let i = 0; i < retries; i++) {
       let timeoutId: NodeJS.Timeout | null = null;
+      const attemptUrl = i === 0 ? url : withCacheBuster(url, i);
       try {
         const controller = new AbortController();
         timeoutId = setTimeout(() => {
           controller.abort();
         }, timeoutMs);
 
-        const response = await fetch(url, {
+        const response = await fetch(attemptUrl, {
           ...fetchOptions,
           signal: controller.signal
         });
 
         if (timeoutId) clearTimeout(timeoutId);
+
+        // Антибот-заглушка вместо файла — повторяем запрос с другим URL.
+        if (expectBinary && response.status === 200 && looksLikeHtml(response)) {
+          throw new Error('Upstream returned an HTML challenge instead of the file');
+        }
 
         // If ok, 206 Partial Content, or 404 (file doesn't exist, no need to retry), return the response
         if (response.ok || response.status === 404 || response.status === 206) {
@@ -176,6 +201,9 @@ router.get('/', proxyLimiter, async (req, res) => {
     }
 
     const isImage = safeUrl.endsWith('.png') || safeUrl.endsWith('.jpg') || safeUrl.endsWith('.jpeg') || safeUrl.endsWith('.webp') || safeUrl.includes('/background/') || safeUrl.includes('/images/') || safeUrl.includes('/characters/');
+    const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)(\?.*)?$/i.test(safeUrl) || safeUrl.includes('/assets/audio/');
+    // Для этих адресов HTML в ответе — всегда заглушка, а не контент.
+    const expectsBinary = isImage || isAudio;
     const isGithubRaw = safeUrl.includes('raw.githubusercontent.com');
     const isTorappu = safeUrl.includes('torappu.prts.wiki');
 
@@ -202,7 +230,16 @@ router.get('/', proxyLimiter, async (req, res) => {
           response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 2, 8000);
         }
       } else {
-        response = await fetchWithRetry(safeUrl, { method: req.method, headers }, 3, 10000, 300);
+        // Для картинок/аудио не тратим время на повторы: если пришла заглушка,
+        // сразу уходим в зеркало (для изображений это weserv).
+        response = await fetchWithRetry(
+          safeUrl,
+          { method: req.method, headers },
+          expectsBinary ? 1 : 3,
+          expectsBinary ? 7000 : 10000,
+          300,
+          expectsBinary
+        );
         
         // Torappu PRTS audio and asset fallback resolution
         if (response.status === 404 && isTorappu) {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
-import { cleanAndUnwrapUrl, getNaturalSize, isImageLoadedInCache, recordLoadedImage } from '../../services/storyService';
+import { handleImageFallback } from '../../lib/imageFallback';
+import { recordLoadedImage, isImageLoadedInCache, getNaturalSize } from '../../services/storyService';
 
 interface CharacterSlot {
   url: string | null;
@@ -40,6 +41,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     if (!data.faceUrl) return true;
     return isImageLoadedInCache(data.faceUrl);
   });
+  const [faceIsFullBody, setFaceIsFullBody] = useState(false);
 
   // Sync face loaded and naturalSize states when URL or size changes
   useEffect(() => {
@@ -54,6 +56,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     } else {
       setFaceLoaded(true);
     }
+    setFaceIsFullBody(false);
   }, [data.url, data.faceUrl]);
 
   const handleBodyRef = React.useCallback((img: HTMLImageElement | null) => {
@@ -169,7 +172,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
     data.faceRect.x >= 0 && data.faceRect.y >= 0 &&
     data.faceRect.x + data.faceRect.w <= naturalSize.w &&
     data.faceRect.y + data.faceRect.h <= naturalSize.h);
-  const showFaceOverlay = !!(data.faceUrl && data.faceRect && naturalSize && faceRectFitsTexture);
+  const showFaceOverlay = !!(data.faceUrl && data.faceRect && naturalSize && faceRectFitsTexture && !faceIsFullBody && data.faceUrl !== data.url);
 
   // Slot horizontal anchoring: Left at 30%, Center at 50%, Right at 70%
   const slotLeft = slot === 'left' ? '35%' : slot === 'right' ? '65%' : '50%';
@@ -203,6 +206,12 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
           referrerPolicy="no-referrer"
           draggable="false"
           loading="eager"
+          decoding="async"
+          onError={(e) => {
+            if (!handleImageFallback(e, data.url || '')) {
+              e.currentTarget.style.opacity = '0';
+            }
+          }}
           onLoad={(e) => {
             e.currentTarget.style.display = 'block';
             const w = e.currentTarget.naturalWidth;
@@ -210,16 +219,7 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             if (data.url && w && h) recordLoadedImage(data.url, w, h);
             setNaturalSize({ w, h });
           }}
-          onError={(e) => {
-            const currentSrc = e.currentTarget.src;
-            const cleanUrl = cleanAndUnwrapUrl(data.url || '');
-            if (!currentSrc.includes('/api/proxy') && cleanUrl) {
-              e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
-              return;
-            }
-            console.error(`Failed to load character body: ${data.url}`);
-            e.currentTarget.style.display = 'none';
-          }}
+
         />
         {/* Render face expression overlay with precise positioning relative to the body image */}
         {showFaceOverlay && data.faceUrl && data.faceRect && naturalSize && (
@@ -228,6 +228,12 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             ref={handleFaceRef}
             src={data.faceUrl} 
             alt="" 
+            decoding="async"
+            onError={(e) => {
+              if (!handleImageFallback(e, data.faceUrl || '')) {
+                e.currentTarget.style.opacity = '0';
+              }
+            }}
             className={cn(
               "absolute max-w-none pointer-events-none select-none",
               faceLoaded ? "opacity-100" : "opacity-0"
@@ -246,18 +252,16 @@ const CharacterSlotItem: React.FC<{ slot: string; data: CharacterSlot; character
             onLoad={(e) => {
               e.currentTarget.style.display = 'block';
               if (data.faceUrl) recordLoadedImage(data.faceUrl);
+              const w = e.currentTarget.naturalWidth;
+              const h = e.currentTarget.naturalHeight;
+              if (naturalSize && w >= naturalSize.w * 0.9 && h >= naturalSize.h * 0.9) {
+                setFaceIsFullBody(true);
+              } else {
+                setFaceIsFullBody(false);
+              }
               setFaceLoaded(true);
             }}
-            onError={(e) => {
-              const currentSrc = e.currentTarget.src;
-              const cleanUrl = cleanAndUnwrapUrl(data.faceUrl || '');
-              if (!currentSrc.includes('/api/proxy') && cleanUrl) {
-                e.currentTarget.src = `/api/proxy?url=${encodeURIComponent(cleanUrl)}`;
-                return;
-              }
-              console.error(`Failed to load character face: ${data.faceUrl}`);
-              e.currentTarget.style.display = 'none';
-            }}
+
           />
         )}
       </div>

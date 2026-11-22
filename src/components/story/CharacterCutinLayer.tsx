@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StoryLine } from '../../types';
+import { handleImageFallback } from '../../lib/imageFallback';
 
 interface CharacterCutinLayerProps {
   characterCutin: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null;
@@ -45,13 +46,25 @@ export function CharacterCutinLayer({ characterCutin }: CharacterCutinLayerProps
                 <img 
                    src={characterCutin.bodyUrl} 
                    alt="Cut-in"
-                   className="h-[150%] w-auto max-w-none origin-bottom object-contain object-bottom pointer-events-none drop-shadow-2xl"
+                   decoding="async"
+                   onError={(e) => {
+                     if (!handleImageFallback(e, characterCutin.bodyUrl)) {
+                       e.currentTarget.style.opacity = '0';
+                     }
+                   }}
+                   className="h-[150%] w-full max-w-full origin-bottom object-contain object-bottom pointer-events-none drop-shadow-2xl"
                 />
                 {characterCutin.faceUrl && (
                   <img 
                     src={characterCutin.faceUrl} 
                     alt="Cut-in expression"
-                    className="absolute bottom-0 h-[150%] w-auto max-w-none origin-bottom object-contain object-bottom pointer-events-none"
+                    decoding="async"
+                    onError={(e) => {
+                      if (!handleImageFallback(e, characterCutin.faceUrl || '')) {
+                        e.currentTarget.style.opacity = '0';
+                      }
+                    }}
+                    className="absolute bottom-0 h-[150%] w-full max-w-full origin-bottom object-contain object-bottom pointer-events-none"
                   />
                 )}
               </div>

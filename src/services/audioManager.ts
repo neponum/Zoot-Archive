@@ -1,6 +1,8 @@
 // AudioManager uses standard HTML5 Audio to avoid CORS issues with external audio files
 // that don't provide Access-Control-Allow-Origin headers.
 
+import { platform } from '../platform';
+
 class AudioManager {
   private static instance: AudioManager;
   
@@ -90,7 +92,18 @@ class AudioManager {
 
   public unlock() {
     this.log('Unlock requested. Current isUnlocked: ' + this.isUnlocked);
-    if (this.isUnlocked) return;
+
+    // Повторный жест тоже полезен: если браузер заблокировал более поздний
+    // BGM, он лежит в pendingBgmArgs и должен запуститься сейчас.
+    const pending = this.pendingBgmArgs;
+    if (this.isUnlocked) {
+      if (pending) {
+        this.pendingBgmArgs = null;
+        this.log('Replaying pending BGM on repeated gesture: ' + (pending.name || pending.url));
+        this.playBGM(pending.url, pending.volume, pending.fadeDuration, pending.introUrl, pending.name, pending.introName);
+      }
+      return;
+    }
     this.isUnlocked = true;
     
     // Play a tiny silent WAV audio to bless the audio context on iOS Safari/Chrome
@@ -148,6 +161,20 @@ class AudioManager {
     localStorage.setItem('arknights_avg_volumes', JSON.stringify({ bgm, sfx, voice }));
   }
 
+  /** Script command `MusicVolume`: меняет громкость текущего BGM. */
+  public setBGMVolume(volume: number, fadeDuration: number = 0) {
+    const target = Math.max(0, Math.min(1, volume));
+    this.bgmVolume = target;
+    if (!this.bgm) return;
+    const finalVolume = Math.max(0, Math.min(1, target * this.masterBGMVolume));
+    if (fadeDuration > 0) {
+      if (this.bgmFadeInterval) window.clearInterval(this.bgmFadeInterval);
+      this.bgmFadeInterval = this.fadeAudio(this.bgm, this.bgm.volume, finalVolume, fadeDuration);
+    } else {
+      this.bgm.volume = finalVolume;
+    }
+  }
+
   public getVolumes() {
     return {
       bgm: this.masterBGMVolume,
@@ -185,11 +212,8 @@ class AudioManager {
   private formatAudioUrl(url: string): string {
     if (!url) return url;
     if (url.startsWith('/') || url.startsWith('blob:') || url.startsWith('data:')) return url;
-    if (url.startsWith('/api/proxy?url=')) {
-      // Decode and unwrap proxy if any
-      const unwrapped = new URL(window.location.origin + url).searchParams.get('url');
-      if (unwrapped) return unwrapped;
-    }
+    const unwrapped = platform.unwrapProxy(url);
+    if (unwrapped) return unwrapped;
     
     // Play audio files directly since torappu.prts.wiki has open CORS headers (Access-Control-Allow-Origin: *)
     // and our cloud run server-side datacenter IPs are blocked by prts.wiki's firewall/DDoS protection.

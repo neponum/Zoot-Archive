@@ -23,6 +23,9 @@ export const TRANSLATOR_METADATA: Record<string, { displayName: string; note: st
 /** Public label used for AI-assisted translations instead of the author nickname. */
 export const AI_TRANSLATOR_LABEL = 'Нейроперевод';
 
+/** Подпись для CSV без имени автора: старые загрузки Discord-бота. */
+export const COMMUNITY_TRANSLATOR_LABEL = 'Сообщество';
+
 export function isAITranslator(translator?: string | null): boolean {
   if (!translator) return false;
   const key = translator.toLowerCase();
@@ -61,7 +64,7 @@ export function getTranslatorLabel(translator?: string | null): string {
 // которые уже переведены и готовы к отображению для конкретного языка.
 export const TRANSLATION_REGISTRY: Partial<Record<Language, TranslationInfo>> = {
   ru_RU: {
-    translators: ['neksi0762', 'frostymisery17', 'naoshka_v', 'ilarhion', 'num4ar', 'nep0num'],
+    translators: ['neksi0762', 'frostymisery17', 'naoshka_v', 'ilarhion', 'num4ar', 'nep0num', 'centurion_vendigo'],
     translatedEpisodes: ['main_0', 'main_1'],
     episodeTranslatorMapping: {}
   },

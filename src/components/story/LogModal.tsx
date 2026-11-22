@@ -111,20 +111,20 @@ export const LogModal: React.FC<LogModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar */}
-          <div className="p-4 portrait:p-4 landscape:p-8 md:p-8 flex items-center justify-between border-b border-white/5 bg-zinc-950/40 backdrop-blur-md shrink-0 z-10">
+          <div className="px-3 py-2 portrait:px-3 portrait:py-2 landscape:px-5 landscape:py-3 md:px-5 md:py-3 flex items-center justify-between border-b border-white/5 bg-zinc-950/40 backdrop-blur-md shrink-0 z-10">
             <button 
               onClick={onClose}
               className="group flex items-center gap-2 text-white/60 hover:text-white transition-colors"
               aria-label="Close History Log"
             >
-              <ChevronLeft className="w-8 h-8 portrait:w-6 portrait:h-6 landscape:w-10 landscape:h-10 md:w-10 md:h-10" />
+              <ChevronLeft className="w-6 h-6 portrait:w-5 portrait:h-5 landscape:w-7 landscape:h-7 md:w-7 md:h-7" />
             </button>
             {fullScript && (
               <button
                 onClick={() => setShowFull(!showFull)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${showFull ? 'border-white text-white bg-white/10' : 'border-white/20 text-white/60 hover:text-white hover:border-white/40'} text-xs portrait:text-[10px] landscape:text-sm md:text-sm`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${showFull ? 'border-white text-white bg-white/10' : 'border-white/20 text-white/60 hover:text-white hover:border-white/40'} text-[11px] portrait:text-[10px] landscape:text-xs md:text-xs`}
               >
-                <FileText className="w-4 h-4 portrait:w-3.5 portrait:h-3.5 landscape:w-5 landscape:h-5 md:w-5 md:h-5" />
+                <FileText className="w-3.5 h-3.5 portrait:w-3 portrait:h-3 landscape:w-4 landscape:h-4 md:w-4 md:h-4" />
                 <span className="font-medium tracking-wider uppercase font-mono">
                   {showFull ? (t.show_history || 'ПОКАЗАТЬ ИСТОРИЮ') : (t.show_full_log || 'ПОКАЗАТЬ ВЕСЬ ЛОГ')}
                 </span>
@@ -180,7 +180,7 @@ export const LogModal: React.FC<LogModalProps> = ({
                       {/* Speaker Name */}
                       <div className="w-full portrait:w-full landscape:w-1/3 md:w-1/3 text-left portrait:text-left landscape:text-right md:text-right shrink-0">
                         {item.speaker ? (
-                          <span className="text-white/50 portrait:text-blue-400 font-semibold portrait:font-bold landscape:text-white/50 landscape:font-medium md:text-white/50 md:font-medium text-sm portrait:text-[13px] landscape:text-base md:text-[20px] leading-[1.6] tracking-wider group-hover:text-white/90 transition-colors uppercase font-mono">
+                          <span className="text-white/50 portrait:text-white/85 font-semibold portrait:font-bold landscape:text-white/50 landscape:font-medium md:text-white/50 md:font-medium text-sm portrait:text-[13px] landscape:text-base md:text-[20px] leading-[1.6] tracking-wider group-hover:text-white/90 transition-colors uppercase font-mono">
                             {item.speaker}
                           </span>
                         ) : (

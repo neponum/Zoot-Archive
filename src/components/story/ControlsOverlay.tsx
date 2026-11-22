@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Settings, History, Maximize, Minimize, Bookmark, AlertTriangle } from 'lucide-react';
+import { platform } from '../../platform';
+import { Settings, History, Maximize, Minimize, AlertTriangle } from 'lucide-react';
 
 interface ControlsOverlayProps {
   showUI: boolean;
@@ -52,6 +53,11 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
 }) => {
   const currentLineNum = currentIndex + 1;
   const progressPercent = totalLines > 0 ? Math.min(100, Math.max(0, Math.round((currentLineNum / totalLines) * 100))) : 0;
+  // В Android-приложении браузерной панели нет — полноэкранная кнопка не нужна.
+  const canUseFullscreen =
+    typeof document !== 'undefined' &&
+    document.fullscreenEnabled &&
+    platform.kind !== 'capacitor';
 
   return (
     <div className={cn(className, "pwa-ui-element")}>
@@ -63,9 +69,9 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
             (showUI && !forceHideUI) ? "opacity-100" : "opacity-60"
           )}
         >
-          <div className="w-full h-1 sm:h-1.5 bg-black/50 backdrop-blur-xs relative overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-400 shadow-[0_0_10px_rgba(56,189,248,0.8)] transition-all duration-300 ease-out"
+          <div className="w-full h-1 sm:h-1.5 bg-white/[0.04] relative overflow-hidden">
+            <div
+              className="h-full bg-white/20 transition-all duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -107,22 +113,6 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
           >
             <History className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </button>
-          {onToggleRead && (
-            <button 
-              onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onToggleRead(); }}
-              className={cn(
-                "transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10",
-                isRead ? "text-emerald-400 hover:text-emerald-300" : "text-white/60 hover:text-white"
-              )}
-              title={isRead ? "Прочитано (нажмите, чтобы снять отметку)" : "Отметить как прочитанное"}
-            >
-              <Bookmark className={cn("w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6", isRead && "fill-emerald-400")} />
-            </button>
-          )}
           {onBugReportClick && (
             <button 
               onPointerDown={(e) => e.stopPropagation()}
@@ -131,12 +121,13 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onBugReportClick(); }}
               className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
-              title="Report Bug"
+              title="Ошибка в переводе или тексте"
+              aria-label="Ошибка в переводе или тексте"
             >
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
             </button>
           )}
-          {document.fullscreenEnabled && (
+          {canUseFullscreen && (
             <button 
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => e.stopPropagation()}
@@ -178,19 +169,19 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               isAuto ? "text-white" : "text-white/60 hover:text-white"
             )}
           >
-            AUTO <span className="text-[7px] sm:text-[9px] md:text-[11px] opacity-60">{isAuto ? 'ON' : 'OFF'}</span>
+            АВТО <span className="text-[7px] sm:text-[9px] md:text-[11px] opacity-60">{isAuto ? 'ВКЛ' : 'ВЫКЛ'}</span>
           </button>
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); onBackClick(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleSkip(); }}
             className={cn(
               "font-bold text-[11px] sm:text-sm md:text-base tracking-[0.08em] sm:tracking-[0.15em] text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
             )}
           >
-            SKIP
+            ПРОПУСК
           </button>
         </div>
       </div>

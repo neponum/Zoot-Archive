@@ -156,10 +156,14 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                   {/* Description */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80">Описание проблемы:</label>
+                    <p className="text-[11px] leading-snug text-white/40">
+                      Если ошибка в переводе или тексте — укажите, что не так, и, если можете,
+                      предложите правильный вариант. Глава и строка уже подставлены выше.
+                    </p>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Опишите, что пошло не так..."
+                      placeholder="Например: в этой реплике потерян смысл / опечатка / неверное имя..."
                       required
                       className="w-full h-32 bg-black/40 border border-white/20 rounded-lg p-3 text-white placeholder-white/30 focus:outline-none focus:border-white/60 transition-colors"
                       onKeyDown={(e) => e.stopPropagation()}

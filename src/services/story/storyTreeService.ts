@@ -1,8 +1,9 @@
 import Papa from 'papaparse';
 import { StoryChapter, StoryEpisode, Language } from '../../types';
 import { CacheService } from '../cacheService';
-import { TRANSLATION_REGISTRY, getDefaultTranslator } from '../../config/translationsRegistry';
+import { TRANSLATION_REGISTRY, getDefaultTranslator, sortTranslators, COMMUNITY_TRANSLATOR_LABEL } from '../../config/translationsRegistry';
 import { UI_STRINGS } from '../../translations';
+import { platform } from '../../platform';
 import { TranslationRow } from './storyTypes';
 import { EXTRA_STORIES } from '../../data/extraStories';
 import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../../utils/operatorUtils';
@@ -102,7 +103,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
       try {
         const jsDelivrController = new AbortController();
         const jsDelivrId = setTimeout(() => jsDelivrController.abort(), Math.min(timeout, 10000));
-        const jsDelivrResponse = await fetch(jsDelivrUrl, {
+        const jsDelivrResponse = await platform.fetch(jsDelivrUrl, {
           ...options,
           signal: jsDelivrController.signal
         });
@@ -122,7 +123,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   
   let useProxy = false;
   try {
-    const response = await fetch(url, {
+    const response = await platform.fetch(url, {
       ...options,
       signal: controller.signal
     });
@@ -153,7 +154,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
       try {
         const jsDelivrController = new AbortController();
         const jsDelivrId = setTimeout(() => jsDelivrController.abort(), Math.min(timeout, 10000));
-        const jsDelivrResponse = await fetch(jsDelivrUrl, {
+        const jsDelivrResponse = await platform.fetch(jsDelivrUrl, {
           ...options,
           signal: jsDelivrController.signal
         });
@@ -168,11 +169,11 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   }
 
   if (useProxy) {
-    const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+    const proxyUrl = platform.proxyUrl(url);
     const proxyController = new AbortController();
     const proxyId = setTimeout(() => proxyController.abort(), timeout);
     try {
-      const response = await fetch(proxyUrl, {
+      const response = await platform.fetch(proxyUrl, {
         ...options,
         signal: proxyController.signal
       });
@@ -476,48 +477,379 @@ export async function checkScriptExists(storyPath: string, lang: Language, trans
     return scriptExistenceCache[cacheKey];
   }
   
-  const extension = 'csv';
-  const translatorSuffix = getTranslatorSuffix(translator);
-  const baseName = normalizedPath.split('/').pop();
+  const baseName = normalizedPath.split('/').pop() || '';
+  const registry = TRANSLATION_REGISTRY[lang];
+  const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
+  const defaultTranslator =
+    knownTranslators && knownTranslators.length > 0
+      ? getDefaultTranslator(knownTranslators)
+      : registry && registry.translators.length > 0
+        ? getDefaultTranslator(registry.translators)
+        : undefined;
+  const candidates = buildTranslationCandidates(
+    lang,
+    baseName,
+    translator || defaultTranslator,
+    knownTranslators
+  );
   
-  const tryUrl = async (urlStr: string) => {
-    try {
-      const response = await fetchWithTimeout(urlStr, { method: 'HEAD' }, 3000);
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('text/html')) {
-          return true;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return false;
-  };
-
-  // Episode folder first, then the legacy flat layout.
-  const candidates = getTranslationCsvCandidates(lang, baseName || '', translatorSuffix)
-    .map(url => url.replace(/\.csv$/, `.${extension}`));
-
-  let exists = false;
-  for (const url of candidates) {
-    if (await tryUrl(url)) {
-      exists = true;
-      break;
-    }
+  const probeKey = `${lang}:${baseName}:${translator || defaultTranslator || 'default'}`;
+  const probed = readProbe(probeKey);
+  if (probed !== null) {
+    scriptExistenceCache[cacheKey] = probed;
+    return probed;
   }
 
+  const found = await firstWorking(candidates, 4, async (urlStr) => {
+    try {
+      const response = await fetchWithTimeout(urlStr, { method: 'HEAD' }, 3000);
+      if (!response.ok) return null;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) return null;
+      return true;
+    } catch {
+      return null;
+    }
+  });
+
+  const exists = Boolean(found);
+  rememberProbe(probeKey, exists);
   scriptExistenceCache[cacheKey] = exists;
   return exists;
 }
 
 export let currentStoryChapter = 'a001';
 
+const storyTranslatorCache = new Map<string, Promise<string | null>>();
+
+/**
+ * Кто перевёл конкретную сцену. Имя автора зашито в имя CSV-файла
+ * (`level_main_00_01_<translator>.csv`), поэтому проверяем точные файлы
+ * каждого переводчика из реестра, без отката на чужие/community-файлы.
+ */
+export function findStoryTranslator(
+  storyPath: string,
+  lang: Language = 'ru_RU'
+): Promise<string | null> {
+  const normalizedPath = normalizeStoryPath(storyPath);
+  const cacheKey = `${lang}:${normalizedPath}`;
+  const cached = storyTranslatorCache.get(cacheKey);
+  if (cached) return cached;
+
+  const request = (async (): Promise<string | null> => {
+    const baseName = normalizedPath.split('/').pop() || '';
+    const registry = TRANSLATION_REGISTRY[lang];
+    const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
+    const translators = sortTranslators(knownTranslators ?? registry?.translators ?? []);
+
+    // Собираем URL по «слоям»: сначала новый layout story/<episode>, затем
+    // старые. Внутри слоя все переводчики проверяются параллельно, поэтому
+    // для основной массы сцен хватает одного короткого раунда HEAD-запросов.
+    const perTranslator = translators
+      .map((translator) => {
+        const suffix = getTranslatorSuffix(translator);
+        if (!suffix) return null;
+        const urls = getTranslationCsvCandidates(lang, baseName, suffix).filter(
+          (url) => url.endsWith(`${suffix}.csv`)
+        );
+        return urls.length > 0 ? { translator, urls } : null;
+      })
+      .filter((entry): entry is { translator: string; urls: string[] } => entry !== null);
+
+    const layers = Math.max(0, ...perTranslator.map((entry) => entry.urls.length));
+    const ordered: Array<{ url: string; translator: string }> = [];
+    for (let layer = 0; layer < layers; layer += 1) {
+      for (const entry of perTranslator) {
+        const url = entry.urls[layer];
+        if (url) ordered.push({ url, translator: entry.translator });
+      }
+    }
+
+    const probeUrl = async (url: string) => {
+      try {
+        const response = await fetchWithTimeout(url, { method: 'HEAD' }, 2500);
+        if (!response.ok) return null;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) return null;
+        return true;
+      } catch {
+        return null;
+      }
+    };
+
+    if (ordered.length > 0) {
+      const byUrl = new Map(ordered.map((entry) => [entry.url, entry.translator]));
+      const found = await firstWorking(
+        ordered.map((entry) => entry.url),
+        6,
+        probeUrl
+      );
+      if (found) return byUrl.get(found.url) ?? null;
+    }
+
+    // Именованного файла нет — возможно, сцена переведена старой загрузкой
+    // Discord-бота без суффикса автора. Тогда честно подписываем «Сообщество».
+    const communityUrls = getTranslationCsvCandidates(lang, baseName, '');
+    if (communityUrls.length > 0) {
+      const community = await firstWorking(communityUrls, 3, probeUrl);
+      if (community) return COMMUNITY_TRANSLATOR_LABEL;
+    }
+
+    return null;
+  })().catch(() => null);
+
+  storyTranslatorCache.set(cacheKey, request);
+  return request;
+}
+
+
+/**
+ * Кэш «есть ли перевод этой главы».
+ *
+ * Каждая проверка — это десяток запросов (переводчики × раскладки путей ×
+ * зеркала), и без кэша глава открывалась в 60+ лишних 404. Отрицательный
+ * результат живёт 6 часов: если перевод добавят, он появится в тот же день.
+ */
+const TRANSLATION_PROBE_KEY = 'arknights_translation_probes_v1';
+const TRANSLATION_PROBE_TTL_MS = 6 * 60 * 60 * 1000;
+
+type TranslationProbe = { has: boolean; at: number };
+
+function loadTranslationProbes(): Array<[string, TranslationProbe]> {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(TRANSLATION_PROBE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') {
+      return Object.entries(parsed as Record<string, TranslationProbe>);
+    }
+  } catch {
+    /* повреждённый кэш не мешает работе */
+  }
+  return [];
+}
+
+const translationProbes = new Map<string, TranslationProbe>(loadTranslationProbes());
+
+let probePersistTimer: ReturnType<typeof setTimeout> | null = null;
+
+function rememberProbe(key: string, has: boolean): void {
+  translationProbes.set(key, { has, at: Date.now() });
+  if (typeof window === 'undefined') return;
+  if (probePersistTimer) clearTimeout(probePersistTimer);
+  probePersistTimer = setTimeout(() => {
+    try {
+      const entries = Array.from(translationProbes.entries()).slice(-800);
+      window.localStorage.setItem(TRANSLATION_PROBE_KEY, JSON.stringify(Object.fromEntries(entries)));
+    } catch {
+      /* localStorage может быть переполнен */
+    }
+  }, 1000);
+}
+
+/** `null` — неизвестно, `true/false` — проверено недавно. */
+function readProbe(key: string): boolean | null {
+  const hit = translationProbes.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > TRANSLATION_PROBE_TTL_MS) {
+    translationProbes.delete(key);
+    return null;
+  }
+  return hit.has;
+}
+
+/**
+ * Параллельная проверка списка URL с ограничением: первый успешный ответ
+ * выигрывает, остальные просто догружаются в фоне и игнорируются.
+ */
+async function firstWorking<T>(
+  urls: string[],
+  concurrency: number,
+  attempt: (url: string) => Promise<T | null>
+): Promise<{ url: string; value: T } | null> {
+  if (urls.length === 0) return null;
+  let nextIndex = 0;
+  let settled = false;
+
+  return new Promise((resolve) => {
+    const run = async () => {
+      while (!settled) {
+        const index = nextIndex++;
+        if (index >= urls.length) return;
+        const url = urls[index];
+        try {
+          const value = await attempt(url);
+          if (value && !settled) {
+            settled = true;
+            resolve({ url, value });
+            return;
+          }
+        } catch {
+          /* пробуем следующий */
+        }
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(concurrency, urls.length) }, () => run());
+    void Promise.all(workers).then(() => {
+      if (!settled) resolve(null);
+    });
+  });
+}
+
+function isBadScriptText(text: string): boolean {
+  const lower = text.trim().toLowerCase();
+  return (
+    !lower ||
+    lower.startsWith('<!doctype') ||
+    lower.startsWith('<html') ||
+    lower.startsWith('404:') ||
+    lower.startsWith('not found')
+  );
+}
+
+/**
+ * Кто реально переводил главу. `translation/<lang>/episodes.json` в zoot-data
+ * генерируется из самих CSV, поэтому содержит точный список авторов. Это
+ * позволяет не перебирать всех переводчиков реестра (до 40 лишних 404 на
+ * каждую сцену) и не упираться в 403 от jsDelivr.
+ */
+interface EpisodeTranslationInfo {
+  files: number;
+  translators: string[];
+}
+
+const episodeIndexPromises = new Map<
+  string,
+  Promise<Record<string, EpisodeTranslationInfo> | null>
+>();
+
+const EPISODE_INDEX_URLS = (lang: Language) => [
+  `https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/translation/${lang}/episodes.json`,
+  `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/episodes.json`,
+];
+
+function loadEpisodeTranslationIndex(
+  lang: Language
+): Promise<Record<string, EpisodeTranslationInfo> | null> {
+  if (lang !== 'ru_RU') return Promise.resolve(null);
+  const existing = episodeIndexPromises.get(lang);
+  if (existing) return existing;
+
+  const task = (async () => {
+    const cacheKey = `translation-index:${lang}:v1`;
+    try {
+      const cached = await CacheService.getCachedJson<Record<string, EpisodeTranslationInfo>>(cacheKey);
+      if (cached && typeof cached === 'object') return cached;
+    } catch {
+      /* кэш недоступен */
+    }
+
+    for (const url of EPISODE_INDEX_URLS(lang)) {
+      try {
+        const response = await fetchWithTimeout(url, { cache: 'no-cache' }, 8000);
+        if (!response.ok) continue;
+        const data = (await response.json()) as Record<string, EpisodeTranslationInfo>;
+        if (!data || typeof data !== 'object') continue;
+        CacheService.cacheJson(cacheKey, data).catch(() => {});
+        return data;
+      } catch {
+        /* пробуем следующий адрес */
+      }
+    }
+    return null;
+  })();
+
+  episodeIndexPromises.set(lang, task);
+  return task;
+}
+
+/**
+ * Сегмент пути, который является ID главы. Важно не спутать папку
+ * `activities` с главой `act18d3`: `'activities'.startsWith('act')` — true,
+ * из-за чего раньше определялась не та глава и перевод искался у всех
+ * переводчиков подряд.
+ */
+function isChapterPathSegment(part: string): boolean {
+  if (!part || part === 'activities' || part === 'obtain') return false;
+  return (
+    part.startsWith('act') ||
+    part === 'main' ||
+    part.startsWith('a00') ||
+    part.startsWith('guide')
+  );
+}
+
+/** ID главы из пути сцены: `activities/act18d3/...` → `act18d3`. */
+function chapterIdFromStoryPath(normalizedPath: string): string | null {
+  for (const part of normalizedPath.split('/')) {
+    if (isChapterPathSegment(part)) return part;
+  }
+  return null;
+}
+
+/** Список переводчиков главы из индекса; `null` — индекс не знает главу. */
+async function translatorsForStoryPath(
+  normalizedPath: string,
+  lang: Language
+): Promise<string[] | null> {
+  if (lang !== 'ru_RU') return null;
+  const chapterId = chapterIdFromStoryPath(normalizedPath);
+  if (!chapterId) return null;
+  const index = await loadEpisodeTranslationIndex(lang).catch(() => null);
+  const info = index?.[chapterId];
+  if (!info || !Array.isArray(info.translators) || info.translators.length === 0) {
+    return null;
+  }
+  return info.translators;
+}
+
+/**
+ * Кандидаты CSV-перевода: сначала выбранный (или дефолтный) переводчик,
+ * затем остальные авторы и в конце — общий файл без суффикса.
+ *
+ * `availableOverride` ограничивает перебор авторами, которые реально
+ * переводили эту главу (из `episodes.json`).
+ */
+function buildTranslationCandidates(
+  lang: Language,
+  baseName: string,
+  translator?: string,
+  availableOverride?: string[] | null
+): string[] {
+  const registry = TRANSLATION_REGISTRY[lang];
+  const available = sortTranslators(availableOverride ?? registry?.translators ?? []);
+  const ordered = translator
+    ? [translator, ...available.filter((name) => name !== translator)]
+    : available;
+
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  const push = (url: string) => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    urls.push(url);
+  };
+
+  for (const name of ordered) {
+    const suffix = getTranslatorSuffix(name);
+    if (!suffix) continue;
+    for (const url of getTranslationCsvCandidates(lang, baseName, suffix)) {
+      // Файл без суффикса (community) добавляем один раз в конце.
+      if (url.endsWith(`/${baseName}.csv`)) continue;
+      push(url);
+    }
+  }
+
+  for (const url of getTranslationCsvCandidates(lang, baseName, '')) push(url);
+  return urls;
+}
+
 export async function fetchStoryScript(storyPath: string, langOverride?: Language, noFallback?: boolean, translator?: string): Promise<string> {
   const normalizedPath = normalizeStoryPath(storyPath);
   const parts = normalizedPath.split('/');
   for (const part of parts) {
-    if (part.startsWith('act') || part === 'main' || part.startsWith('a00') || part.startsWith('guide')) {
+    if (isChapterPathSegment(part)) {
       currentStoryChapter = part;
       break;
     }
@@ -526,27 +858,38 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
   const targetLang = langOverride || currentLanguage;
   
   const fetchScript = async (lang: Language): Promise<string> => {
-    const isOfficial = ['zh_CN', 'en_US', 'ja_JP'].includes(lang);
+    const isOfficial = ['zh_CN', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
     
     if (isOfficial) {
       const baseUrl = getBaseUrl(lang);
-      const urlsToTry = [
-        `${baseUrl}/gamedata/story/${normalizedPath}.txt`,
-        `https://torappu.prts.wiki/gamedata/latest/story/${normalizedPath}.txt`
-      ];
+      const urlsToTry = [`${baseUrl}/gamedata/story/${normalizedPath}.txt`];
+
+      // torappu.prts.wiki раздаёт `gamedata/latest` только китайского клиента.
+      // Для en/ja/ko этот адрес отдаёт китайский текст, поэтому он годится
+      // лишь как фолбэк для zh_CN (и для ru_RU, который строится поверх zh_CN).
+      const cnFallback = (path: string): string | null =>
+        lang === 'zh_CN'
+          ? `https://torappu.prts.wiki/gamedata/latest/story/${path}.txt`
+          : null;
+      const cnUrl = cnFallback(normalizedPath);
+      if (cnUrl) urlsToTry.push(cnUrl);
 
       // Add roguelike and legacy path mapping fallbacks
       if (normalizedPath.includes('ro00_st_') || normalizedPath.includes('ro0_st_')) {
         let numStr = normalizedPath.slice(-2);
         if (numStr.startsWith('0')) numStr = numStr.slice(1);
-        urlsToTry.push(`${baseUrl}/gamedata/story/activities/act12d6/level_act12d6_ending_${numStr}.txt`);
-        urlsToTry.push(`https://torappu.prts.wiki/gamedata/latest/story/activities/act12d6/level_act12d6_ending_${numStr}.txt`);
+        const legacyPath = `activities/act12d6/level_act12d6_ending_${numStr}`;
+        urlsToTry.push(`${baseUrl}/gamedata/story/${legacyPath}.txt`);
+        const legacyCn = cnFallback(legacyPath);
+        if (legacyCn) urlsToTry.push(legacyCn);
       } else if (normalizedPath.includes('obt/roguelike/')) {
         const roMatch = normalizedPath.match(/ro0?(\d)_st_0?(\d)/i);
         if (roMatch) {
           const num = roMatch[1];
           const endingNum = roMatch[2];
-          urlsToTry.push(`https://torappu.prts.wiki/gamedata/latest/story/obt/roguelike/ro${num}/level_rogue${num}_ending_${endingNum}.txt`);
+          const roguePath = `obt/roguelike/ro${num}/level_rogue${num}_ending_${endingNum}`;
+          const rogueCn = cnFallback(roguePath);
+          if (rogueCn) urlsToTry.push(rogueCn);
         }
       }
       
@@ -585,39 +928,56 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
       }
 
       const registry = TRANSLATION_REGISTRY[lang];
-      const defaultTranslator = (registry && registry.translators.length > 0) ? getDefaultTranslator(registry.translators) : undefined;
+      // Авторы, которые реально переводили эту главу. Раньше здесь
+      // перебирались все семь переводчиков реестра — это давало десятки
+      // 404 и 403 на каждую сцену и задерживало старт на 2–4 секунды.
+      const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
+      const defaultTranslator =
+        knownTranslators && knownTranslators.length > 0
+          ? getDefaultTranslator(knownTranslators)
+          : registry && registry.translators.length > 0
+            ? getDefaultTranslator(registry.translators)
+            : undefined;
       const effectiveTranslator = translator || defaultTranslator;
-      const translatorSuffix = getTranslatorSuffix(effectiveTranslator);
       const baseName = normalizedPath.split('/').pop() || '';
-      const csvUrls = getTranslationCsvCandidates(lang, baseName, translatorSuffix);
-      
-      let csvText: string | null = null;
-      
-      for (const csvUrl of csvUrls) {
-        try {
-          const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' });
-          if (response.ok) {
-            const fresh = await response.text();
-            const lowerText = fresh.trim().toLowerCase();
-            if (!lowerText.startsWith('<!doctype') && !lowerText.startsWith('<html') && !lowerText.startsWith('404:') && !lowerText.startsWith('not found')) {
-              csvText = fresh;
-              await CacheService.cacheText(csvUrl, csvText);
-              break;
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to fetch fresh translation, trying cache:', e);
-        }
+      const csvUrls = buildTranslationCandidates(
+        lang,
+        baseName,
+        effectiveTranslator,
+        knownTranslators
+      );
+      const probeKey = `${lang}:${baseName}:${effectiveTranslator || 'default'}`;
 
-        if (!csvText) {
+      let csvText: string | null = null;
+
+      // Недавно проверяли и не нашли — не тратим полсотни запросов повторно.
+      if (readProbe(probeKey) !== false) {
+        // 1. Уже скачанное — мгновенно, даже без сети.
+        for (const csvUrl of csvUrls) {
           const cached = await CacheService.getCachedText(csvUrl);
-          if (cached) {
+          if (cached && !isBadScriptText(cached)) {
             csvText = cached;
             break;
           }
         }
+
+        // 2. Параллельно, но не больше четырёх: один переводчик обычно
+        //    отвечает быстро, остальные нужны только как запасные.
+        if (!csvText) {
+          const found = await firstWorking(csvUrls, 4, async (csvUrl) => {
+            const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' }, 8000);
+            if (!response.ok) return null;
+            const fresh = await response.text();
+            if (isBadScriptText(fresh)) return null;
+            await CacheService.cacheText(csvUrl, fresh);
+            return fresh;
+          });
+          if (found) csvText = found.value;
+        }
+
+        rememberProbe(probeKey, Boolean(csvText));
       }
-      
+
       if (!csvText) {
         return originalScript;
       }
