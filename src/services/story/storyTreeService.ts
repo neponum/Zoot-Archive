@@ -7,7 +7,11 @@ import { platform } from '../../platform';
 import { TranslationRow } from './storyTypes';
 import { EXTRA_STORIES } from '../../data/extraStories';
 import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../../utils/operatorUtils';
-import { getTranslationCsvCandidates, getTranslatorSuffix } from '../../utils/translationPaths';
+import {
+  getEpisodeFolderForStory,
+  getTranslationCsvCandidates,
+  getTranslatorSuffix,
+} from '../../utils/translationPaths';
 
 export function detectInitialLanguage(): Language {
   try {
@@ -538,6 +542,10 @@ export function findStoryTranslator(
 
   const request = (async (): Promise<string | null> => {
     const baseName = normalizedPath.split('/').pop() || '';
+    // Личные дела (obt/memory/story_*) лежат в story/memory без суффикса
+    // автора — это community-переводы. Не перебираем всех переводчиков:
+    // иначе на каждую сцену уходит десяток заведомо пустых HEAD-запросов.
+    if (getEpisodeFolderForStory(baseName) === 'memory') return null;
     const registry = TRANSLATION_REGISTRY[lang];
     const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
     const translators = sortTranslators(knownTranslators ?? registry?.translators ?? []);
@@ -830,6 +838,13 @@ function buildTranslationCandidates(
     seen.add(url);
     urls.push(url);
   };
+
+  // Личные дела хранятся в story/memory единым community-файлом без
+  // суффикса переводчика. Пробуем его первым, иначе до него доходит
+  // только после перебора всех авторов и старых путей.
+  if (getEpisodeFolderForStory(baseName) === 'memory') {
+    for (const url of getTranslationCsvCandidates(lang, baseName, '')) push(url);
+  }
 
   for (const name of ordered) {
     const suffix = getTranslatorSuffix(name);
