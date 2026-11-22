@@ -14,6 +14,50 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "operators.rhodes.monster"
+        }
+      ],
+      "destination": "/operators",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "terminal.rhodes.monster"
+        }
+      ],
+      "destination": "/terminal",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "terra.rhodes.monster"
+        }
+      ],
+      "destination": "/terra",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "translation.rhodes.monster"
+        }
+      ],
+      "destination": "/translate",
+      "permanent": false
+    },
+    {
       "source": "/server.ts",
       "destination": "/",
       "permanent": true

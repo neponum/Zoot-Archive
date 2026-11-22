@@ -5,6 +5,11 @@ import './index.css';
 import { maybeAutoStartStoryTextSync } from './services/storyTextSync';
 import { initNativeShell, applyNativeViewport } from './platform/nativeShell';
 import { platform } from './platform';
+import { applySubdomainRedirect } from './utils/subdomains';
+
+// Поддомены operators/terminal/terra/translation открывают свой раздел
+// ещё до монтирования React — без вспышки главной страницы.
+applySubdomainRedirect();
 
 // До первого рендера: в Android-ландшафте включаем десктопный viewport,
 // чтобы не было вспышки мобильной раскладки.
