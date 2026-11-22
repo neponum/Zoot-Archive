@@ -17,6 +17,7 @@ import { BackConfirmation } from './story/BackConfirmation';
 import { SkipConfirmation } from './story/SkipConfirmation';
 import { AssetPreloadDialog } from './story/AssetPreloadDialog';
 import { prioritizeStoryText } from '../services/storyTextSync';
+import { onImageFailure } from '../lib/imageFallback';
 import type { PreloadFailure } from '../services/story/storyAssetService';
 import { SettingsModal } from './story/SettingsModal';
 import { LogModal } from './story/LogModal';
@@ -149,6 +150,32 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   const toast = useToast();
   const audioWarningShownRef = React.useRef(false);
   const backgroundWarningShownRef = React.useRef(false);
+
+  // Картинка, у которой не сработал ни один источник, раньше просто исчезала
+  // без ошибки. Показываем один сводный тост, чтобы читатель понимал, что
+  // часть сцены недоступна, а не думал, что так и задумано.
+  useEffect(() => {
+    let pending = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = onImageFailure(() => {
+      pending += 1;
+      if (timer) return;
+      timer = setTimeout(() => {
+        const isRu = getLanguage() === 'ru_RU' || getLanguage() === 'ru_RU_CN';
+        toast.info(
+          isRu
+            ? `Не удалось загрузить ${pending} изображени(й). Проверьте соединение или сообщите об ошибке.`
+            : `${pending} image(s) could not be loaded. Check your connection or report the issue.`
+        );
+        pending = 0;
+        timer = null;
+      }, 1200);
+    });
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [toast]);
   const prefetchWindowRef = React.useRef<AbortController | null>(null);
   const parsedLinesRef = useRef<StoryLine[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -1799,12 +1826,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     prefetchStoryFx(effectNames(lines.slice(currentIndex + 1, currentIndex + 81)));
   }, [currentIndex, lines, loading, isReadyToStart]);
 
-  // Окно предзагрузки впереди текущей реплики: 80 строк. Не тянем всю
+  // Окно предзагрузки впереди текущей реплики: 100 строк. Не тянем всю
   // главу целиком — на больших событиях это сотни мегабайт и лишняя
-  // память/трафик на телефоне. При чтении окно сдвигается каждые 25 строк.
+  // память/трафик на телефоне. Сдвигаем чаще (каждые 10 строк), чтобы при
+  // быстром чтении окно не отставало и картинки не догружались на глазах.
   useEffect(() => {
     if (loading || !isReadyToStart) return;
-    if (currentIndex !== 0 && currentIndex % 25 !== 0) return;
+    if (currentIndex !== 0 && currentIndex % 10 !== 0) return;
     const all = parsedLinesRef.current;
     if (!all || all.length <= PRELOAD_LINE_LIMIT) return;
 
@@ -1812,7 +1840,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     const controller = new AbortController();
     prefetchWindowRef.current = controller;
     const start = Math.min(all.length, currentIndex + 1);
-    const end = Math.min(all.length, start + 80);
+    const end = Math.min(all.length, start + 100);
 
     const timer = setTimeout(() => {
       void preloadAssets(
@@ -1834,7 +1862,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           );
         })
         .catch(() => undefined);
-    }, 900);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [currentIndex, loading, isReadyToStart, storyTxt]);

@@ -1302,12 +1302,16 @@ export function extractFileName(rawUrl: string): string {
 }
 
 /**
- * Тихо подгружает одну картинку в HTTP-кэш браузера. Дубликаты не грузятся.
+ * Тихо подгружает картинки в HTTP-кэш браузера. Дубликаты не грузятся.
+ * Очередь с ограниченной параллельностью и таймаутом: раньше один зависший
+ * запрос останавливал всю цепочку, и следующие фоны/спрайты не грузились
+ * вообще, хотя ошибки не было.
  */
 const quietPrefetched = new Set<string>();
-// Фоновая догрузка идёт строго по одному файлу: не создаём параллельную
-// пачку запросов к PRTS.
-let quietChain: Promise<void> = Promise.resolve();
+const QUIET_CONCURRENCY = 4;
+const QUIET_TIMEOUT_MS = 8000;
+const quietQueue: string[] = [];
+let quietActive = 0;
 
 /**
  * Тихая догрузка аудио в HTTP-кэш браузера. Вызывается заранее (за несколько
@@ -1370,30 +1374,52 @@ export function prefetchStoryAudio(lines: StoryLine[]): void {
   }
 }
 
+function loadQuietImage(url: string): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const img = new Image();
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      img.onload = null;
+      img.onerror = null;
+      if (!ok) quietPrefetched.delete(url);
+      resolve();
+    };
+    const timer = setTimeout(() => finish(false), QUIET_TIMEOUT_MS);
+    img.decoding = 'async';
+    img.onload = () => {
+      recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
+      finish(true);
+    };
+    img.onerror = () => {
+      // Ошибка не критична: основной <img> сам попробует зеркала.
+      finish(false);
+    };
+    img.src = url;
+  });
+}
+
+function pumpQuietQueue(): void {
+  while (quietActive < QUIET_CONCURRENCY && quietQueue.length > 0) {
+    const url = quietQueue.shift()!;
+    quietActive += 1;
+    void loadQuietImage(url).finally(() => {
+      quietActive -= 1;
+      pumpQuietQueue();
+    });
+  }
+}
+
 export function preloadImageQuietly(url: string): void {
   if (!url || typeof Image === 'undefined') return;
   if (url.startsWith('blob:') || url.startsWith('data:')) return;
   if (quietPrefetched.has(url)) return;
   if (quietPrefetched.size > 2000) quietPrefetched.clear();
   quietPrefetched.add(url);
-
-  quietChain = quietChain.then(
-    () =>
-      new Promise<void>((resolve) => {
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = () => {
-          recordLoadedImage(url, img.naturalWidth, img.naturalHeight);
-          resolve();
-        };
-        img.onerror = () => {
-          // Ошибка не критична: основной <img> сам попробует зеркала.
-          quietPrefetched.delete(url);
-          resolve();
-        };
-        img.src = url;
-      })
-  );
+  quietQueue.push(url);
+  pumpQuietQueue();
 }
 
 const PREFETCH_CHAR_TYPES = new Set([

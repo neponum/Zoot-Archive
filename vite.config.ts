@@ -114,6 +114,22 @@ export default defineConfig(({mode}) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
+            {
+              // zoot-data больше 50 МБ, поэтому часть баннеров идёт напрямую
+              // с raw.githubusercontent (jsDelivr отдаёт 403). Их тоже держим
+              // в кэше, иначе карта и сетка глав каждый раз тянут их заново.
+              urlPattern:
+                /^https:\/\/raw\.githubusercontent\.com\/neponum\/zoot-data\/.*\.(?:png|jpe?g|webp|avif|svg)$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'zoot-banners-raw',
+                expiration: {
+                  maxEntries: 150,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
           ]
         }
       })

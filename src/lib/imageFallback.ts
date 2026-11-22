@@ -78,6 +78,29 @@ export function getImageFallbackChain(src: string): string[] {
   return Array.from(new Set(chain.filter(Boolean)));
 }
 
+
+type ImageFailureListener = (src: string) => void;
+const imageFailureListeners = new Set<ImageFailureListener>();
+const reportedImageFailures = new Set<string>();
+
+/** Подписка на картинки, у которых не сработал ни один источник. */
+export function onImageFailure(listener: ImageFailureListener): () => void {
+  imageFailureListeners.add(listener);
+  return () => imageFailureListeners.delete(listener);
+}
+
+function reportImageFailure(src: string): void {
+  if (!src || reportedImageFailures.has(src)) return;
+  reportedImageFailures.add(src);
+  imageFailureListeners.forEach((listener) => {
+    try {
+      listener(src);
+    } catch {
+      /* слушатель не должен ломать рендер */
+    }
+  });
+}
+
 interface AttemptState {
   original: string;
   index: number;
@@ -100,6 +123,9 @@ export function handleImageFallback(
 
   if (index >= chain.length) {
     attempts.delete(img);
+    // Все зеркала и прокси не отдали файл: сообщаем читалке, иначе картинка
+    // просто исчезает без единой ошибки в интерфейсе.
+    reportImageFailure(originalSrc);
     return false;
   }
 
