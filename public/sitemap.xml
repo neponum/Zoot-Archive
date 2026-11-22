@@ -3,52 +3,52 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Main Hub / Chapters & Stories -->
   <url>
-    <loc>https://zoot-archive.vercel.app/</loc>
+    <loc>https://rhodes.monster/</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://zoot-archive.vercel.app/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://zoot-archive.vercel.app/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://zoot-archive.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/"/>
   </url>
 
   <!-- Operators & Dossiers -->
   <url>
-    <loc>https://zoot-archive.vercel.app/operators</loc>
+    <loc>https://rhodes.monster/operators</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://zoot-archive.vercel.app/operators"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://zoot-archive.vercel.app/operators"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://zoot-archive.vercel.app/operators"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/operators"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/operators"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/operators"/>
   </url>
 
   <!-- Community Translation Workbench -->
   <url>
-    <loc>https://zoot-archive.vercel.app/translate</loc>
+    <loc>https://rhodes.monster/translate</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://zoot-archive.vercel.app/translate"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://zoot-archive.vercel.app/translate"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://zoot-archive.vercel.app/translate"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/translate"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/translate"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/translate"/>
   </url>
 
   <!-- Legal / Fan-project Disclosures -->
   <url>
-    <loc>https://zoot-archive.vercel.app/disclaimer</loc>
+    <loc>https://rhodes.monster/disclaimer</loc>
     <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://zoot-archive.vercel.app/privacy</loc>
+    <loc>https://rhodes.monster/privacy</loc>
     <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://zoot-archive.vercel.app/takedown</loc>
+    <loc>https://rhodes.monster/takedown</loc>
     <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
