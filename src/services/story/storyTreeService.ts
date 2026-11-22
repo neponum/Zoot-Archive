@@ -247,9 +247,39 @@ export function getArknightsYear(timestamp: number): number {
   return years + 1;
 }
 
+/** UI-язык без импорта uiLanguage (там уже есть зависимость от этого сервиса). */
+function isRussianUiLang(): boolean {
+  try {
+    const saved = localStorage.getItem('arknights_ui_lang');
+    if (saved) return saved.startsWith('ru');
+  } catch {
+    /* приватный режим */
+  }
+  return true;
+}
+
+/** Английское имя вставной сцены: «Финал I: … (Ending 1)» → «Ending 1». */
+function englishExtraChapterName(name: string): string {
+  const tail = name.match(/\(([^)]+)\)\s*$/);
+  if (tail && tail[1]) return tail[1].trim();
+  return name.replace(/^[^:]+:\s*/, '').trim() || name;
+}
+
+function localizeExtraStory(story: StoryEpisode): StoryEpisode {
+  return {
+    ...story,
+    name: story.englishName || story.name,
+    chapters: (story.chapters || []).map((chapter) => ({
+      ...chapter,
+      name: englishExtraChapterName(chapter.name || chapter.code || ''),
+    })),
+  };
+}
+
 export async function fetchChapterList(): Promise<StoryEpisode[]> {
   const dataLang = getDataLanguage(currentLanguage);
-  const cacheKey = `${dataLang}_${currentLanguage}`;
+  const uiRu = isRussianUiLang();
+  const cacheKey = `${dataLang}_${currentLanguage}_${uiRu ? 'ru' : 'en'}`;
   if (cachedEpisodes[cacheKey]) {
     return cachedEpisodes[cacheKey]!;
   }
@@ -420,7 +450,14 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
             const opDetails = getOperatorDetails(opKey, currentLanguage);
             const setMatch = key.match(/set_(\d+)/i) || key.match(/record_(\d+)/i) || key.match(/_(\d+)$/);
             const setNum = setMatch ? setMatch[1] : '1';
-            displayName = `${opDetails.displayName} · Запись ${setNum}`;
+            let uiRu = true;
+            try {
+              const saved = localStorage.getItem('arknights_ui_lang');
+              uiRu = !saved || saved.startsWith('ru');
+            } catch {
+              /* приватный режим */
+            }
+            displayName = `${opDetails.displayName} · ${uiRu ? 'Запись' : 'Record'} ${setNum}`;
           }
         }
 
@@ -442,7 +479,7 @@ export async function fetchChapterList(): Promise<StoryEpisode[]> {
   // Merge Extra Stories (Integrated Strategies, Reclamation Algorithm, Side Content)
   for (const extra of EXTRA_STORIES) {
     if (!episodes.some(e => e.id === extra.id)) {
-      episodes.push(extra);
+      episodes.push(uiRu ? extra : localizeExtraStory(extra));
     }
   }
 

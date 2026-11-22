@@ -11,9 +11,17 @@ interface BugReportModalProps {
     history: { speaker: string | null; text: string }[];
     translator?: string | null;
   };
+  /** Русский интерфейс; иначе — английский. */
+  isRu?: boolean;
 }
 
-export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, context }) => {
+export const BugReportModal: React.FC<BugReportModalProps> = ({
+  show,
+  onClose,
+  context,
+  isRu = true,
+}) => {
+  const tr = (ru: string, en: string) => (isRu ? ru : en);
   const [type, setType] = useState<'player' | 'translation'>('translation');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +52,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
         setSuccess(true);
       } else {
         const data = await res.json();
-        setError(data.error || 'Произошла ошибка при отправке репорта');
+        setError(data.error || tr('Произошла ошибка при отправке репорта', 'Failed to submit the report'));
       }
     } catch (e: any) {
       setError(e.message);
@@ -76,7 +84,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h2 className="text-xl font-medium text-white flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                Сообщить об ошибке
+                {tr('Сообщить об ошибке', 'Report an issue')}
               </h2>
               <button 
                 onClick={onClose}
@@ -92,36 +100,36 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                   <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Send className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-medium text-white mb-2">Отправлено!</h3>
-                  <p className="text-white/60 mb-8">Спасибо, ваш репорт успешно отправлен команде.</p>
+                  <h3 className="text-xl font-medium text-white mb-2">{tr('Отправлено!', 'Submitted!')}</h3>
+                  <p className="text-white/60 mb-8">{tr('Спасибо, ваш репорт успешно отправлен команде.', 'Thank you, your report has been sent to the team.')}</p>
                   <button
                     onClick={onClose}
                     className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-white/90 transition-colors w-full"
                   >
-                    Закрыть
+                    {tr('Закрыть', 'Close')}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/50 leading-relaxed">
-                    Отчёт отправляется анонимно — вход и Discord-профиль не нужны. Пожалуйста, не указывайте личные данные.
+                    {tr('Отчёт отправляется анонимно — вход и Discord-профиль не нужны. Пожалуйста, не указывайте личные данные.', 'The report is anonymous — no login or Discord profile required. Please do not include personal data.')}
                   </div>
 
                   {/* Readonly Context */}
                   <div className="bg-black/40 border border-white/10 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/50">Глава:</span>
+                      <span className="text-white/50">{tr('Глава:', 'Chapter:')}</span>
                       <span className="text-white">{context.chapter}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/50">Строка:</span>
+                      <span className="text-white/50">{tr('Строка:', 'Line:')}</span>
                       <span className="text-white">{context.line}</span>
                     </div>
                   </div>
 
                   {/* Type Selection */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-white/80">Тип проблемы:</label>
+                    <label className="text-sm font-medium text-white/80">{tr('Тип проблемы:', 'Issue type:')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
@@ -133,8 +141,8 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                         }`}
                       >
                         <MessageSquare className="w-6 h-6 mb-2" />
-                        <span className="text-sm font-medium">Перевод / Текст</span>
-                        <span className="text-xs opacity-60 mt-1">Опечатки, контекст</span>
+                        <span className="text-sm font-medium">{tr('Перевод / Текст', 'Translation / Text')}</span>
+                        <span className="text-xs opacity-60 mt-1">{tr('Опечатки, контекст', 'Typos, context')}</span>
                       </button>
                       
                       <button
@@ -147,23 +155,25 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                         }`}
                       >
                         <AlertTriangle className="w-6 h-6 mb-2" />
-                        <span className="text-sm font-medium">Плеер / Логика</span>
-                        <span className="text-xs opacity-60 mt-1">Креш, нет звука, баги</span>
+                        <span className="text-sm font-medium">{tr('Плеер / Логика', 'Player / Logic')}</span>
+                        <span className="text-xs opacity-60 mt-1">{tr('Креш, нет звука, баги', 'Crash, no sound, bugs')}</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Description */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Описание проблемы:</label>
+                    <label className="text-sm font-medium text-white/80">{tr('Описание проблемы:', 'Issue description:')}</label>
                     <p className="text-[11px] leading-snug text-white/40">
-                      Если ошибка в переводе или тексте — укажите, что не так, и, если можете,
-                      предложите правильный вариант. Глава и строка уже подставлены выше.
+                      {tr(
+                        'Если ошибка в переводе или тексте — укажите, что не так, и, если можете, предложите правильный вариант. Глава и строка уже подставлены выше.',
+                        'If the issue is in the translation or text, describe what is wrong and suggest a correction if you can. The chapter and line are already filled in above.'
+                      )}
                     </p>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Например: в этой реплике потерян смысл / опечатка / неверное имя..."
+                      placeholder={tr('Например: в этой реплике потерян смысл / опечатка / неверное имя...', 'For example: this line loses the meaning / typo / wrong name...')}
                       required
                       className="w-full h-32 bg-black/40 border border-white/20 rounded-lg p-3 text-white placeholder-white/30 focus:outline-none focus:border-white/60 transition-colors"
                       onKeyDown={(e) => e.stopPropagation()}
@@ -186,7 +196,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ show, onClose, c
                     ) : (
                       <>
                         <Send className="w-5 h-5" />
-                        Отправить репорт
+                        {tr('Отправить репорт', 'Submit report')}
                       </>
                     )}
                   </button>

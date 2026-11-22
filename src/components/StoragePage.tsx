@@ -37,19 +37,19 @@ const LANGUAGE_LABEL: Record<OfflineTextLanguage, string> = {
   ko_KR: '한국어',
 };
 
-const LANGUAGE_NOTE: Record<OfflineTextLanguage, string> = {
-  ru_RU: 'zh + перевод',
-  en_US: 'официальный',
-  zh_CN: 'официальный',
-  ja_JP: 'официальный',
-  ko_KR: 'официальный',
+const LANGUAGE_NOTE: Record<OfflineTextLanguage, { ru: string; en: string }> = {
+  ru_RU: { ru: 'zh + перевод', en: 'zh + translation' },
+  en_US: { ru: 'официальный', en: 'official' },
+  zh_CN: { ru: 'официальный', en: 'official' },
+  ja_JP: { ru: 'официальный', en: 'official' },
+  ko_KR: { ru: 'официальный', en: 'official' },
 };
 
 const RELEASES_URL = 'https://github.com/neponum/zoot-archive/releases/latest';
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return '0 Б';
-  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+function formatBytes(bytes: number, isRu = true): string {
+  if (!bytes) return isRu ? '0 Б' : '0 B';
+  const units = isRu ? ['Б', 'КБ', 'МБ', 'ГБ'] : ['B', 'KB', 'MB', 'GB'];
   let value = bytes;
   let unit = 0;
   while (value >= 1024 && unit < units.length - 1) {
@@ -61,7 +61,7 @@ function formatBytes(bytes: number): string {
 
 const PLATFORM_LABEL: Record<string, string> = {
   capacitor: 'Android',
-  web: 'Веб',
+  web: 'Web',
 };
 
 export const StoragePage: React.FC = () => {
@@ -205,7 +205,7 @@ export const StoragePage: React.FC = () => {
                       active ? 'text-black/55' : 'text-white/35'
                     }`}
                   >
-                    {LANGUAGE_NOTE[lang]}
+                    {LANGUAGE_NOTE[lang][isRu ? 'ru' : 'en']}
                     {total > 0 ? ` · ${done}/${total}` : ''}
                   </span>
                 </button>
@@ -322,7 +322,7 @@ export const StoragePage: React.FC = () => {
               {isRu ? 'Кэш контента' : 'Content cache'}
             </h2>
             <span className="font-mono text-[11px] tabular-nums text-white/60">
-              {cache ? `${cache.entries} ${isRu ? 'файлов' : 'files'} · ${formatBytes(cache.bytes)}` : '—'}
+              {cache ? `${cache.entries} ${isRu ? 'файлов' : 'files'} · ${formatBytes(cache.bytes, isRu)}` : '—'}
             </span>
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-white/40">

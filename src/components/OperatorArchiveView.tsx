@@ -522,7 +522,8 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
   detailLoading = false,
   locale = 'ru',
 }) => {
-  const t = ARCHIVE_TEXT[locale === 'ru' ? 'ru' : 'en'];
+  const isRu = locale === 'ru';
+  const t = ARCHIVE_TEXT[isRu ? 'ru' : 'en'];
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(
     initialOperatorId
   );
@@ -1106,8 +1107,10 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
             aria-pressed={artInspect}
             title={
               artInspect
-                ? 'Выключить просмотр арта'
-                : 'Просмотр арта: колесо — масштаб, ЛКМ — перенос, ПКМ — поворот'
+                ? (isRu ? 'Выключить просмотр арта' : 'Exit art inspection')
+                : (isRu
+                    ? 'Просмотр арта: колесо — масштаб, ЛКМ — перенос, ПКМ — поворот'
+                    : 'Art inspection: wheel to zoom, drag to pan, right-click to rotate')
             }
             className={`absolute bottom-3 left-3 z-40 w-8 h-8 sm:w-9 sm:h-9 border border-black/25 shadow-md flex items-center justify-center cursor-pointer transition-colors ${
               artInspect
@@ -1135,8 +1138,8 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
               <button
                 type="button"
                 onClick={() => zoomArtBy(1.25)}
-                aria-label="Приблизить"
-                title="Приблизить"
+                aria-label={isRu ? 'Приблизить' : 'Zoom in'}
+                title={isRu ? 'Приблизить' : 'Zoom in'}
                 className="w-9 h-9 bg-white/95 hover:bg-white text-[#1e2022] border border-black/25 shadow-md flex items-center justify-center text-xl font-bold cursor-pointer"
               >
                 +
@@ -1144,8 +1147,8 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
               <button
                 type="button"
                 onClick={() => zoomArtBy(0.8)}
-                aria-label="Отдалить"
-                title="Отдалить"
+                aria-label={isRu ? 'Отдалить' : 'Zoom out'}
+                title={isRu ? 'Отдалить' : 'Zoom out'}
                 className="w-9 h-9 bg-white/95 hover:bg-white text-[#1e2022] border border-black/25 shadow-md flex items-center justify-center text-xl font-bold cursor-pointer"
               >
                 −
@@ -1155,7 +1158,7 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
 
           {artInspect && (
             <div className="absolute bottom-3 left-14 right-14 sm:right-auto sm:left-15 z-40 px-2 py-1 bg-[#202225]/90 text-white/90 text-[9px] font-bold tracking-[0.12em] uppercase pointer-events-none leading-snug">
-              Щипок/колесо — масштаб · перетаскивание — сдвиг · 2× — сброс
+              {isRu ? 'Щипок/колесо — масштаб · перетаскивание — сдвиг · 2× — сброс' : 'Pinch/wheel to zoom · drag to pan · double-click to reset'}
             </div>
           )}
 
@@ -1525,8 +1528,8 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
                 disabled={unavailable}
                 title={
                   unavailable
-                    ? `Досье: ${lang.title} — перевода нет`
-                    : `Досье: ${lang.title}`
+                    ? (isRu ? `Досье: ${lang.title} — перевода нет` : `Dossier: ${lang.title} — no translation`)
+                    : (isRu ? `Досье: ${lang.title}` : `Dossier: ${lang.title}`)
                 }
                 onClick={() => {
                   if (active || unavailable) return;
@@ -1551,7 +1554,7 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
         {(!selectedOperator.detailLoaded || detailLoading) && (
           <div className="fixed top-[100px] left-3 sm:top-2.5 sm:left-auto sm:right-3 z-40 h-[32px] px-3.5 flex items-center gap-2 bg-[#202225]/92 text-white text-[10px] font-bold tracking-[0.18em] uppercase shadow-[0_6px_18px_rgba(0,0,0,0.42)]">
             <span className="w-3 h-3 rounded-full border-2 border-white/25 border-t-[#f5b400] animate-spin" />
-            Загрузка архива
+            {isRu ? 'Загрузка архива' : 'Loading archive'}
           </div>
         )}
 
@@ -2233,7 +2236,7 @@ export const OperatorArchiveView: React.FC<OperatorArchiveViewProps> = ({
                 });
               }}
               aria-pressed={birthdayOnly}
-              title={`Оперативники, родившиеся ${formatBirthday(todayKey)} — ${todayBirthdaysCount}`}
+              title={isRu ? `Оперативники, родившиеся ${formatBirthday(todayKey)} — ${todayBirthdaysCount}` : `Operators born on ${formatBirthday(todayKey)} — ${todayBirthdaysCount}`}
               className={`h-8 px-2.5 flex items-center gap-1.5 text-[11px] font-bold tracking-[0.08em] uppercase border transition-colors shrink-0 cursor-pointer ${
                 birthdayOnly
                   ? 'bg-[#f5b400] text-[#121315] border-[#f5b400]'

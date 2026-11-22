@@ -202,6 +202,14 @@ export const ReclamationAlgorithmView: React.FC<
       ? (localStorage.getItem('arknights_ui_lang') as Language | null)
       : null) ?? getLanguage();
   const t = UI_STRINGS[uiLang];
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+  const synopsis = isRu ? activeTheme.synopsisLinesRu : activeTheme.synopsisLines;
+  const sceneLabel = (scene: RAStoryScene) =>
+    isRu
+      ? scene.label
+      : scene.code === 'START'
+        ? 'Start'
+        : scene.code.replace(/^END/i, 'Ending');
 
   return (
     <section
@@ -363,18 +371,16 @@ export const ReclamationAlgorithmView: React.FC<
             {activeTheme.name}
           </p>
           <div className="max-w-[820px] space-y-1.5 text-xs leading-[1.9] tracking-[0.03em] text-[#c4c8cc] sm:text-sm">
-            {(activeTheme.synopsisLinesRu ?? activeTheme.synopsisLines).map(
-              (line, idx) => (
-                <p key={idx}>{line}</p>
-              )
-            )}
+            {synopsis.map((line, idx) => (
+              <p key={idx}>{line}</p>
+            ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {activeTheme.storyScenes.map((scene) => (
               <StorySceneButton
                 key={scene.path}
                 code={scene.code}
-                label={scene.label}
+                label={sceneLabel(scene)}
                 onClick={() => onOpenStory(scene.path)}
               />
             ))}

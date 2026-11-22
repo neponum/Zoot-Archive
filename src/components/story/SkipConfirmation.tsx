@@ -2,8 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { StoryOperationBrief } from '../MainThemeStoryView';
 
-const PROMPT = 'Пропустить историю?';
-
 const TAG_LABEL: Record<string, Record<string, string>> = {
   Interlude: { ru: 'Интерлюдия', en: 'Interlude', zh: '幕间', ja: '幕間' },
   'After Operation': { ru: 'После операции', en: 'After Operation', zh: '行动后', ja: '作戦後' },
@@ -13,6 +11,8 @@ interface SkipConfirmationProps {
   show: boolean;
   operation?: StoryOperationBrief;
   lang: string;
+  /** Русский интерфейс; иначе — английский. */
+  isRu?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -25,15 +25,16 @@ export const SkipConfirmation: React.FC<SkipConfirmationProps> = ({
   show,
   operation,
   lang,
+  isRu = true,
   onConfirm,
   onCancel,
 }) => {
-  const prompt = PROMPT;
+  const prompt = isRu ? 'Пропустить историю?' : 'Skip the story?';
   const chapter = operation?.chapter;
   const code = operation?.code;
   const name = operation?.name;
   const tag = operation?.tag
-    ? TAG_LABEL[operation.tag]?.ru ?? operation.tag
+    ? TAG_LABEL[operation.tag]?.[isRu ? 'ru' : 'en'] ?? operation.tag
     : undefined;
   const desc = operation?.desc;
 

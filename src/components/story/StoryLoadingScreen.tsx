@@ -21,6 +21,8 @@ interface StoryLoadingScreenProps {
   started?: boolean;
   preloadProgress: { loaded: number; total: number; currentFile: string };
   lang: Language;
+  /** Язык интерфейса: подписи не зависят от языка чтения. */
+  uiLang?: Language;
   t: Record<string, string>;
   /** Скрипт показан в оригинале: русского перевода главы нет. */
   isOriginalScript?: boolean;
@@ -70,6 +72,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
   started = false,
   preloadProgress,
   lang,
+  uiLang,
   t,
   isOriginalScript,
   operation,
@@ -83,7 +86,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
   onShowHelp,
   onBack
 }) => {
-  const isRu = lang === 'ru_RU' || lang === 'ru_RU_CN';
+  const isRu = (uiLang ?? lang) === 'ru_RU' || (uiLang ?? lang) === 'ru_RU_CN';
   const progress = preloadProgress.total
     ? Math.round((preloadProgress.loaded / preloadProgress.total) * 100)
     : 0;
@@ -375,7 +378,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
         {settings && (
           <div className="px-1">
             <div className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">
-              Предпросмотр шрифта
+              {isRu ? 'Предпросмотр шрифта' : 'Font preview'}
             </div>
             <div className="border border-white/10 bg-white/[0.03] px-3 py-2.5">
               <p
@@ -385,7 +388,9 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
                   fontSize: `${(settings.fontSize / 100) * 13}px`,
                 }}
               >
-                Съешь же ещё этих мягких французских булок, да выпей чаю.
+                {isRu
+                  ? 'Съешь же ещё этих мягких французских булок, да выпей чаю.'
+                  : 'The quick brown fox jumps over the lazy dog.'}
               </p>
               <p
                 className="m-0 mt-1 leading-snug text-white/35"
@@ -394,7 +399,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
                   fontSize: `${(settings.fontSize / 100) * 10}px`,
                 }}
               >
-                The quick brown fox jumps over the lazy dog.
+                {isRu ? 'The quick brown fox jumps over the lazy dog.' : 'Sphinx of black quartz, judge my vow.'}
               </p>
             </div>
           </div>
@@ -405,11 +410,11 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
           <div className="px-1">
             <div className="mb-1 flex items-center justify-between gap-3">
               <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">
-                Сцены операции
+                {isRu ? 'Сцены операции' : 'Operation scenes'}
               </span>
               {sceneSelection && !sceneSelection.beg && !sceneSelection.end && (
                 <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-amber-300/90">
-                  Выберите хотя бы одну
+                  {isRu ? 'Выберите хотя бы одну' : 'Select at least one'}
                 </span>
               )}
             </div>
@@ -428,7 +433,9 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
                         : 'border-white/15 bg-white/[0.02] text-white/55 hover:border-white/40 hover:text-white'
                     }`}
                   >
-                    {part === 'beg' ? 'До боя' : 'После боя'}
+                    {part === 'beg'
+                      ? isRu ? 'До боя' : 'Before'
+                      : isRu ? 'После боя' : 'After'}
                   </button>
                 );
               })}
@@ -449,7 +456,7 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
           >
             <Play className="h-4 w-4 text-white/80 transition-transform group-hover:scale-110" />
             <span className="text-xs font-black uppercase tracking-[0.3em] text-white/85 group-hover:text-white">
-              Загрузить историю
+              {isRu ? 'Загрузить историю' : 'Load story'}
             </span>
           </button>
         ) : null}

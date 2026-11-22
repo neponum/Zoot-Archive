@@ -96,6 +96,8 @@ interface SettingsPanelProps {
   settings: StorySettingsShape;
   onUpdateSettings: (settings: any) => void;
   t: any;
+  /** Русские fallback-подписи только для русского интерфейса. */
+  isRu?: boolean;
   /** Компактный вариант — для встроенного показа на экране загрузки. */
   compact?: boolean;
 }
@@ -108,7 +110,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   onUpdateSettings,
   t,
+  isRu = true,
 }) => {
+  const tr = (ru: string, en: string) => (isRu ? ru : en);
   const handleNicknameChange = (value: string) => {
     onUpdateSettings({ nickname: value });
     try {
@@ -164,7 +168,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           onSelect={setVolume}
         />
         <p className="text-[11px] leading-snug text-white/35">
-          {t.volume_hint || 'Общий уровень: музыка, эффекты и голоса'}
+          {t.volume_hint || tr('Общий уровень: музыка, эффекты и голоса', 'Overall level: music, effects and voices')}
         </p>
       </section>
 
@@ -186,11 +190,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           type="text"
           value={settings.nickname === '{@nickname}' ? '' : settings.nickname}
           onChange={(e) => handleNicknameChange(e.target.value)}
-          placeholder={t.enter_nickname || 'Введите ваше имя...'}
+          placeholder={t.enter_nickname || tr('Введите ваше имя...', 'Enter your name...')}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/25 transition-colors"
         />
         <p className="text-xs text-white/40 italic">
-          {t.nickname_hint || 'Это имя будет отображаться в диалогах вместо Доктора'}
+          {t.nickname_hint || tr('Это имя будет отображаться в диалогах вместо Доктора', 'This name will be shown in dialogues instead of the Doctor')}
         </p>
       </section>
 
@@ -203,7 +207,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <SettingsOptionRow
           label={t.text_speed || 'Text Appearance'}
           options={[
-            { value: 0, short: '0ms', label: t.instant || 'Мгновенно' },
+            { value: 0, short: '0ms', label: t.instant || tr('Мгновенно', 'Instant') },
             { value: 30, short: '30ms', label: '30ms' },
             { value: 60, short: '60ms', label: '60ms' },
             { value: 100, short: '100ms', label: '100ms' },
@@ -255,7 +259,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <SettingsOptionRow
           label={t.shake_intensity || 'Screen Shake'}
           options={[
-            { value: 0, short: '0%', label: t.off || 'Нет' },
+            { value: 0, short: '0%', label: t.off || tr('Нет', 'Off') },
             { value: 0.33, short: '33%', label: '33%' },
             { value: 0.66, short: '66%', label: '66%' },
             { value: 1, short: '100%', label: '100%' },
@@ -308,6 +312,7 @@ interface SettingsModalProps {
   onUpdateSettings: (settings: any) => void;
   onClose: () => void;
   t: any;
+  isRu?: boolean;
 }
 
 /** Полноэкранная модалка настроек читалки. */
@@ -316,7 +321,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdateSettings,
   onClose,
-  t
+  t,
+  isRu = true,
 }) => {
   return (
     <AnimatePresence>
@@ -353,6 +359,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 settings={settings}
                 onUpdateSettings={onUpdateSettings}
                 t={t}
+                isRu={isRu}
               />
             </div>
           </div>

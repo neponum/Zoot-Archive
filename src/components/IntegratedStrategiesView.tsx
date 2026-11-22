@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StorySceneButton } from './story/StorySceneButton';
 import { handleImageFallback } from '../lib/imageFallback';
+import { getUiLanguage } from '../utils/uiLanguage';
 
 export interface ISThemeItem {
   id: string;
@@ -30,6 +31,13 @@ export interface ISThemeItem {
   challenges: number;
   updates: number;
 }
+
+/** У Ceobe's Fungimist в игровых данных нет английского lineText. */
+const ROGUE_0_LINES_EN = [
+  "Ceobe finds strange mushrooms in the forest and falls into a dream where the fungal forest lives its own life.",
+  'To wake up, she must pass through visions and battles and gather everything she needs.',
+  'Mushroom stew awaits at the end of the road.',
+];
 
 const ThemeMotifCrest: React.FC<{
   type: ISThemeItem['motifType'];
@@ -134,6 +142,22 @@ export const IntegratedStrategiesView: React.FC<
   const selectedTheme =
     themes.find((t) => t.id === selectedThemeId) ?? latestTheme;
 
+  const uiLang = getUiLanguage();
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+  const themeLines = isRu
+    ? (selectedTheme.linesRu?.length ? selectedTheme.linesRu : selectedTheme.lines)
+    : (selectedTheme.lines.length
+        ? selectedTheme.lines
+        : selectedTheme.id === 'rogue_0'
+          ? ROGUE_0_LINES_EN
+          : []);
+  const sceneLabel = (scene: { code: string; label: string }) =>
+    isRu
+      ? scene.label
+      : scene.code === 'START'
+        ? 'Start'
+        : scene.code.replace(/^END/i, 'Ending');
+
   useEffect(() => {
     selectedCardRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }, [selectedThemeId]);
@@ -214,7 +238,7 @@ export const IntegratedStrategiesView: React.FC<
         <div className="relative z-20 max-w-[1440px] mx-auto w-full h-full px-6 sm:px-12">
           <div className="absolute right-4 top-32 sm:right-8 sm:top-36 z-20 w-full max-w-[360px] bg-black/25 p-4 backdrop-blur-xs md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className="space-y-1 text-xs leading-[1.7] tracking-[0.02em] text-[#b4bcc4] sm:text-[13px]">
-              {(selectedTheme.linesRu?.length ? selectedTheme.linesRu : selectedTheme.lines).map((line, i) => (
+              {themeLines.map((line, i) => (
                 <p key={i}>{line}</p>
               ))}
             </div>
@@ -225,7 +249,7 @@ export const IntegratedStrategiesView: React.FC<
                   <StorySceneButton
                     key={scene.path}
                     code={scene.code}
-                    label={scene.label}
+                    label={sceneLabel(scene)}
                     onClick={() =>
                       navigate(`/story/${scene.path}`, {
                         state: { backTo: '/integrated-strategies' },

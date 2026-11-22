@@ -672,7 +672,7 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
                                 {isRussian && !isChecking && !isTranslated && (
                                   <span
                                     className="text-[9px] font-mono text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded-sm border border-amber-500/30"
-                                    title="Русского перевода нет — будет показан оригинал"
+                                    title={isRussian ? 'Русского перевода нет — будет показан оригинал' : 'No Russian translation yet — the original will be shown'}
                                   >
                                     ОРИГИНАЛ
                                   </span>
@@ -764,9 +764,9 @@ export const OperatorDossierModal: React.FC<OperatorDossierModalProps> = ({
             </button>
             <div className="h-4 w-px bg-white/10 hidden sm:block" />
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-white/40 uppercase">
-              <span>АРХИВ</span>
+              <span>{isRussian ? 'АРХИВ' : 'ARCHIVE'}</span>
               <span>{"/"}</span>
-              <span>ОПЕРАТИВНИКИ</span>
+              <span>{isRussian ? 'ОПЕРАТИВНИКИ' : 'OPERATORS'}</span>
               <span>{"/"}</span>
               <span className="text-white font-bold">{operator.displayName || operator.nameEn}</span>
             </div>

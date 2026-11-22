@@ -14,6 +14,8 @@ interface ControlsOverlayProps {
   currentIndex?: number;
   totalLines?: number;
   lang?: string;
+  /** Русские подписи только для русского интерфейса. */
+  isRu?: boolean;
   isRead?: boolean;
   onToggleRead?: () => void;
   onToggleAuto: () => void;
@@ -38,6 +40,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
   isFullscreen,
   currentIndex = 0,
   totalLines = 0,
+  isRu = true,
   isRead,
   onToggleRead,
   onToggleAuto,
@@ -121,8 +124,8 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               onTouchEnd={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onBugReportClick(); }}
               className="text-white/60 hover:text-yellow-400 transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
-              title="Ошибка в переводе или тексте"
-              aria-label="Ошибка в переводе или тексте"
+              title={isRu ? 'Ошибка в переводе или тексте' : 'Translation or text error'}
+              aria-label={isRu ? 'Ошибка в переводе или тексте' : 'Translation or text error'}
             >
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
             </button>
@@ -169,7 +172,10 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               isAuto ? "text-white" : "text-white/60 hover:text-white"
             )}
           >
-            АВТО <span className="text-[7px] sm:text-[9px] md:text-[11px] opacity-60">{isAuto ? 'ВКЛ' : 'ВЫКЛ'}</span>
+            {isRu ? 'АВТО' : 'AUTO'}{' '}
+            <span className="text-[7px] sm:text-[9px] md:text-[11px] opacity-60">
+              {isAuto ? (isRu ? 'ВКЛ' : 'ON') : isRu ? 'ВЫКЛ' : 'OFF'}
+            </span>
           </button>
           <button 
             onPointerDown={(e) => e.stopPropagation()}
@@ -181,7 +187,7 @@ export const ControlsOverlay: React.FC<ControlsOverlayProps> = ({
               "font-bold text-[11px] sm:text-sm md:text-base tracking-[0.08em] sm:tracking-[0.15em] text-white/60 hover:text-white transition-all drop-shadow-lg p-1 sm:p-1.5 md:p-2"
             )}
           >
-            ПРОПУСК
+            {isRu ? 'ПРОПУСК' : 'SKIP'}
           </button>
         </div>
       </div>

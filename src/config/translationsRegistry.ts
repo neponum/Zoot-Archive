@@ -37,9 +37,22 @@ export function isAITranslator(translator?: string | null): boolean {
  * AI translations are displayed as a plain "Нейроперевод" label — never as the
  * author nickname.
  */
+/** Язык интерфейса хранится в localStorage; сервис не должен зависеть от React. */
+function isRussianUi(): boolean {
+  try {
+    const saved = localStorage.getItem('arknights_ui_lang');
+    if (saved) return saved.startsWith('ru');
+  } catch {
+    /* приватный режим — считаем русским по умолчанию */
+  }
+  return true;
+}
+
 export function getTranslatorDisplayName(translator?: string | null): string {
   if (!translator) return '';
-  return isAITranslator(translator) ? AI_TRANSLATOR_LABEL : translator;
+  if (isAITranslator(translator)) return isRussianUi() ? AI_TRANSLATOR_LABEL : 'AI translation';
+  if (translator === COMMUNITY_TRANSLATOR_LABEL && !isRussianUi()) return 'Community';
+  return translator;
 }
 
 export function sortTranslators(translators: string[]): string[] {

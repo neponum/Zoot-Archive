@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wrapUrlWithProxy } from '../services/story/storyAssetService';
+import { getUiLanguage } from '../utils/uiLanguage';
 
 /**
  * Раздел «Терра» ещё не готов: белый экран, Кальцит крупным планом
@@ -11,6 +12,8 @@ const KALTSIT_ART = 'https://torappu.prts.wiki/assets/char_arts/char_003_kalts_1
 
 export const TerraPage: React.FC = () => {
   const navigate = useNavigate();
+  const uiLang = getUiLanguage();
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
 
   const goBack = () => {
     const idx =
@@ -61,7 +64,7 @@ export const TerraPage: React.FC = () => {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[56vh] overflow-hidden md:inset-y-0 md:left-auto md:right-[-3%] md:h-full md:w-[58%]">
           <img
             src={wrapUrlWithProxy(KALTSIT_ART)}
-            alt="Кальцит"
+            alt={isRu ? 'Кальцит' : "Kal'tsit"}
             referrerPolicy="no-referrer"
             draggable={false}
             className="absolute top-0 left-1/2 h-[260%] w-auto max-w-none -translate-x-1/2 select-none md:h-[240%]"
@@ -72,14 +75,17 @@ export const TerraPage: React.FC = () => {
         <div className="relative z-10 w-full px-5 pt-16 md:absolute md:top-[19vh] md:right-[50%] md:w-[clamp(340px,30vw,440px)] md:px-0 md:pt-0">
           <div className="relative border-2 border-[#141414] bg-white px-5 py-5 shadow-[10px_10px_0_rgba(20,20,20,0.08)] sm:px-6 sm:py-6">
             <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-black/45">
-              Кальцит
+              {isRu ? 'Кальцит' : "Kal'tsit"}
             </div>
             <p className="text-[15px] leading-relaxed sm:text-[17px]">
-              Доктор. Этот раздел ещё в разработке. Карта Терры, хронология и досье регионов
-              появятся позже.
+              {isRu
+                ? 'Доктор. Этот раздел ещё в разработке. Карта Терры, хронология и досье регионов появятся позже.'
+                : 'Doctor. This section is still under construction. The Terra map, timeline and region dossiers will appear here later.'}
             </p>
             <p className="mt-3 text-[15px] leading-relaxed text-black/65 sm:text-[17px]">
-              Обновлять страницу каждый день бессмысленно — я сообщу, когда будет готово.
+              {isRu
+                ? 'Обновлять страницу каждый день бессмысленно — я сообщу, когда будет готово.'
+                : 'Refreshing the page every day is pointless — I will let you know when it is ready.'}
             </p>
 
             {/* Хвостик: снизу к голове на мобильном, справа к лицу на десктопе */}

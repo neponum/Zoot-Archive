@@ -16,6 +16,7 @@ import {
 import { fetchChapterList } from '../../services/storyService';
 import type { StoryEpisode } from '../../types';
 import STORY_TITLES_RU from '../../data/storyTitlesRu.json';
+import { getUiLanguage } from '../../utils/uiLanguage';
 
 /**
  * Браузер переводов в `neponum/zoot-data/translation` в духе файлового
@@ -40,11 +41,12 @@ interface Entry {
   size: number;
 }
 
-function formatSize(bytes: number): string {
+function formatSize(bytes: number, isRu = true): string {
   if (!bytes) return '—';
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+  const units = isRu ? ['Б', 'КБ', 'МБ'] : ['B', 'KB', 'MB'];
+  if (bytes < 1024) return `${bytes} ${units[0]}`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} ${units[1]}`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} ${units[2]}`;
 }
 
 function saveBlob(name: string, blob: Blob) {
@@ -120,6 +122,13 @@ const META_LABELS: Record<string, string> = {
   __chapter__: 'Глава',
 };
 
+const META_LABELS_EN: Record<string, string> = {
+  __translator__: 'Translator',
+  __language__: 'Language',
+  __episode__: 'Episode',
+  __chapter__: 'Chapter',
+};
+
 interface PreviewData {
   entry: Entry;
   header: string[];
@@ -141,6 +150,9 @@ function columnClass(name: string): string {
 
 export const TranslationRepoPage: React.FC = () => {
   const navigate = useNavigate();
+  const uiLang = getUiLanguage();
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+  const tr = (ru: string, en: string) => (isRu ? ru : en);
   const [path, setPath] = useState(ROOT);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [storyTree, setStoryTree] = useState<Entry[]>([]);
@@ -171,9 +183,9 @@ export const TranslationRepoPage: React.FC = () => {
         headers: { Accept: 'application/vnd.github+json' },
       });
       if (response.status === 403) {
-        throw new Error('GitHub ограничил число запросов (60 в час на IP). Попробуйте позже.');
+        throw new Error(tr('GitHub ограничил число запросов (60 в час на IP). Попробуйте позже.', 'GitHub rate limit reached (60 requests per hour per IP). Try again later.'));
       }
-      if (!response.ok) throw new Error(`GitHub ответил ${response.status}`);
+      if (!response.ok) throw new Error(tr(`GitHub ответил ${response.status}`, `GitHub responded ${response.status}`));
       const data = (await response.json()) as Array<Record<string, unknown>>;
       const list: Entry[] = data
         .map((item) => ({
@@ -197,7 +209,7 @@ export const TranslationRepoPage: React.FC = () => {
       }
     } catch (caught) {
       setEntries([]);
-      setError(caught instanceof Error ? caught.message : 'Не удалось загрузить список');
+      setError(caught instanceof Error ? caught.message : tr('Не удалось загрузить список', 'Failed to load the list'));
     } finally {
       setLoading(false);
     }
@@ -316,7 +328,7 @@ export const TranslationRepoPage: React.FC = () => {
       if (!response.ok) throw new Error(String(response.status));
       saveBlob(entry.name, await response.blob());
     } catch {
-      setError(`Не удалось скачать ${entry.name}`);
+      setError(tr(`Не удалось скачать ${entry.name}`, `Failed to download ${entry.name}`));
     } finally {
       setBusyFile(null);
     }
@@ -348,7 +360,7 @@ export const TranslationRepoPage: React.FC = () => {
       const meta = body
         .filter((row) => /^__.+__$/.test((row[0] || '').trim()))
         .map((row) => ({
-          label: META_LABELS[(row[0] || '').trim()] || (row[0] || '').replace(/^__|__$/g, ''),
+          label: (isRu ? META_LABELS : META_LABELS_EN)[(row[0] || '').trim()] || (row[0] || '').replace(/^__|__$/g, ''),
           value: row.slice(1).map((cell) => cell.trim()).filter(Boolean).join(' · '),
         }));
       const rows = body.filter((row) => !/^__.+__$/.test((row[0] || '').trim()));
@@ -361,7 +373,7 @@ export const TranslationRepoPage: React.FC = () => {
         total: rows.length,
       });
     } catch {
-      setError(`Не удалось открыть ${entry.name}`);
+      setError(tr(`Не удалось открыть ${entry.name}`, `Failed to open ${entry.name}`));
     } finally {
       setPreviewLoading(null);
     }
@@ -392,7 +404,7 @@ export const TranslationRepoPage: React.FC = () => {
           type="button"
           onClick={() => navigate(-1)}
           className="flex h-8 w-8 shrink-0 items-center justify-center text-white/60 hover:bg-white/10 hover:text-white"
-          title="Назад"
+          title={tr('Назад', 'Back')}
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -400,7 +412,7 @@ export const TranslationRepoPage: React.FC = () => {
           type="button"
           onClick={() => navigate('/')}
           className="flex h-8 w-8 shrink-0 items-center justify-center text-white/60 hover:bg-white/10 hover:text-white"
-          title="На главную"
+          title={tr('На главную', 'Home')}
         >
           <Home className="h-4 w-4" />
         </button>
@@ -409,7 +421,7 @@ export const TranslationRepoPage: React.FC = () => {
           onClick={() => parentPath && setPath(parentPath)}
           disabled={!parentPath}
           className="flex h-8 w-8 shrink-0 items-center justify-center text-white/60 hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:text-white/20"
-          title="Уровень выше"
+          title={tr('Уровень выше', 'Up one level')}
         >
           <ArrowUp className="h-4 w-4" />
         </button>
@@ -419,7 +431,7 @@ export const TranslationRepoPage: React.FC = () => {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Поиск: act55side, «Время в путь!», TL-ST-1, файл…"
+            placeholder={tr('Поиск: act55side, «Время в путь!», TL-ST-1, файл…', 'Search: act55side, “Time to Set Off!”, TL-ST-1, file…')}
             className="h-full w-full bg-transparent text-[12px] text-white outline-none placeholder:text-white/25"
           />
           {query && (
@@ -427,7 +439,7 @@ export const TranslationRepoPage: React.FC = () => {
               type="button"
               onClick={() => setQuery('')}
               className="shrink-0 text-white/40 hover:text-white"
-              title="Очистить"
+              title={tr('Очистить', 'Clear')}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -435,7 +447,7 @@ export const TranslationRepoPage: React.FC = () => {
         </div>
 
         <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-wider text-white/30 lg:block">
-          {query.trim() ? `найдено ${visible.length}` : `${entries.length} в папке`}
+          {query.trim() ? tr(`найдено ${visible.length}`, `${visible.length} found`) : tr(`${entries.length} в папке`, `${entries.length} in folder`)}
         </span>
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -446,7 +458,7 @@ export const TranslationRepoPage: React.FC = () => {
               void load(path, true);
             }}
             className="flex h-8 w-8 items-center justify-center text-white/50 hover:bg-white/10 hover:text-white"
-            title="Обновить"
+            title={tr('Обновить', 'Refresh')}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -455,7 +467,7 @@ export const TranslationRepoPage: React.FC = () => {
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-8 items-center gap-1.5 px-2 text-white/50 hover:bg-white/10 hover:text-white"
-            title="Открыть папку на GitHub"
+            title={tr('Открыть папку на GitHub', 'Open folder on GitHub')}
           >
             <ExternalLink className="h-4 w-4" />
             <span className="hidden text-[11px] uppercase tracking-wider sm:inline">GitHub</span>
@@ -475,17 +487,17 @@ export const TranslationRepoPage: React.FC = () => {
           <span className="flex-1 truncate font-mono text-white/55">
             {path.replace('translation/ru_RU/', '') || ROOT}
           </span>
-          <span className="w-24 shrink-0 text-right">Размер</span>
+          <span className="w-24 shrink-0 text-right">{tr('Размер', 'Size')}</span>
         </div>
 
         {loading && entries.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-16 text-[12px] text-white/40">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Загружаем список…
+            {tr('Загружаем список…', 'Loading list…')}
           </div>
         ) : visible.length === 0 ? (
           <div className="py-16 text-center text-[12px] text-white/35">
-            {query.trim() ? 'Ничего не найдено' : 'Папка пуста'}
+            {query.trim() ? tr('Ничего не найдено', 'Nothing found') : tr('Папка пуста', 'Folder is empty')}
           </div>
         ) : (
           <ul className="divide-y divide-white/[0.06]">
@@ -498,7 +510,7 @@ export const TranslationRepoPage: React.FC = () => {
                       type="button"
                       onClick={() => openEntry(entry)}
                       className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                      title={entry.type === 'file' ? 'Открыть предпросмотр' : entry.path}
+                      title={entry.type === 'file' ? tr('Открыть предпросмотр', 'Open preview') : entry.path}
                     >
                       {entry.type === 'dir' ? (
                         <Folder className="h-4 w-4 shrink-0 text-[#8b8b8b]" fill="currentColor" />
@@ -520,7 +532,7 @@ export const TranslationRepoPage: React.FC = () => {
                     </button>
 
                     <span className="w-24 shrink-0 text-right font-mono text-[11px] text-white/35">
-                      {entry.type === 'dir' ? 'папка' : formatSize(entry.size)}
+                      {entry.type === 'dir' ? tr('папка', 'folder') : formatSize(entry.size, isRu)}
                     </span>
 
                     {entry.type === 'file' && (
@@ -528,7 +540,7 @@ export const TranslationRepoPage: React.FC = () => {
                         type="button"
                         onClick={() => void download(entry)}
                         className="flex h-6 w-6 shrink-0 items-center justify-center text-white/35 hover:text-white"
-                        title="Скачать"
+                        title={tr('Скачать', 'Download')}
                       >
                         {busyFile === entry.path ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -561,7 +573,7 @@ export const TranslationRepoPage: React.FC = () => {
                 </div>
                 <div className="truncate font-mono text-[10px] text-white/35">
                   {preview.entry.path.replace('translation/ru_RU/', '')} ·{' '}
-                  {formatSize(preview.entry.size)}
+                  {formatSize(preview.entry.size, isRu)}
                 </div>
               </div>
 
@@ -569,7 +581,7 @@ export const TranslationRepoPage: React.FC = () => {
                 href={`https://github.com/${REPO}/blob/main/${preview.entry.path}`}
                 target="_blank"
                 rel="noreferrer"
-                title="Открыть на GitHub"
+                title={tr('Открыть на GitHub', 'Open on GitHub')}
                 className="flex h-8 w-8 items-center justify-center text-white/40 hover:bg-white/10 hover:text-white"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -577,7 +589,7 @@ export const TranslationRepoPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => void download(preview.entry)}
-                title="Скачать"
+                title={tr('Скачать', 'Download')}
                 className="flex h-8 w-8 items-center justify-center text-white/40 hover:bg-white/10 hover:text-white"
               >
                 {busyFile === preview.entry.path ? (
@@ -589,7 +601,7 @@ export const TranslationRepoPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPreview(null)}
-                title="Закрыть"
+                title={tr('Закрыть', 'Close')}
                 className="flex h-8 w-8 items-center justify-center text-white/40 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
@@ -656,10 +668,10 @@ export const TranslationRepoPage: React.FC = () => {
               <span>
                 {preview.text !== undefined
                   ? 'JSON'
-                  : `показано ${preview.rows.length} из ${preview.total} строк`}
+                  : tr(`показано ${preview.rows.length} из ${preview.total} строк`, `showing ${preview.rows.length} of ${preview.total} rows`)}
               </span>
               <span className="font-mono normal-case tracking-normal text-white/25">
-                Esc — закрыть
+                {tr('Esc — закрыть', 'Esc to close')}
               </span>
             </footer>
           </div>

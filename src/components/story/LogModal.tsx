@@ -10,6 +10,7 @@ interface LogModalProps {
   onClose: () => void;
   onJumpToLine?: (lineIndex: number, snapshotStateRaw: string, audioSnapshot: any, historyIndex: number) => void;
   t: any;
+  isRu?: boolean;
 }
 
 // Incremental rendering of the log (a full chapter script can be thousands of
@@ -24,7 +25,8 @@ export const LogModal: React.FC<LogModalProps> = ({
   fullScript,
   onClose,
   onJumpToLine,
-  t
+  t,
+  isRu = true,
 }) => {
   const [showFull, setShowFull] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -146,7 +148,7 @@ export const LogModal: React.FC<LogModalProps> = ({
                     onClick={handleShowMore}
                     className="px-5 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-sm text-xs font-mono uppercase tracking-widest text-white/60 hover:text-white transition-colors flex items-center gap-2"
                   >
-                    {`${t.show_more || 'ПОКАЗАТЬ ЕЩЁ'} (${hiddenLogCount})`}
+                    {`${t.show_more || (isRu ? 'ПОКАЗАТЬ ЕЩЁ' : 'SHOW MORE')} (${hiddenLogCount})`}
                   </button>
                   <span className="text-[10px] font-mono text-white/25">
                     {visibleLog.length} / {displayedLog.length}

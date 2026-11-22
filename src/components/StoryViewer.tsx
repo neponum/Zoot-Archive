@@ -18,6 +18,7 @@ import { SkipConfirmation } from './story/SkipConfirmation';
 import { AssetPreloadDialog } from './story/AssetPreloadDialog';
 import { prioritizeStoryText } from '../services/storyTextSync';
 import { onImageFailure } from '../lib/imageFallback';
+import { getUiLanguage } from '../utils/uiLanguage';
 import type { PreloadFailure } from '../services/story/storyAssetService';
 import { SettingsModal } from './story/SettingsModal';
 import { LogModal } from './story/LogModal';
@@ -88,7 +89,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   // Язык чтения выбирается на экране загрузки и сохраняется в localStorage.
   const [lang, setLangState] = useState<Language>(() => getLanguage());
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-  const t = UI_STRINGS[lang];
+  // Язык интерфейса не обязан совпадать с языком чтения: англоязычный сайт
+  // не должен показывать русские кнопки и памятки только потому, что сцена
+  // читается в русском переводе.
+  const uiLang = getUiLanguage();
+  const isRuUi = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+  const t = UI_STRINGS[uiLang] ?? UI_STRINGS.en_US;
 
   /** Смена языка до старта: перезагружаем сцену в новом языке. */
   const handleSelectLang = useCallback((next: Language) => {
@@ -1997,6 +2003,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         started={started}
         preloadProgress={preloadProgress}
         lang={lang}
+        uiLang={uiLang}
         t={t}
         isOriginalScript={isOriginalScript}
         operation={operation}
@@ -2027,12 +2034,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       />
       <StoryHelpModal
         show={showHelp}
+        isRu={isRuUi}
         onClose={() => setShowHelp(false)}
       />
       {preloadFailures.length > 0 && (
         <AssetPreloadDialog
           failures={preloadFailures}
-          isRu={lang === 'ru_RU' || lang === 'ru_RU_CN'}
+          isRu={isRuUi}
           onRetry={retryPreload}
           onContinue={continueWithoutFailures}
         />
@@ -2276,7 +2284,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
               className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] bg-black/60 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full flex items-center gap-2 pointer-events-none drop-shadow-xl"
             >
               <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-              <span className="text-white/80 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">Идёт пропуск</span>
+              <span className="text-white/80 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">{isRuUi ? 'Идёт пропуск' : 'Skipping'}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -2292,6 +2300,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           currentIndex={currentIndex}
           totalLines={lines.length}
           lang={lang}
+          isRu={isRuUi}
           isRead={isRead}
           onToggleRead={onToggleRead}
           onToggleAuto={() => dispatch({ type: 'TOGGLE_AUTO' })}
@@ -2316,6 +2325,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       {/* Modals placed outside motion.div to prevent modal shake and ensure crisp, stable dialogs */}
       <BugReportModal
         show={showBugReport}
+        isRu={isRuUi}
         onClose={() => setShowBugReport(false)}
         context={{
           chapter: storyTxt || 'Unknown',
@@ -2332,10 +2342,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         onClose={() => dispatch({ type: 'SET_SHOW_LOG', payload: false })}
         onJumpToLine={jumpToLine}
         t={t}
+        isRu={isRuUi}
       />
 
       <SettingsModal
         show={showSettings}
+        isRu={isRuUi}
         settings={settings}
         onUpdateSettings={(newSettings) => dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings })}
         onClose={() => dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
@@ -2356,6 +2368,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         show={showSkipConfirm}
         operation={operation}
         lang={lang}
+        isRu={isRuUi}
         onCancel={() => setShowSkipConfirm(false)}
         onConfirm={() => {
           setShowSkipConfirm(false);
@@ -2365,7 +2378,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         }}
       />
 
-      <OrientationOverlay lang={lang} />
+      <OrientationOverlay lang={uiLang} />
     </div>
   );
 };

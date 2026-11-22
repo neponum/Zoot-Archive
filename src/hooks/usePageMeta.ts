@@ -1,37 +1,50 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { getUiLanguage } from '../utils/uiLanguage';
 
 export function usePageMeta() {
   const location = useLocation();
 
   useEffect(() => {
     const path = location.pathname;
-    let pageTitle = 'rhodes.monster — Arknights Story Reader & Translation Archive | Читалка Arknights';
+    const uiLang = getUiLanguage();
+    const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+    let pageTitle = isRu
+      ? 'rhodes.monster — Читалка Arknights и архив переводов'
+      : 'rhodes.monster — Arknights Story Reader & Translation Archive';
 
-    if (path === '/story/map' || path === '/maps') {
-      pageTitle = 'Карта сюжета Arknights | Story Map — rhodes.monster';
+    if (path === '/story/map' || path === '/maps' || path === '/story') {
+      pageTitle = isRu
+        ? 'Карта сюжета Arknights — rhodes.monster'
+        : 'Arknights Story Map — rhodes.monster';
     } else if (path === '/story/grid' || path === '/story/grid/lines' || path === '/grid') {
-      pageTitle = 'Сетка глав Arknights | Story Grid — rhodes.monster';
-    } else if (path === '/story') {
-      pageTitle = 'Карта сюжета Arknights | Story Map — rhodes.monster';
+      pageTitle = isRu
+        ? 'Сетка глав Arknights — rhodes.monster'
+        : 'Arknights Story Grid — rhodes.monster';
     } else if (path === '/terminal') {
-      pageTitle = 'Терминал | Terminal — rhodes.monster';
+      pageTitle = isRu ? 'Терминал — rhodes.monster' : 'Terminal — rhodes.monster';
     } else if (path.startsWith('/story/')) {
       const storyName = path.replace('/story/', '').replace(/\.txt$/, '').split('/').pop() || 'Story';
-      pageTitle = `${storyName} — Arknights Story Viewer | rhodes.monster`;
+      pageTitle = `${storyName} — ${isRu ? 'Читалка Arknights' : 'Arknights Story Viewer'} — rhodes.monster`;
     } else if (path.startsWith('/event/')) {
       const eventId = path.replace('/event/', '');
-      pageTitle = `Эпизод ${eventId} — Сюжет Arknights | rhodes.monster`;
+      pageTitle = isRu
+        ? `Эпизод ${eventId} — Сюжет Arknights — rhodes.monster`
+        : `Episode ${eventId} — Arknights Story — rhodes.monster`;
     } else if (path.startsWith('/translate') || path.startsWith('/export')) {
-      pageTitle = 'Перевод | Translation — rhodes.monster';
+      pageTitle = isRu ? 'Перевод — rhodes.monster' : 'Translation — rhodes.monster';
     } else if (path.startsWith('/operators')) {
-      pageTitle = 'Оперативники и личные истории | Operators — rhodes.monster';
+      pageTitle = isRu
+        ? 'Оперативники и личные истории — rhodes.monster'
+        : 'Operators and Personal Stories — rhodes.monster';
     } else if (path.startsWith('/privacy')) {
-      pageTitle = 'Политика конфиденциальности — rhodes.monster';
+      pageTitle = isRu
+        ? 'Политика конфиденциальности — rhodes.monster'
+        : 'Privacy Policy — rhodes.monster';
     } else if (path.startsWith('/takedown')) {
-      pageTitle = 'Правообладателям — rhodes.monster';
+      pageTitle = isRu ? 'Правообладателям — rhodes.monster' : 'Takedown — rhodes.monster';
     } else if (path.startsWith('/disclaimer')) {
-      pageTitle = 'О нас — rhodes.monster';
+      pageTitle = isRu ? 'О нас — rhodes.monster' : 'About — rhodes.monster';
     }
 
     document.title = pageTitle;

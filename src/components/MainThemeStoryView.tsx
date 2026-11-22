@@ -631,10 +631,13 @@ const TranslatorBadge: React.FC<{ storyPath?: string | null }> = ({ storyPath })
 
   if (!translator) return null;
 
+  const uiLang = getUiLanguage();
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+
   return (
     <div className="mt-2 inline-flex max-w-full items-center gap-1.5 text-[9.5px] font-mono uppercase tracking-[0.16em] text-white/45">
       <span className="h-px w-3 bg-white/25" aria-hidden="true" />
-      <span>Перевод</span>
+      <span>{isRu ? 'Перевод' : 'Translation'}</span>
       <span className="truncate text-white/80">{getTranslatorDisplayName(translator)}</span>
       <span className="h-px w-3 bg-white/25" aria-hidden="true" />
     </div>
@@ -1870,7 +1873,9 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
                 </span>
               </div>
               <p className="m-0 mb-3 text-[10px] leading-snug text-white/40">
-                У этой операции две сцены. Какую открыть?
+                {isRussianUi
+                  ? 'У этой операции две сцены. Какую открыть?'
+                  : 'This operation has two scenes. Which one do you want to open?'}
               </p>
               <div className="flex flex-col gap-1.5">
                 {sceneChoice.beg && (
@@ -1889,7 +1894,7 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
                     }}
                     className="w-full cursor-pointer border border-white/20 bg-white/[0.04] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/50 hover:text-white"
                   >
-                    До боя
+                    {isRussianUi ? 'До боя' : 'Before operation'}
                   </button>
                 )}
                 {sceneChoice.end && (
@@ -1907,7 +1912,7 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
                     }}
                     className="w-full cursor-pointer border border-white/20 bg-white/[0.04] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/50 hover:text-white"
                   >
-                    После боя
+                    {isRussianUi ? 'После боя' : 'After operation'}
                   </button>
                 )}
               </div>
@@ -1916,7 +1921,7 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
                 onClick={() => setSceneChoice(null)}
                 className="mt-3 w-full cursor-pointer text-center font-mono text-[9px] uppercase tracking-[0.18em] text-white/35 transition-colors hover:text-white"
               >
-                Отмена
+                {isRussianUi ? 'Отмена' : 'Cancel'}
               </button>
             </div>
           </div>
