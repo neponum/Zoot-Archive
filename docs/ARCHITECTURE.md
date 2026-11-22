@@ -1,12 +1,12 @@
-# 🏛️ Zoot Archive — System Architecture & Topology
+# 🏛️ rhodes.monster — System Architecture & Topology
 
-This document provides a comprehensive architectural reference for developers and AI models working on the **Zoot Archive** codebase.
+This document provides a comprehensive architectural reference for developers and AI models working on the **rhodes.monster** codebase.
 
 ---
 
 ## 1. System Topology Overview
 
-Zoot Archive is a full-stack web application designed to run seamlessly on containerized environments (Google Cloud Run / AI Studio dev server on port 3000) as well as serverless platforms (Vercel).
+rhodes.monster is a full-stack web application designed to run seamlessly on containerized environments (Google Cloud Run / AI Studio dev server on port 3000) as well as serverless platforms (Vercel).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -16,7 +16,9 @@ Zoot Archive is a full-stack web application designed to run seamlessly on conta
     Client Browser (React 19 + TypeScript + Vite 6 + Tailwind CSS v4)
       │
       ├── Client Routing (`react-router-dom` v6):
-      │     ├── `/` & `/story`          ──> ChapterSelector (Main Hub)
+      │     ├── `/`                    ──> MonsterTextStage (Main Hub)
+      │     ├── `/story`               ──> MainThemeStoryView (Story Map, 1:1 c untitled)
+      │     ├── `/chapters`            ──> ChapterSelector (Full Chapter List)
       │     ├── `/event/:eventId`       ──> Event Story Collection
       │     ├── `/operators`            ──> Operators Dossier List
       │     ├── `/operators/:operatorId`──> Operator Records & Handbook

@@ -1,0 +1,58 @@
+name: Sync game data
+
+# Аргументы историй и терминала берутся из таблиц игры, которые обновляются
+# примерно раз в месяц. Workflow пересобирает их и коммитит результат —
+# Vercel подхватывает коммит и пересобирает сайт.
+#
+# Досье оперативников здесь не собираются: они скачиваются в браузер
+# пользователя при открытии оперативника и кэшируются в Cache Storage.
+on:
+  schedule:
+    # 2-е число каждого месяца, 04:17 UTC.
+    - cron: '17 4 2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-game-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Rebuild story and terminal data
+        run: |
+          node scripts/build_story_data.mjs
+          node scripts/fill_storymap_descriptions.mjs
+          node scripts/build_terminal_data.mjs
+
+      - name: Validate
+        run: |
+          bun run validate:data
+          bun run lint
+
+      - name: Commit and push
+        run: |
+          git config user.name "zoot-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -z "$(git status --porcelain public/data src/data/storymapData.ts)" ]; then
+            echo "Данные не изменились — коммит не нужен."
+            exit 0
+          fi
+          git add public/data src/data/storymapData.ts
+          git commit -m "chore(data): monthly game data sync"
+          git push

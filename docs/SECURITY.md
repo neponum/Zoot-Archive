@@ -1,12 +1,12 @@
-# 🛡️ Zoot Archive — Security Architecture & Hardening Guide
+# 🛡️ rhodes.monster — Security Architecture & Hardening Guide
 
-This document details the security posture, threat model, mitigation strategies, and defensive implementations across Zoot Archive.
+This document details the security posture, threat model, mitigation strategies, and defensive implementations across rhodes.monster.
 
 ---
 
 ## 1. Threat Model & Attack Surface
 
-Zoot Archive operates a client-facing React frontend backed by an Express server. The primary threat surfaces are:
+rhodes.monster operates a client-facing React frontend backed by an Express server. The primary threat surfaces are:
 
 1. **Server-Side Request Forgery (SSRF) & Open Proxy Abuse** via `/api/proxy`:
    - Risk: Attackers proxy arbitrary internal requests (e.g. `http://169.254.169.254/computeMetadata/v1/` on Cloud Run or internal port scans on `localhost`).
@@ -119,10 +119,15 @@ app.use((req, res, next) => {
 ```
 
 ### Rate Limiting Hierarchy
-1. **Global Limiter**: 1,000 requests per 15 minutes per IP across all endpoints.
+1. **Global Limiter**: production build only, API paths only — 3,000 requests per 15 minutes per IP.
+   Static assets and the whole dev server are exempt, otherwise local testing burns the quota on
+   `/data` and `/assets` requests (the old 1,000/15 min limit did exactly that).
 2. **Proxy Limiter**: 10,000 requests per 15 minutes per IP.
 3. **Bug Report Limiter**: 5 requests per 10 minutes per IP (prevents webhook spam).
 4. **Translate Limiter**: 200 requests per 15 minutes per IP (protects Gemini API quota).
+
+Vercel already blocks abusive bots at the edge, so the in-process limiter is only a backstop for
+`/api/*` abuse; it must never reject ordinary page or asset traffic.
 
 ---
 
@@ -158,7 +163,7 @@ protected; the risk is concentrated in clients that never fetch revocation data.
 
 | Surface | Result |
 |---|---|
-| Our own certificate (`zoot-archive.vercel.app`) | `*.vercel.app` ← Google Trust Services **WR1** ← GTS Root R1 ← GlobalSign Root CA. **Does not touch emSign** — unaffected, including the 27 Oct Chrome Root Store change |
+| Our own certificate (`rhodes.monster`) | `*.vercel.app` ← Google Trust Services **WR1** ← GTS Root R1 ← GlobalSign Root CA. **Does not touch emSign** — unaffected, including the 27 Oct Chrome Root Store change |
 | TLS versions | TLS 1.0/1.1 rejected, only 1.2/1.3 accepted |
 | HSTS | `max-age=63072000; includeSubDomains; preload` (Vercel edge) |
 | Node runtime trust store (`tls.rootCertificates`) | Still contains `emSign ECC Root CA - G3` — Node bundles its own Mozilla-derived store and ignores the OS one, `--use-openssl-ca` is a no-op in official builds |

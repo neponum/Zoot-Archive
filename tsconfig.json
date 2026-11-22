@@ -24,6 +24,17 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["vite/client", "vite-plugin-pwa/client"]
-  }
+    "types": [
+      "vite/client",
+      "vite-plugin-pwa/client"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-server",
+    "dev-dist",
+    "android",
+    "build"
+  ]
 }

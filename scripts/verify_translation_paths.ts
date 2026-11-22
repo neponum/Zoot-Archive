@@ -26,9 +26,12 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Имя файла в репозитории: <episode>/<storyBaseName>_<translator>.csv */
+/** Имя файла в репозитории: story/<episode>/<storyBaseName>_<translator>.csv */
 function splitFileName(fileName: string): { episode: string; bareName: string; suffix: string } {
-  const [episode, file] = fileName.split('/');
+  const parts = fileName.split('/');
+  // До 2026-11-19 эпизоды лежали прямо в корне языковой папки.
+  const episode = parts.length >= 3 ? parts[parts.length - 2] : parts[0];
+  const file = parts[parts.length - 1];
   const stem = file.replace(/\.csv$/, '');
   const match = stem.match(/_(neksi0762|frostymisery17|naoshka_v|ilarhion|num4ar|nep0num|neponum|vendigo|myshanin)$/);
   return {
@@ -38,19 +41,22 @@ function splitFileName(fileName: string): { episode: string; bareName: string; s
   };
 }
 
-const files = walk(LANG_DIR);
+// Только сюжетные переводы: dossiers/ и voices/ загрузчик читает иначе.
+const STORY_DIR = join(LANG_DIR, 'story');
+const files = walk(existsSync(STORY_DIR) ? STORY_DIR : LANG_DIR);
 const missing: string[] = [];
 const notFirstCandidate: string[] = [];
 const episodes = new Set<string>();
 
 for (const file of files) {
-  const name = file.slice(LANG_DIR.length + 1);
+  const name = file.slice((existsSync(STORY_DIR) ? STORY_DIR : LANG_DIR).length + 1);
   const { episode, bareName, suffix } = splitFileName(name);
   episodes.add(episode);
 
   const candidates = getTranslationCsvCandidates(LANG, bareName, suffix);
   if (!candidates.some(c => existsSync(toLocalPath(c)))) missing.push(name);
-  else if (candidates[0] !== `${RAW_PREFIX}/translation/${LANG}/${name}`) notFirstCandidate.push(name);
+  else if (candidates[0] !== `${RAW_PREFIX}/translation/${LANG}/story/${name}`)
+    notFirstCandidate.push(name);
 }
 
 console.log(`Репозиторий: ${REPO}`);

@@ -1,6 +1,7 @@
 node_modules/
 build/
 dist/
+dev-dist/
 dist-server/
 coverage/
 .aistudio/
@@ -8,3 +9,18 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Capacitor Android (генерируется `cap sync`)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/res/xml/config.xml
+
+# Локальные артефакты сборки
+release/
+
+# Python
+__pycache__/
+*.pyc

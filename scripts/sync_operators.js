@@ -375,7 +375,7 @@ try {
     'Rosa': 'Роса',
     'Typhon': 'Тифон',
     'Rosmontis': 'Росмонтис',
-    "Wiš'adel": "Виш'адель",
+    "Wiš'adel": "Вишадель",
     "Ch'en the Holungday": 'Чэнь Праздничная',
     'Ray': 'Рэй',
     '娜仁图亚': 'Нарантуя',
@@ -393,8 +393,8 @@ try {
     'Mostima': 'Мостима',
     'Eyjafjalla': 'Эйяфьялла',
     'Ceobe': 'Цеоба',
-    "Ho'olheyak": "Хо'олхейак",
-    'Logos': 'Логос',
+    "Ho'olheyak": "Хоолхейак",
+    'Logos': 'Logos',
     'Dusk': 'Даск',
     '玛露西尔': 'Марсиль',
     'Passenger': 'Пассажир',
@@ -502,7 +502,7 @@ try {
     '乌尔比安': 'Ульпиан',
     '佩佩': 'Пепе',
     "Ch'en": 'Чэнь',
-    'Irene': 'Ирен',
+    'Irene': 'Ирене',
     'Degenbrecher': 'Дегенбрехер',
     'Blaze': 'Блейз',
     'Gavial the Invincible': 'Гавиал Непобедимая',
@@ -518,7 +518,21 @@ try {
     '隐德来希': 'Энтелехия',
     'Młynar': 'Млынар',
     '司霆惊蛰': 'Лэйцзы Повелительница Грома',
-    'Skadi': 'Скади'
+    'Skadi': 'Скади',
+    // Новые оперативники (Persona 3 Reload collab + свежие CN-релизы)
+    'de Toledo': 'де Толедо',
+    'Makoto Yuki': 'Макото Юки',
+    'Aegis': 'Эгида',
+    'Yukari Takeba': 'Юкари Такеба',
+    'Koromaru': 'Коромару',
+    'Clementia': 'Клементия',
+    // «Vremya, v Put'!» (CN, ноябрь 2026)
+    'Caleido': 'Калейдо',
+    'Herdbells': 'Хердбеллз',
+    'Toska': 'Тоска',
+    'Olga': 'Ольга',
+    'Dominion': 'Доминион',
+    'Talulah': 'Талула'
   };
 
   for (const op of db) {

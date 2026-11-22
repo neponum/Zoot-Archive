@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">rhodes</string>
+    <string name="title_activity_main">rhodes</string>
+    <string name="package_name">monster.rhodes.app</string>
+    <string name="custom_url_scheme">monster.rhodes.app</string>
+</resources>

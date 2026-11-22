@@ -1,4 +1,4 @@
-# 🎬 Zoot Archive — Visual Novel & Story Engine Specification
+# 🎬 rhodes.monster — Visual Novel & Story Engine Specification
 
 This document details the mechanics, coordinate math, parsing rules, and rendering pipeline of the in-browser visual novel engine that reproduces Arknights story scenarios.
 
@@ -137,6 +137,8 @@ Dialogue scripts contain Unity rich-text markup tags:
 - `<i>text</i>`: Italic emphasis.
 - `<u>text</u>`: Underlined text.
 - `<size=N>text</size>`: Text font size adjustment.
+- `<p=1>…</><p=2>…</>`: разбивка на строки (подписи места/времени, двуязычные цитаты). В `storyParser.ts` и `parseTags()` превращается в `\n`, `Typewriter` рисует его как `<br>`; в текст реплики теги не попадают.
+- `<@tu.kw>…</>` / `<@tu.imp>…</>`: подсветка терминов в туториале; теги снимаются, `</>` не превращается в перенос строки.
 
 ### Security Sanitization Policy
 To prevent style injection or DOM layout breaking:

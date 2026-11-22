@@ -1,11 +1,12 @@
 {
   "name": "zoot-archive",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist-server/server.cjs",
+    "build:native": "NATIVE_BUILD=1 vite build",
     "start": "NODE_ENV=production node dist-server/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -13,9 +14,29 @@
     "validate:data": "node scripts/validate_data.js",
     "check:runtime": "node scripts/check_runtime.mjs",
     "check:runtime:warn": "node scripts/check_runtime.mjs --warn",
-    "sync:operators": "node scripts/sync_operators.js"
+    "sync:operators": "node scripts/sync_operators.js",
+    "sync:birthdays": "node scripts/build_birthdays.mjs",
+    "sync:story": "node scripts/build_story_data.mjs",
+    "sync:terminal": "node scripts/build_terminal_data.mjs",
+    "sync:all": "node scripts/build_story_data.mjs && node scripts/fill_storymap_descriptions.mjs && node scripts/build_story_gallery.mjs && node scripts/build_story_operations.mjs && node scripts/build_terminal_data.mjs && node scripts/build_story_scripts_manifest.mjs",
+    "sync:storymap-desc": "node scripts/fill_storymap_descriptions.mjs",
+    "sync:story-gallery": "node scripts/build_story_gallery.mjs",
+    "sync:story-operations": "node scripts/build_story_operations.mjs",
+    "sync:story-scripts": "node scripts/build_story_scripts_manifest.mjs",
+    "android:sync": "npm run build:native && cap sync android",
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:release": "npm run android:sync && cd android && ./gradlew assembleRelease",
+    "release:collect": "node scripts/collect_release.mjs",
+    "check:story-assets": "node scripts/check_story_assets.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/browser": "^7.0.5",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/preferences": "^7.0.4",
+    "@capacitor/status-bar": "^7.0.6",
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/papaparse": "^5.5.2",
@@ -39,6 +60,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.10",
     "@types/d3": "^7.4.3",
     "@types/express": "^4.17.21",
     "@types/howler": "^2.2.12",

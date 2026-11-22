@@ -1,0 +1,106 @@
+{
+  "note": "Каталог ссылок раздела «Архив» (страница снята с сайта 2026-11-18, вернёмся позже). Восстановлен из собранного бандла android/app/src/main/assets/public/assets/ArchiveLinksPage-CEFQmjjL.js",
+  "groups": [
+    {
+      "id": "music",
+      "titleRu": "Музыка",
+      "titleEn": "Music",
+      "links": [
+        {
+          "title": "Monster Siren Records",
+          "url": "https://monster-siren.hypergryph.com/",
+          "descriptionRu": "Официальный музыкальный лейбл Arknights: саундтреки, темы оперативников и альбомы событий.",
+          "descriptionEn": "The official Arknights music label: soundtracks, operator themes and event albums."
+        },
+        {
+          "title": "Arknights Terra Wiki — Soundtrack",
+          "url": "https://arknights.wiki.gg/wiki/Soundtrack",
+          "descriptionRu": "Каталог игровых треков с разбивкой по темам, событиям и сценам.",
+          "descriptionEn": "A catalogue of in-game tracks organised by theme, event and scene."
+        }
+      ]
+    },
+    {
+      "id": "illustration",
+      "titleRu": "Иллюстрации",
+      "titleEn": "Illustration",
+      "links": [
+        {
+          "title": "Arknights Assets",
+          "url": "https://github.com/ArknightsAssets/ArknightsAssets",
+          "descriptionRu": "Открытое зеркало игровых ассетов: спрайты, CG, UI, иконки и фоны.",
+          "descriptionEn": "An open mirror of game assets: sprites, CGs, UI, icons and backgrounds."
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "titleRu": "Справочники и лор",
+      "titleEn": "Reference & lore",
+      "links": [
+        {
+          "title": "PRTS",
+          "url": "https://prts.wiki/",
+          "descriptionRu": "Крупнейшая китайская вики по игре: оперативники, сюжет, механики и данные.",
+          "descriptionEn": "The largest Chinese Arknights wiki: operators, story, mechanics and data."
+        },
+        {
+          "title": "Arknights Terra Wiki",
+          "url": "https://arknights.wiki.gg/",
+          "descriptionRu": "Англоязычная энциклопедия: сюжет, персонажи, предметы и игровые системы.",
+          "descriptionEn": "An English-language encyclopedia of story, characters, items and systems."
+        },
+        {
+          "title": "Arknights Wiki (Fandom)",
+          "url": "https://arknights.fandom.com/",
+          "descriptionRu": "Англоязычная вики с гайдами, статьями и обсуждениями сообщества.",
+          "descriptionEn": "An English wiki with guides, articles and community discussions."
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "titleRu": "Инструменты",
+      "titleEn": "Tools",
+      "links": [
+        {
+          "title": "Penguin Stats",
+          "url": "https://penguin-stats.io/",
+          "descriptionRu": "Статистика выпадения материалов, собранная по реальным забегам игроков.",
+          "descriptionEn": "Material drop statistics collected from real player runs."
+        },
+        {
+          "title": "Arknights Toolbox",
+          "url": "https://arkntools.app/",
+          "descriptionRu": "Планировщик материалов, калькуляторы и справочные таблицы в одном месте.",
+          "descriptionEn": "A material planner, calculators and reference tables in one place."
+        },
+        {
+          "title": "MAA — MaaAssistantArknights",
+          "url": "https://github.com/MaaAssistantArknights/MaaAssistantArknights",
+          "descriptionRu": "Ассистент автоматизации ежедневных задач: бой, база, recruitment.",
+          "descriptionEn": "A daily-task automation assistant: combat, base and recruitment."
+        }
+      ]
+    },
+    {
+      "id": "official",
+      "titleRu": "Официальные",
+      "titleEn": "Official",
+      "links": [
+        {
+          "title": "Arknights — официальный сайт (CN)",
+          "url": "https://ak.hypergryph.com/",
+          "descriptionRu": "Новости, анонсы, события и медиа с китайского официального сайта.",
+          "descriptionEn": "News, announcements, events and media from the Chinese official site."
+        },
+        {
+          "title": "Arknights — Global",
+          "url": "https://www.arknights.global/",
+          "descriptionRu": "Глобальный официальный сайт: новости, оперативники и события EN-сервера.",
+          "descriptionEn": "The global official site: news, operators and events for EN servers."
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
-# 🏛️ ZOOT Archive — Arknights Dossier & Visual Novel Reader
+# 🏛️ rhodes.monster — Arknights Dossier & Visual Novel Reader
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/story/obt/main/../avatar/char_002_amiya.png" alt="ZOOT Archive Logo" width="96" height="96" style="border-radius: 50%;" />
+  <img src="https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/story/obt/main/../avatar/char_002_amiya.png" alt="rhodes.monster Logo" width="96" height="96" style="border-radius: 50%;" />
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 ## 🇷🇺 Русский
 
-**ZOOT Archive** — это полнофункциональная веб-платформа и архив лора вселенной **Arknights**, включающая полноценный движок визуальной новеллы для воспроизведения сюжетных сценариев игры, каталог оперативников с голосовыми репликами, музыкальный плеер PRTS, а также верстак для фанатского перевода с поддержкой Google Gemini AI и интеграцией с Discord.
+**rhodes.monster** — это полнофункциональная веб-платформа и архив лора вселенной **Arknights**, включающая полноценный движок визуальной новеллы для воспроизведения сюжетных сценариев игры, каталог оперативников с голосовыми репликами, музыкальный плеер PRTS, а также верстак для фанатского перевода с поддержкой Google Gemini AI и интеграцией с Discord.
 
 ### ✨ Ключевые возможности
 
@@ -133,7 +133,7 @@ npm start
 
 ## 🇬🇧 English
 
-**ZOOT Archive** is a feature-rich web platform and lore archive for **Arknights**, featuring an authentic in-browser visual novel engine to reproduce in-game story scenarios, an operator dossier with a voice line player, PRTS music player, and a community translation workbench integrated with Google Gemini AI and Discord.
+**rhodes.monster** is a feature-rich web platform and lore archive for **Arknights**, featuring an authentic in-browser visual novel engine to reproduce in-game story scenarios, an operator dossier with a voice line player, PRTS music player, and a community translation workbench integrated with Google Gemini AI and Discord.
 
 ### ✨ Key Features
 
@@ -268,4 +268,4 @@ This project relies on data, tools, and assets provided by the global Arknights 
 - **[ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)** by Kengxxiao: Source for Global (EN/JP/KR) game data.
 - **[PRTS.wiki](https://prts.wiki/)**: High-resolution story illustrations, character sprites, and audio assets.
 
-*Disclaimer: ZOOT Archive is a non-commercial fan-made project and is not affiliated with or endorsed by Hypergryph, Studio Montagne, or Yostar. Arknights game assets and intellectual property belong to their respective owners.*
+*Disclaimer: rhodes.monster is a non-commercial fan-made project and is not affiliated with or endorsed by Hypergryph, Studio Montagne, or Yostar. Arknights game assets and intellectual property belong to their respective owners.*

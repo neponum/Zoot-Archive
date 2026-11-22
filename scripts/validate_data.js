@@ -41,9 +41,37 @@ function describe(value) {
 const REQUIRED_FILES = [
   { name: 'operators_database.json', root: 'array', purpose: 'operator dossier records' },
   { name: 'operator_names_map.json', root: 'object', purpose: 'operator name lookup index' },
+  { name: 'new_operators.json', root: 'array', purpose: 'recent release ids for the NEW filter' },
+  { name: 'operator_birthdays.json', root: 'object', purpose: 'birthday index (char_id -> MM-DD)' },
   { name: 'tags_database.json', root: 'object', purpose: 'story script AST tag dictionary' },
   { name: 'translations.json', root: 'object', purpose: 'UI localization strings' },
-  { name: 'dossiers_ru.json', root: 'object', purpose: 'manual Russian dossier labels' }
+  { name: 'storyDescriptionsRu.json', root: 'object', purpose: 'Russian chapter synopses (zoot-data canon)' },
+  { name: 'storyOperationDescriptionsRu.json', root: 'object', purpose: 'Russian operation briefs (zoot-data canon)' }
+];
+
+/**
+ * Канон zoot-data: запрещённые формы в русских описаниях.
+ * Источник — `ZOOT-DATA/tools/UNIFY.md`, `translation/ru_RU/glossary.json`,
+ * `apply_canon.py` (ё, тире) и `apply_glossary.py` (Инфицированные).
+ */
+const STORY_CANON_RULES = [
+  { pattern: /зараж[её]нн\w*/gi, hint: 'Инфицированные (glossary: infected)' },
+  { pattern: /Родос[ -]Айленд/g, hint: 'Родос (apply_canon: Rhodes Island)' },
+  { pattern: /Реюньон/g, hint: 'Воссоединение (glossary)' },
+  { pattern: /Таллула/g, hint: 'Талула (UNIFY.md)' },
+  { pattern: /Хосигума/g, hint: 'Хошигума (UNIFY.md)' },
+  { pattern: /Нянь/g, hint: 'Ниан (UNIFY.md)' },
+  { pattern: /Тьяго/g, hint: 'Тиаго (UNIFY.md)' },
+  { pattern: /Леонтуццо/g, hint: 'Леонтузо (UNIFY.md)' },
+  { pattern: /Клеменца/g, hint: 'Клементия (UNIFY.md)' },
+  { pattern: /Сузуран/g, hint: 'Судзуран (UNIFY.md)' },
+  { pattern: /Паллас/g, hint: 'Паллада (UNIFY.md)' },
+  { pattern: /Вэй Яньу(?!в)/g, hint: 'Вэй Яньву (UNIFY.md)' },
+  { pattern: /Доберман(?!н)/g, hint: 'Доберманн (UNIFY.md)' },
+  { pattern: /((?<!А-Яа-яЁё)Чен(?!А-Яа-яЁё))/g, hint: 'Чэнь (UNIFY.md)' },
+  { pattern: /Клоуз/g, hint: 'Кложер (UNIFY.md)' },
+  { pattern: /—{2,}/g, hint: 'одинарное тире — (apply_canon)' },
+  { pattern: /\.{4,}/g, hint: 'многоточие «...» (glossary: punctuation)' }
 ];
 
 const OPERATOR_REQUIRED_STRINGS = ['id', 'nameZh', 'nameEn', 'profession', 'drawName', 'infoName'];
@@ -200,6 +228,62 @@ if (!Array.isArray(opDb) || typeof namesMap !== 'object' || namesMap === null) {
     }
   } else {
     print(`   ✅ [ALIGNED] All ${opDb.length} operator(s) are mapped in operator_names_map.json`);
+  }
+}
+
+print();
+print('🆕 [3b/3] new_operators.json ↔ operators_database.json');
+const newOps = parsedFiles['new_operators.json'];
+if (!Array.isArray(newOps) || !Array.isArray(opDb)) {
+  printError('   ❌ [MISMATCH] Cannot verify new operators: new_operators.json or operators_database.json is unavailable.');
+} else {
+  const knownIds = new Set(opDb.map((op) => (op && typeof op.id === 'string' ? op.id : '')));
+  const newEntries = newOps
+    .map((entry) => (typeof entry === 'string' ? { id: entry } : entry))
+    .filter((entry) => entry && typeof entry.id === 'string');
+  const unknown = newEntries
+    .map((entry) => entry.id)
+    .filter((id) => !knownIds.has(id));
+  if (unknown.length > 0) {
+    printError(`   ❌ [MISMATCH] ${unknown.length} id(s) in new_operators.json are missing from operators_database.json:`);
+    for (const id of unknown.slice(0, MAX_REPORTED)) print(`      - ${id}`);
+    if (fileStatus['new_operators.json']) {
+      fileStatus['new_operators.json'].errors.push(`${unknown.length} id(s) not found in operators_database.json`);
+    }
+  } else {
+    print(`   ✅ [ALIGNED] All ${newEntries.length} new operator(s) exist in operators_database.json`);
+  }
+}
+
+print();
+print('📝 [3c/3] Story translations ↔ canon (zoot-data)');
+for (const name of ['storyDescriptionsRu.json', 'storyOperationDescriptionsRu.json']) {
+  const data = parsedFiles[name];
+  if (!data || typeof data !== 'object') {
+    printError(`   ❌ [MISSING] ${name}: cannot check canon`);
+    continue;
+  }
+  const violations = [];
+  for (const [key, text] of Object.entries(data)) {
+    if (typeof text !== 'string') continue;
+    for (const rule of STORY_CANON_RULES) {
+      rule.pattern.lastIndex = 0;
+      const match = rule.pattern.exec(text);
+      if (match) {
+        violations.push({ key, found: match[0], hint: rule.hint });
+      }
+    }
+  }
+  if (violations.length > 0) {
+    printError(`   ❌ [CANON] ${name}: ${violations.length} violation(s)`);
+    for (const item of violations.slice(0, MAX_REPORTED)) {
+      print(`      - ${item.key}: «${item.found}» → ${item.hint}`);
+    }
+    if (fileStatus[name]) {
+      fileStatus[name].errors.push(`${violations.length} canon violation(s) in Russian story text`);
+    }
+  } else {
+    print(`   ✅ [CANON] ${name}: no banned forms`);
   }
 }
 
