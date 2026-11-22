@@ -339,19 +339,19 @@
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Виш'адель"
+    "russianName": "Вишадель"
   },
   "wisdel": {
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Виш'адель"
+    "russianName": "Вишадель"
   },
   "wiadel": {
     "displayName": "Wiš'adel",
     "englishName": "Wiš'adel",
     "chineseName": "维什戴尔",
-    "russianName": "Виш'адель"
+    "russianName": "Вишадель"
   },
   "char_1038_whitw2": {
     "displayName": "Lappland the Decadenza",
@@ -1305,13 +1305,13 @@
     "displayName": "Irene",
     "englishName": "Irene",
     "chineseName": "艾丽妮",
-    "russianName": "Ирен"
+    "russianName": "Ирене"
   },
   "irene": {
     "displayName": "Irene",
     "englishName": "Irene",
     "chineseName": "艾丽妮",
-    "russianName": "Ирен"
+    "russianName": "Ирене"
   },
   "char_4010_etlchi": {
     "displayName": "Entelechia",
@@ -1371,19 +1371,19 @@
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Хо'олхейак"
+    "russianName": "Хоолхейак"
   },
   "heyak": {
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Хо'олхейак"
+    "russianName": "Хоолхейак"
   },
   "hoolheyak": {
     "displayName": "Ho'olheyak",
     "englishName": "Ho'olheyak",
     "chineseName": "霍尔海雅",
-    "russianName": "Хо'олхейак"
+    "russianName": "Хоолхейак"
   },
   "char_4037_demetr": {
     "displayName": "Bellone",
@@ -1707,13 +1707,13 @@
     "displayName": "Logos",
     "englishName": "Logos",
     "chineseName": "逻各斯",
-    "russianName": "Логос"
+    "russianName": "Logos"
   },
   "logos": {
     "displayName": "Logos",
     "englishName": "Logos",
     "chineseName": "逻各斯",
-    "russianName": "Логос"
+    "russianName": "Logos"
   },
   "char_4134_cetsyr": {
     "displayName": "Civilight Eterna",
@@ -7162,6 +7162,240 @@
     "englishName": "GALLUS²",
     "chineseName": "GALLUS²",
     "russianName": "GALLUS²"
+  },
+  "char_393_toledo": {
+    "displayName": "de Toledo",
+    "englishName": "de Toledo",
+    "chineseName": "德·托莱多",
+    "russianName": "де Толедо"
+  },
+  "toledo": {
+    "displayName": "de Toledo",
+    "englishName": "de Toledo",
+    "chineseName": "德·托莱多",
+    "russianName": "де Толедо"
+  },
+  "detoledo": {
+    "displayName": "de Toledo",
+    "englishName": "de Toledo",
+    "chineseName": "德·托莱多",
+    "russianName": "де Толедо"
+  },
+  "char_4232_hbound": {
+    "displayName": "Homebound",
+    "englishName": "Homebound",
+    "chineseName": "旅骨",
+    "russianName": "Homebound"
+  },
+  "hbound": {
+    "displayName": "Homebound",
+    "englishName": "Homebound",
+    "chineseName": "旅骨",
+    "russianName": "Homebound"
+  },
+  "homebound": {
+    "displayName": "Homebound",
+    "englishName": "Homebound",
+    "chineseName": "旅骨",
+    "russianName": "Homebound"
+  },
+  "char_4231_clemnt": {
+    "displayName": "Clementia",
+    "englishName": "Clementia",
+    "chineseName": "克莱门莎",
+    "russianName": "Клементия"
+  },
+  "clemnt": {
+    "displayName": "Clementia",
+    "englishName": "Clementia",
+    "chineseName": "克莱门莎",
+    "russianName": "Клементия"
+  },
+  "clementia": {
+    "displayName": "Clementia",
+    "englishName": "Clementia",
+    "chineseName": "克莱门莎",
+    "russianName": "Клементия"
+  },
+  "char_4217_makoto": {
+    "displayName": "Makoto Yuki",
+    "englishName": "Makoto Yuki",
+    "chineseName": "结城理",
+    "russianName": "Макото Юки"
+  },
+  "makoto": {
+    "displayName": "Makoto Yuki",
+    "englishName": "Makoto Yuki",
+    "chineseName": "结城理",
+    "russianName": "Макото Юки"
+  },
+  "makotoyuki": {
+    "displayName": "Makoto Yuki",
+    "englishName": "Makoto Yuki",
+    "chineseName": "结城理",
+    "russianName": "Макото Юки"
+  },
+  "char_4218_aigis": {
+    "displayName": "Aegis",
+    "englishName": "Aegis",
+    "chineseName": "埃癸斯",
+    "russianName": "Эгида"
+  },
+  "aigis": {
+    "displayName": "Aegis",
+    "englishName": "Aegis",
+    "chineseName": "埃癸斯",
+    "russianName": "Эгида"
+  },
+  "aegis": {
+    "displayName": "Aegis",
+    "englishName": "Aegis",
+    "chineseName": "埃癸斯",
+    "russianName": "Эгида"
+  },
+  "char_4219_yukari": {
+    "displayName": "Yukari Takeba",
+    "englishName": "Yukari Takeba",
+    "chineseName": "岳羽由加莉",
+    "russianName": "Юкари Такеба"
+  },
+  "yukari": {
+    "displayName": "Yukari Takeba",
+    "englishName": "Yukari Takeba",
+    "chineseName": "岳羽由加莉",
+    "russianName": "Юкари Такеба"
+  },
+  "yukaritakeba": {
+    "displayName": "Yukari Takeba",
+    "englishName": "Yukari Takeba",
+    "chineseName": "岳羽由加莉",
+    "russianName": "Юкари Такеба"
+  },
+  "char_4220_kormr": {
+    "displayName": "Koromaru",
+    "englishName": "Koromaru",
+    "chineseName": "虎狼丸",
+    "russianName": "Коромару"
+  },
+  "kormr": {
+    "displayName": "Koromaru",
+    "englishName": "Koromaru",
+    "chineseName": "虎狼丸",
+    "russianName": "Коромару"
+  },
+  "koromaru": {
+    "displayName": "Koromaru",
+    "englishName": "Koromaru",
+    "chineseName": "虎狼丸",
+    "russianName": "Коромару"
+  },
+  "char_4169_caledo": {
+    "displayName": "Caleido",
+    "englishName": "Caleido",
+    "chineseName": "镜匠",
+    "russianName": "Калейдо"
+  },
+  "caledo": {
+    "displayName": "Caleido",
+    "englishName": "Caleido",
+    "chineseName": "镜匠",
+    "russianName": "Калейдо"
+  },
+  "caleido": {
+    "displayName": "Caleido",
+    "englishName": "Caleido",
+    "chineseName": "镜匠",
+    "russianName": "Калейдо"
+  },
+  "char_4170_hdbell": {
+    "displayName": "Herdbells",
+    "englishName": "Herdbells",
+    "chineseName": "行铃",
+    "russianName": "Хердбеллз"
+  },
+  "hdbell": {
+    "displayName": "Herdbells",
+    "englishName": "Herdbells",
+    "chineseName": "行铃",
+    "russianName": "Хердбеллз"
+  },
+  "herdbells": {
+    "displayName": "Herdbells",
+    "englishName": "Herdbells",
+    "chineseName": "行铃",
+    "russianName": "Хердбеллз"
+  },
+  "char_4244_tocka": {
+    "displayName": "Toska",
+    "englishName": "Toska",
+    "chineseName": "冻河",
+    "russianName": "Тоска"
+  },
+  "tocka": {
+    "displayName": "Toska",
+    "englishName": "Toska",
+    "chineseName": "冻河",
+    "russianName": "Тоска"
+  },
+  "toska": {
+    "displayName": "Toska",
+    "englishName": "Toska",
+    "chineseName": "冻河",
+    "russianName": "Тоска"
+  },
+  "char_4245_alga": {
+    "displayName": "Olga",
+    "englishName": "Olga",
+    "chineseName": "奥尔佳",
+    "russianName": "Ольга"
+  },
+  "alga": {
+    "displayName": "Olga",
+    "englishName": "Olga",
+    "chineseName": "奥尔佳",
+    "russianName": "Ольга"
+  },
+  "olga": {
+    "displayName": "Olga",
+    "englishName": "Olga",
+    "chineseName": "奥尔佳",
+    "russianName": "Ольга"
+  },
+  "char_4246_dminon": {
+    "displayName": "Dominion",
+    "englishName": "Dominion",
+    "chineseName": "国度",
+    "russianName": "Доминион"
+  },
+  "dminon": {
+    "displayName": "Dominion",
+    "englishName": "Dominion",
+    "chineseName": "国度",
+    "russianName": "Доминион"
+  },
+  "dominion": {
+    "displayName": "Dominion",
+    "englishName": "Dominion",
+    "chineseName": "国度",
+    "russianName": "Доминион"
+  },
+  "char_4247_oxi": {
+    "displayName": "Talulah",
+    "englishName": "Talulah",
+    "chineseName": "塔露拉",
+    "russianName": "Талула"
+  },
+  "oxi": {
+    "displayName": "Talulah",
+    "englishName": "Talulah",
+    "chineseName": "塔露拉",
+    "russianName": "Талула"
+  },
+  "talulah": {
+    "displayName": "Talulah",
+    "englishName": "Talulah",
+    "chineseName": "塔露拉",
+    "russianName": "Талула"
   },
   "снегурочка": {
     "displayName": "Pramanix the Prerita",

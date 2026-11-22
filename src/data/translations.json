@@ -2,6 +2,7 @@
   "zh_CN": {
     "archive": "档案库",
     "search": "搜索...",
+    "to_be_explored": "尚待探索...",
     "all": "全部",
     "mainline": "主线剧情",
     "activity": "侧影/插曲",
@@ -104,11 +105,14 @@
     "system_configuration": "系统设置",
     "show_history": "查看历史记录",
     "show_full_log": "显示完整日志",
-    "narrator": "旁白"
+    "narrator": "旁白",
+    "rotate_title": "请旋转设备",
+    "rotate_body": "此页面针对横屏模式进行了优化。"
   },
   "en_US": {
-    "archive": "Zoot Archive",
+    "archive": "rhodes.monster",
     "search": "Search...",
+    "to_be_explored": "TO BE EXPLORED...",
     "all": "All",
     "mainline": "Main Story",
     "activity": "Side Story",
@@ -168,6 +172,18 @@
     "storyline_selection": "Storyline Selection",
     "year_selection": "Year Selection",
     "storyline": "STORYLINE",
+    "story_line": "Story Line",
+    "chapter_recollection": "Chapter Recollection",
+    "recollection": "Recollection",
+    "collected_recollections": "Collected Recollections",
+    "collected": "Collected",
+    "collect_to_gallery": "Collect to gallery",
+    "in_gallery": "Collected in gallery",
+    "open_scene": "Open scene",
+    "archive_record": "Archive record",
+    "no_recollection": "No recollection illustrations found for this storyline.",
+    "no_collected_recollection": "No collected recollections yet. Open any illustration and press \"Collect to gallery\".",
+    "show_all_illustrations": "Show all illustrations",
     "year": "YEAR",
     "community_translators": "Community Translators",
     "translated": "TRANSLATED",
@@ -211,11 +227,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Please rotate your device",
+    "rotate_body": "This experience is optimized for landscape orientation."
   },
   "ja_JP": {
     "archive": "アーカイブ",
     "search": "検索...",
+    "to_be_explored": "未踏の領域...",
     "all": "すべて",
     "mainline": "メインストーリー",
     "activity": "サイドストーリー",
@@ -318,11 +337,14 @@
     "system_configuration": "システム設定",
     "show_history": "履歴を表示",
     "show_full_log": "ログを全画面表示",
-    "narrator": "ナレーション"
+    "narrator": "ナレーション",
+    "rotate_title": "端末を横向きにしてください",
+    "rotate_body": "このページは横向き表示に最適化されています。"
   },
   "ko_KR": {
     "archive": "아카이브",
     "search": "검색...",
+    "to_be_explored": "미지의 영역...",
     "all": "전체",
     "mainline": "메인 스토리",
     "activity": "사이드 스토리",
@@ -425,11 +447,14 @@
     "system_configuration": "시스템 설정",
     "show_history": "기록 보기",
     "show_full_log": "전체 로그 보기",
-    "narrator": "나레이터"
+    "narrator": "나레이터",
+    "rotate_title": "기기를 가로로 돌려주세요",
+    "rotate_body": "이 화면은 가로 방향에 최적화되어 있습니다."
   },
   "ru_RU": {
-    "archive": "Zoot Archive",
+    "archive": "rhodes.monster",
     "search": "Поиск...",
+    "to_be_explored": "ПРЕДСТОИТ ИССЛЕДОВАТЬ...",
     "all": "all",
     "mainline": "Основной сюжет",
     "activity": "Побочные истории",
@@ -489,6 +514,18 @@
     "storyline_selection": "Выбор сюжетной линии",
     "year_selection": "Выбор года",
     "storyline": "ЛИНИЯ",
+    "story_line": "Сюжетная линия",
+    "chapter_recollection": "Воспоминания о главе",
+    "recollection": "Воспоминания",
+    "collected_recollections": "Собранные воспоминания",
+    "collected": "Собрано",
+    "collect_to_gallery": "Добавить в галерею",
+    "in_gallery": "Уже в галерее",
+    "open_scene": "Открыть сцену",
+    "archive_record": "Архивная запись",
+    "no_recollection": "Для этой сюжетной линии нет иллюстраций.",
+    "no_collected_recollection": "В галерее пока пусто. Откройте иллюстрацию и нажмите «Добавить в галерею».",
+    "show_all_illustrations": "Показать все иллюстрации",
     "year": "ГОД",
     "community_translators": "Переводчики сообщества",
     "translated": "ПЕРЕВЕДЕНО",
@@ -726,11 +763,14 @@
     "system_configuration": "НАСТРОЙКИ СИСТЕМЫ",
     "show_history": "ПОКАЗАТЬ ИСТОРИЮ",
     "show_full_log": "ПОКАЗАТЬ ВЕСЬ ЛОГ",
-    "narrator": "Рассказчик"
+    "narrator": "Рассказчик",
+    "rotate_title": "Поверните устройство",
+    "rotate_body": "Эта страница рассчитана на альбомную ориентацию."
   },
   "zh_TW": {
     "archive": "檔案庫",
     "search": "搜尋...",
+    "to_be_explored": "尚待探索...",
     "all": "全部",
     "mainline": "主線劇情",
     "activity": "側影/插曲",
@@ -833,11 +873,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "請旋轉裝置",
+    "rotate_body": "此頁面針對橫向模式進行了最佳化。"
   },
   "de_DE": {
     "archive": "Archiv",
     "search": "Suche...",
+    "to_be_explored": "NOCH ZU ERKUNDEN...",
     "all": "Alle",
     "mainline": "Hauptstory",
     "activity": "Nebenstory",
@@ -940,11 +983,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Bitte Gerät drehen",
+    "rotate_body": "Diese Ansicht ist für die Querformat-Ausrichtung optimiert."
   },
   "es_ES": {
     "archive": "Archivo",
     "search": "Buscar...",
+    "to_be_explored": "POR EXPLORAR...",
     "all": "Todo",
     "mainline": "Historia Principal",
     "activity": "Historia Secundaria",
@@ -1047,11 +1093,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Gira tu dispositivo",
+    "rotate_body": "Esta experiencia está optimizada para la orientación horizontal."
   },
   "fr_FR": {
     "archive": "Archive",
     "search": "Rechercher...",
+    "to_be_explored": "À EXPLORER...",
     "all": "Tout",
     "mainline": "Histoire Principale",
     "activity": "Histoire Secondaire",
@@ -1154,11 +1203,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Veuillez tourner votre appareil",
+    "rotate_body": "Cette expérience est optimisée pour l'orientation paysage."
   },
   "id_ID": {
     "archive": "Arsip",
     "search": "Cari...",
+    "to_be_explored": "BELUM DIJELAJAHI...",
     "all": "Semua",
     "mainline": "Cerita Utama",
     "activity": "Cerita Sampingan",
@@ -1261,11 +1313,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Putar perangkat Anda",
+    "rotate_body": "Pengalaman ini dioptimalkan untuk orientasi lanskap."
   },
   "it_IT": {
     "archive": "Archivio",
     "search": "Cerca...",
+    "to_be_explored": "ANCORA DA ESPLORARE...",
     "all": "Tutti",
     "mainline": "Storia Principale",
     "activity": "Storia Secondaria",
@@ -1368,11 +1423,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Ruota il dispositivo",
+    "rotate_body": "Questa esperienza è ottimizzata per l'orientamento orizzontale."
   },
   "pt_PT": {
     "archive": "Arquivo",
     "search": "Pesquisar...",
+    "to_be_explored": "AINDA A EXPLORAR...",
     "all": "Tudo",
     "mainline": "História Principal",
     "activity": "História Secundária",
@@ -1475,11 +1533,14 @@
     "system_configuration": "SYSTEM CONFIGURATION",
     "show_history": "SHOW HISTORY",
     "show_full_log": "SHOW FULL LOG",
-    "narrator": "Narrator"
+    "narrator": "Narrator",
+    "rotate_title": "Gire o dispositivo",
+    "rotate_body": "Esta experiência foi otimizada para a orientação horizontal."
   },
   "ru_RU_CN": {
-    "archive": "Zoot Archive",
+    "archive": "rhodes.monster",
     "search": "Поиск...",
+    "to_be_explored": "ПРЕДСТОИТ ИССЛЕДОВАТЬ...",
     "all": "all",
     "mainline": "Основной сюжет",
     "activity": "Побочные истории",
@@ -1539,6 +1600,18 @@
     "storyline_selection": "Выбор сюжетной линии",
     "year_selection": "Выбор года",
     "storyline": "ЛИНИЯ",
+    "story_line": "Сюжетная линия",
+    "chapter_recollection": "Воспоминания о главе",
+    "recollection": "Воспоминания",
+    "collected_recollections": "Собранные воспоминания",
+    "collected": "Собрано",
+    "collect_to_gallery": "Добавить в галерею",
+    "in_gallery": "Уже в галерее",
+    "open_scene": "Открыть сцену",
+    "archive_record": "Архивная запись",
+    "no_recollection": "Для этой сюжетной линии нет иллюстраций.",
+    "no_collected_recollection": "В галерее пока пусто. Откройте иллюстрацию и нажмите «Добавить в галерею».",
+    "show_all_illustrations": "Показать все иллюстрации",
     "year": "ГОД",
     "community_translators": "Переводчики сообщества",
     "translated": "ПЕРЕВЕДЕНО",
@@ -1776,6 +1849,8 @@
     "system_configuration": "НАСТРОЙКИ СИСТЕМЫ",
     "show_history": "ПОКАЗАТЬ ИСТОРИЮ",
     "show_full_log": "ПОКАЗАТЬ ВЕСЬ ЛОГ",
-    "narrator": "Рассказчик"
+    "narrator": "Рассказчик",
+    "rotate_title": "Поверните устройство",
+    "rotate_body": "Эта страница рассчитана на альбомную ориентацию."
   }
 }
