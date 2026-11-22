@@ -1,5 +1,6 @@
 import { Language, OperatorVoiceLine, OperatorCvInfo, OperatorVoiceData } from '../types';
 import { DbService } from './dbService';
+import { platform } from '../platform';
 
 export type { OperatorVoiceLine, OperatorCvInfo, OperatorVoiceData };
 
@@ -515,14 +516,14 @@ function scheduleVoiceTablePersist(lang: VoiceTableLang, table: RawVoiceTable): 
 
 async function fetchVoiceTable(lang: VoiceTableLang): Promise<RawVoiceTable | null> {
   const url = CHARWORD_TABLE_URLS[lang];
-  const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+  const proxiedUrl = platform.proxyUrl(url);
 
   try {
-    const proxied = await fetch(proxiedUrl);
+    const proxied = await platform.fetch(proxiedUrl);
     if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
     return (await proxied.json()) as RawVoiceTable;
   } catch (proxyErr) {
-    const direct = await fetch(url);
+    const direct = await platform.fetch(url);
     if (!direct.ok) throw new Error(`HTTP ${direct.status}`);
     return (await direct.json()) as RawVoiceTable;
   }
@@ -628,7 +629,7 @@ export function buildAudioUrlForLang(
       break;
   }
 
-  return `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+  return platform.proxyUrl(targetUrl);
 }
 
 /**

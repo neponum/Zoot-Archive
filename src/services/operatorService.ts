@@ -1,6 +1,9 @@
 import { Language, OperatorData, OperatorHandbookSection, StoryEpisode } from '../types';
+import { platform } from '../platform';
 import { getOperatorRussianName, PROFESSION_NAMES, FACTION_NAMES, HANDBOOK_TITLE_MAP, getCanonicalHandbookTitle } from '../utils/operatorUtils';
+import { getOperatorAvatarUrl, getOperatorPortraitUrl } from '../utils/assetUrls';
 import { fetchChapterList } from './storyService';
+import { loadDossierOverlay } from './ruCsvOverlayService';
 
 export interface ParsedDossierItem {
   key: string;
@@ -35,38 +38,60 @@ const GITHUB_HANDBOOK_URLS: Record<string, string> = {
   en_US: 'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData_YoStar/main/en_US/gamedata/excel/handbook_info_table.json',
 };
 
-interface RussianDossierSection {
+export interface RussianDossierSection {
   index: number;
   titleEn: string;
   titleRu: string;
   textRu: string;
 }
 
-interface RussianDossier {
+export interface RussianDossier {
   operatorId: string;
   sections: RussianDossierSection[];
 }
 
-const RU_DOSSIER_MODULES = import.meta.glob<{ default: RussianDossier }>('../data/dossiers_ru/*.json');
-const russianDossierCache: Record<string, RussianDossier | null> = {};
+const ZOOT_DATA_DOSSIER_BASE =
+  'https://raw.githubusercontent.com/neponum/zoot-data/main/translation/ru_RU/dossiers';
+const russianDossierCache = new Map<string, RussianDossier | null>();
+/** Досье, которого в репозитории точно нет (404), — в отличие от сбоя сети. */
+const missingDossiers = new Set<string>();
 
-async function loadRussianDossier(opId: string): Promise<RussianDossier | null> {
-  if (opId in russianDossierCache) return russianDossierCache[opId];
+/** `true` — досье точно отсутствует в переводе, `false` — сбой загрузки. */
+export function isRussianDossierMissing(opId: string): boolean {
+  return missingDossiers.has(opId);
+}
 
-  const loader = RU_DOSSIER_MODULES[`../data/dossiers_ru/${opId}.json`];
-  if (!loader) {
-    russianDossierCache[opId] = null;
-    return null;
-  }
+/**
+ * Русское досье из zoot-data. Официальные JSON-таблицы игры остаются
+ * источником структуры, а перевод приходит из общего репозитория.
+ */
+export async function loadRussianDossier(opId: string): Promise<RussianDossier | null> {
+  if (russianDossierCache.has(opId)) return russianDossierCache.get(opId) ?? null;
 
   try {
-    const mod = await loader();
-    const dossier = (mod.default || mod) as RussianDossier;
-    russianDossierCache[opId] = dossier;
-    return dossier;
+    const response = await platform.fetch(
+      `${ZOOT_DATA_DOSSIER_BASE}/${encodeURIComponent(opId)}.json`,
+      { cache: 'no-cache' }
+    );
+    if (response.status === 404) {
+      // Такого перевода нет вовсе — это ответ, а не сбой, его можно кешировать.
+      missingDossiers.add(opId);
+      russianDossierCache.set(opId, null);
+      return null;
+    }
+    if (!response.ok) {
+      // 429/5xx и прочие сбои не кешируем: следующий запрос попробует снова.
+      return null;
+    }
+    const data = (await response.json()) as RussianDossier;
+    if (!data || !Array.isArray(data.sections)) {
+      russianDossierCache.set(opId, null);
+      return null;
+    }
+    russianDossierCache.set(opId, data);
+    return data;
   } catch (err) {
     console.warn(`Failed to load Russian dossier for ${opId}:`, err);
-    russianDossierCache[opId] = null;
     return null;
   }
 }
@@ -100,15 +125,15 @@ export async function fetchHandbookTable(langKey: 'zh_CN' | 'en_US'): Promise<an
   }
 
   const url = GITHUB_HANDBOOK_URLS[langKey] || GITHUB_HANDBOOK_URLS.en_US;
-  const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+  const proxiedUrl = platform.proxyUrl(url);
 
-  handbookFetchPromises[langKey] = fetch(proxiedUrl)
+  handbookFetchPromises[langKey] = platform.fetch(proxiedUrl)
     .then(res => {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return res.json();
     })
     .catch(async () => {
-      const direct = await fetch(url);
+      const direct = await platform.fetch(url);
       if (!direct.ok) throw new Error(`HTTP error ${direct.status}`);
       return direct.json();
     })
@@ -134,26 +159,35 @@ export async function fetchOperatorHandbookAsync(
   uiLang: Language = 'ru_RU'
 ): Promise<OperatorHandbookSection[]> {
   try {
-    const [zhDict, enDict, ruDossier] = await Promise.all([
+    const [zhDict, enDict, ruDossier, dossierOverlay] = await Promise.all([
       fetchHandbookTable('zh_CN'),
       fetchHandbookTable('en_US'),
-      loadRussianDossier(opId)
+      loadRussianDossier(opId),
+      loadDossierOverlay(opId)
     ]);
 
     const hz = zhDict ? zhDict[opId] : null;
     const he = enDict ? enDict[opId] : null;
 
-    if (!hz && !he && !ruDossier) return [];
+    if (!hz && !he && !ruDossier && dossierOverlay.size === 0) return [];
 
-    if (!hz && !he && ruDossier) {
-      return ruDossier.sections.map((section) => ({
-        titleZh: '',
-        titleEn: section.titleEn,
-        textZh: '',
-        textEn: '',
-        titleRu: section.titleRu,
-        textRu: section.textRu
-      }));
+    if (!hz && !he && (ruDossier || dossierOverlay.size > 0)) {
+      const maxIndex = Math.max(
+        ruDossier?.sections.length || 0,
+        ...Array.from(dossierOverlay.keys()).map((index) => index + 1)
+      );
+      return Array.from({ length: maxIndex }, (_, idx) => {
+        const bundled = ruDossier?.sections[idx];
+        const overlay = dossierOverlay.get(idx);
+        return {
+          titleZh: '',
+          titleEn: bundled?.titleEn || '',
+          textZh: '',
+          textEn: '',
+          titleRu: overlay?.titleRu || bundled?.titleRu || '',
+          textRu: overlay?.textRu || bundled?.textRu || ''
+        };
+      });
     }
 
     const handbookSections: OperatorHandbookSection[] = [];
@@ -171,13 +205,14 @@ export async function fetchOperatorHandbookAsync(
       const textZh = (sZh && sZh.stories && sZh.stories[0] && sZh.stories[0].storyText) || (s && s.stories && s.stories[0] && s.stories[0].storyText) || '';
       const textEn = (sEn && sEn.stories && sEn.stories[0] && sEn.stories[0].storyText) || '';
 
+      const overlaySection = dossierOverlay.get(idx);
       handbookSections.push({
         titleZh,
         titleEn,
         textZh,
         textEn,
-        titleRu: ruSection?.titleRu,
-        textRu: ruSection?.textRu
+        titleRu: overlaySection?.titleRu || ruSection?.titleRu,
+        textRu: overlaySection?.textRu || ruSection?.textRu
       });
     }
 
@@ -266,10 +301,9 @@ export async function getOperatorsList(uiLang: Language = 'ru_RU'): Promise<Enri
       ? { ru: 'Ближний бой', en: 'Melee' } 
       : (op.position === 'RANGED' ? { ru: 'Дальний бой', en: 'Ranged' } : { ru: 'Универсал', en: 'All' });
 
-    // Avatar and Portrait URLs (Official headshots & bust portraits)
-    // yuanyan3060 provides full coverage of all operators up to the latest CN release
-    const avatarUrl = `https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/${op.id}.png`;
-    const portraitUrl = `https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/portrait/${op.id}_1.png`;
+    // Avatar and Portrait URLs (official game assets, mirrored by torappu.prts.wiki)
+    const avatarUrl = getOperatorAvatarUrl(op.id);
+    const portraitUrl = getOperatorPortraitUrl(op.id);
 
     // Match with Paradox Story
     const cleanIdPart = op.id.replace('char_', '').split('_')[1] || '';

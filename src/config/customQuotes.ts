@@ -17,7 +17,7 @@ export interface CustomQuote {
 
 export const CUSTOM_QUOTES: CustomQuote[] = [
   {
-    ru: "Приветствую, доктор! zoot-archive опять подвергся изменениям. Чтобы прочитать историю, нажмите на кнопку терминала.",
-    en: "Greetings, Doctor! zoot-archive has undergone changes again. To read the story, press the terminal button."
+    ru: "Приветствую, доктор! rhodes.monster опять подвергся изменениям. Чтобы прочитать историю, нажмите на кнопку терминала.",
+    en: "Greetings, Doctor! rhodes.monster has undergone changes again. To read the story, press the terminal button."
   }
 ];

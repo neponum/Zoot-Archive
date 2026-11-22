@@ -36,6 +36,17 @@ export function extractOperatorKey(id: string): string {
   return parts[0] || cleanId;
 }
 
+/**
+ * ID оперативника из пути личного дела:
+ * `obt/memory/story_kalts_1_1` → `kalts`.
+ * Нужен, чтобы выход из читалки памяти вёл в досье, а не в терминал историй.
+ */
+export function operatorShortIdFromMemoryStory(path: string | undefined): string {
+  if (!path) return '';
+  const match = /obt\/memory\/story_([a-z0-9]+?)_\d+_\d+/i.exec(path);
+  return match?.[1]?.toLowerCase() ?? '';
+}
+
 export function isOperatorEpisode(epOrId: any): boolean {
   if (!epOrId) return false;
   const id = typeof epOrId === 'string' ? epOrId : (epOrId.id || '');
@@ -93,6 +104,7 @@ export const FACTION_NAMES: Record<string, { ru: string; en: string }> = {
   glasgow: { ru: 'Банда Глазго', en: 'Glasgow Gang' },
   dublinn: { ru: 'Дублинн', en: 'Dublinn' },
   reunion: { ru: 'Воссоединение', en: 'Reunion' },
+  sees: { ru: 'S.E.E.S.', en: 'S.E.E.S.' },
 };
 
 export const HANDBOOK_TITLE_MAP: Record<string, string> = {

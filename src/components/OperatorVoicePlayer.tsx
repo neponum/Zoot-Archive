@@ -1,31 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  Play, 
-  Pause, 
-  Square, 
-  Volume2, 
-  VolumeX, 
-  SkipForward, 
-  SkipBack, 
-  Search, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  Mic, 
-  Languages, 
-  MessageSquare, 
-  ShieldAlert, 
-  Building2, 
-  Layers, 
-  Loader2, 
+import {
+  Play,
+  Pause,
+  Square,
+  Volume2,
+  VolumeX,
+  SkipForward,
+  SkipBack,
+  Search,
+  Copy,
+  Check,
+  Sparkles,
+  Mic,
+  Languages,
+  MessageSquare,
+  ShieldAlert,
+  Building2,
+  Layers,
+  Loader2,
   Radio
 } from 'lucide-react';
 import { Language, OperatorVoiceLine, OperatorCvInfo, OperatorVoiceData } from '../types';
-import { 
-  getOperatorVoiceData, 
-  getLineAudioUrl, 
-  CV_LANG_LABELS, 
-  VOICE_TITLE_RU_MAP 
+import {
+  getOperatorVoiceData,
+  getLineAudioUrl,
+  CV_LANG_LABELS,
+  VOICE_TITLE_RU_MAP
 } from '../services/operatorVoiceService';
 import { cn } from '../lib/utils';
 
@@ -138,7 +138,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
     // Filter by Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter((l) => 
+      list = list.filter((l) =>
         l.voiceTitle.toLowerCase().includes(q) ||
         l.voiceTitleEn.toLowerCase().includes(q) ||
         l.voiceTitleZh.toLowerCase().includes(q) ||
@@ -311,7 +311,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
+        <Loader2 className="w-8 h-8 text-white/85 animate-spin mb-3" />
         <span className="text-xs font-mono text-white/60 tracking-wider uppercase">
           {isRussian ? 'Загрузка голосовых файлов и озвучки...' : 'Loading voice records & audio...'}
         </span>
@@ -335,16 +335,16 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-950">
-      
+
       {/* 1. TOP ACTORS & DUB LANGUAGE SELECTOR */}
       <div className="shrink-0 border-b border-white/10 bg-zinc-900/60 p-4">
         <div className="flex flex-col gap-3">
-          
+
           {/* Header Row: Voice Languages Switcher */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            
+
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-950/80 border border-blue-500/30 rounded-sm text-blue-400 font-mono text-xs font-bold tracking-wider">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/[0.04] border border-white/25 rounded-sm text-white/85 font-mono text-xs font-bold tracking-wider">
                 <Radio className="w-3.5 h-3.5 animate-pulse" />
                 <span>{isRussian ? 'ЯЗЫК ОЗВУЧКИ' : 'VOICE DUB'}</span>
               </div>
@@ -362,8 +362,8 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                       onClick={() => handleSelectLanguage(langKey)}
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 rounded-sm border text-xs font-mono transition-all",
-                        isSelected 
-                          ? "bg-blue-600 border-blue-400 text-white font-bold shadow-[0_0_12px_rgba(59,130,246,0.4)] scale-105"
+                        isSelected
+                          ? "bg-white/20 border-white/25 text-white font-bold shadow-[0_0_12px_rgba(255,255,255,0.28)] scale-105"
                           : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/20"
                       )}
                       title={cvInfo && cvInfo.cvNames.length > 0 ? `CV: ${cvInfo.cvNames.join(', ')}` : undefined}
@@ -396,13 +396,13 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                     onClick={() => setSelectedWordKey(wk)}
                     className={`px-2.5 py-1 text-xs font-mono font-bold rounded-sm transition-colors ${
                       selectedWordKey === wk
-                        ? 'bg-blue-600 text-white shadow-sm'
+                        ? 'bg-white/20 text-white shadow-sm'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {wk.includes('amiya2') 
+                    {wk.includes('amiya2')
                       ? (isRussian ? 'Гвардеец' : 'Guard')
-                      : wk.includes('amiya3') 
+                      : wk.includes('amiya3')
                       ? (isRussian ? 'Медик' : 'Medic')
                       : (isRussian ? 'Заклинатель' : 'Caster')}
                   </button>
@@ -415,7 +415,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
           {activeCv && activeCv.cvNames.length > 0 && (
             <div className="flex items-center gap-2 text-xs font-mono text-white/60 pt-1 border-t border-white/5">
               <span className="text-white/40 uppercase tracking-wider">{isRussian ? 'Сэйю (CV):' : 'Voice Actor:'}</span>
-              <span className="text-blue-300 font-bold">{activeCv.cvNames.join(', ')}</span>
+              <span className="text-white/85 font-bold">{activeCv.cvNames.join(', ')}</span>
               <span className="text-white/30">•</span>
               <span className="text-white/50">
                 {activeLangConfig.flag} {isRussian ? activeLangConfig.ru : activeLangConfig.en}
@@ -428,20 +428,20 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
       {/* 2. PERSISTENT AUDIO PLAYBACK BAR */}
       <div className="shrink-0 bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-b border-white/15 p-3.5 shadow-xl relative z-20">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          
+
           {/* Currently Playing Line Info */}
           <div className="flex items-center gap-3 w-full md:w-1/3 min-w-0">
             <div className={`w-10 h-10 rounded-sm flex items-center justify-center shrink-0 border transition-all ${
-              isPlaying 
-                ? 'bg-blue-600/30 border-blue-400/60 shadow-[0_0_15px_rgba(59,130,246,0.4)]' 
+              isPlaying
+                ? 'bg-white/15 border-white/25 shadow-[0_0_15px_rgba(255,255,255,0.28)]'
                 : 'bg-black/60 border-white/15'
             }`}>
               {isPlaying ? (
                 <div className="flex items-end gap-0.5 h-4">
-                  <span className="w-1 bg-blue-400 animate-[bounce_0.8s_infinite] h-2" />
-                  <span className="w-1 bg-blue-400 animate-[bounce_1.1s_infinite] h-4" />
-                  <span className="w-1 bg-blue-400 animate-[bounce_0.6s_infinite] h-3" />
-                  <span className="w-1 bg-blue-400 animate-[bounce_0.9s_infinite] h-1" />
+                  <span className="w-1 bg-white/20 animate-[bounce_0.8s_infinite] h-2" />
+                  <span className="w-1 bg-white/20 animate-[bounce_1.1s_infinite] h-4" />
+                  <span className="w-1 bg-white/20 animate-[bounce_0.6s_infinite] h-3" />
+                  <span className="w-1 bg-white/20 animate-[bounce_0.9s_infinite] h-1" />
                 </div>
               ) : (
                 <Volume2 className="w-5 h-5 text-white/40" />
@@ -450,10 +450,10 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-wider">
+                <span className="text-[10px] font-mono font-bold text-white/85 uppercase tracking-wider">
                   {currentLine ? currentLine.voiceId : 'AUDIO PLAYER'}
                 </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-blue-950/80 border border-blue-500/20 text-blue-300 rounded-sm uppercase">
+                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-white/[0.04] border border-white/25 text-white/85 rounded-sm uppercase">
                   {activeLangConfig.flag} {selectedVoiceLang}
                 </span>
                 {currentLine && (
@@ -470,7 +470,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
 
           {/* Player Transport Controls & Timeline */}
           <div className="flex flex-col items-center gap-2 w-full md:w-1/3 max-w-md">
-            
+
             {/* Control Buttons */}
             <div className="flex items-center gap-3">
               <button
@@ -491,7 +491,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                     playLine(filteredLines[0]);
                   }
                 }}
-                className="w-12 h-12 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:scale-105 active:scale-95 shrink-0"
+                className="w-12 h-12 flex items-center justify-center bg-white/20 hover:bg-white/15 text-white rounded-full transition-all shadow-[0_0_15px_rgba(255,255,255,0.28)] hover:scale-105 active:scale-95 shrink-0"
                 title={isPlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Воспроизведение' : 'Play')}
                 aria-label={isPlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Воспроизведение' : 'Play')}
               >
@@ -530,7 +530,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                 value={currentTime}
                 onChange={handleSeek}
                 disabled={!currentLineId}
-                className="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500 disabled:opacity-30"
+                className="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-30"
               />
               <span className="w-8">{formatTime(duration)}</span>
             </div>
@@ -538,15 +538,15 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
 
           {/* Volume & Playback Settings */}
           <div className="flex items-center justify-end gap-3 w-full md:w-1/3">
-            
+
             {/* Auto Next Toggle */}
             <button
               onClick={() => setAutoNext(!autoNext)}
               aria-pressed={autoNext}
               aria-label={isRussian ? 'Автоматическое воспроизведение следующей реплики' : 'Auto play next voice line'}
               className={`inline-flex items-center gap-1 min-h-[44px] px-2 rounded-sm text-[11px] font-mono border transition-all ${
-                autoNext 
-                  ? 'bg-blue-950/80 border-blue-500/50 text-blue-300' 
+                autoNext
+                  ? 'bg-white/[0.04] border-white/25 text-white/85'
                   : 'bg-black/40 border-white/10 text-white/40 hover:text-white/70'
               }`}
               title={isRussian ? 'Автоматическое воспроизведение следующей реплики' : 'Auto play next voice line'}
@@ -561,8 +561,8 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
               aria-pressed={showDualText}
               aria-label={isRussian ? 'Двойные субтитры (Оригинал + Перевод)' : 'Dual Subtitles (Original + Translation)'}
               className={`inline-flex items-center gap-1 min-h-[44px] px-2 rounded-sm text-[11px] font-mono border transition-all ${
-                showDualText 
-                  ? 'bg-zinc-800 border-white/20 text-white font-medium' 
+                showDualText
+                  ? 'bg-zinc-800 border-white/20 text-white font-medium'
                   : 'bg-black/40 border-white/10 text-white/40'
               }`}
               title={isRussian ? 'Двойные субтитры (Оригинал + Перевод)' : 'Dual Subtitles (Original + Translation)'}
@@ -593,7 +593,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                 step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className="w-16 sm:w-20 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                className="w-16 sm:w-20 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
           </div>
@@ -603,7 +603,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
 
       {/* 3. FILTER TABS & SEARCH BAR */}
       <div className="shrink-0 border-b border-white/10 bg-zinc-950 p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-        
+
         {/* Category Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
           {[
@@ -639,7 +639,7 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isRussian ? 'Поиск реплики или текста...' : 'Search voice title or text...'}
-            className="w-full pl-8 pr-3 py-1.5 bg-black/60 border border-white/10 rounded-sm text-xs font-mono text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
+            className="w-full pl-8 pr-3 py-1.5 bg-black/60 border border-white/10 rounded-sm text-xs font-mono text-white placeholder:text-white/30 focus:outline-none focus:border-white/25"
           />
           {searchQuery && (
             <button
@@ -684,24 +684,24 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                 className={cn(
                   "p-3.5 rounded-sm border transition-all relative group",
                   isThisLinePlaying
-                    ? "bg-blue-950/40 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                    ? "bg-white/[0.04] border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
                     : isThisLineSelected
                     ? "bg-white/5 border-white/20"
                     : "bg-zinc-900/40 border-white/5 hover:border-white/15 hover:bg-zinc-900/80"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  
+
                   {/* Play Button & Title */}
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    
+
                     <button
                       onClick={() => playLine(line)}
                       className={cn(
                         "mt-0.5 w-11 h-11 rounded-sm flex items-center justify-center shrink-0 border transition-all",
                         isThisLinePlaying
-                          ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                          : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-blue-600/30 hover:border-blue-500/40"
+                          ? "bg-white/20 border-white/25 text-white shadow-[0_0_10px_rgba(255,255,255,0.25)]"
+                          : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-white/15 hover:border-white/25"
                       )}
                       title={isThisLinePlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Слушать' : 'Play')}
                       aria-label={isThisLinePlaying ? (isRussian ? 'Пауза' : 'Pause') : (isRussian ? 'Слушать' : 'Play')}
@@ -714,10 +714,10 @@ export const OperatorVoicePlayer: React.FC<OperatorVoicePlayerProps> = ({
                     </button>
 
                     <div className="flex-1 min-w-0">
-                      
+
                       {/* Badge / Title / Category */}
                       <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                        <span className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-wider bg-blue-950/60 px-1.5 py-0.5 rounded-sm border border-blue-500/20">
+                        <span className="text-[10px] font-mono font-bold text-white/85 uppercase tracking-wider bg-white/[0.04] px-1.5 py-0.5 rounded-sm border border-white/25">
                           {line.voiceId}
                         </span>
 

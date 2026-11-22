@@ -15,6 +15,11 @@ export const STORY_LINES_DATA = [
   { id: 'ts', topText: 'Story Line • TS', bottomText: 'Tales of Terra', logo: 'TS_arc' },
 ];
 
+/** Английское название линии (как в STORYMAP_DATA) → её id в переводах. */
+export const STORY_LINE_ID_BY_NAME: Record<string, string> = Object.fromEntries(
+  STORY_LINES_DATA.map((line) => [line.bottomText, line.id])
+);
+
 // Добавьте сюда префиксы или полные ID эпизодов, чтобы они попадали в нужную стори линию
 export const STORY_LINE_FILTERS: Record<string, string[]> = {
   'main': ['main_'],

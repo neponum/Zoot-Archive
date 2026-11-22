@@ -321,7 +321,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
     <div className="h-full flex flex-col bg-zinc-950 text-white relative select-none font-sans overflow-hidden">
       
       {/* Background Graphic Grid with Subtle Blue Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/10 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Top Header Bar with High Stacking Context (z-30) */}
@@ -331,15 +331,15 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-blue-400/50 rounded-sm text-xs font-mono font-bold text-white/80 hover:text-white transition-all shadow-sm group"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/25 rounded-sm text-xs font-mono font-bold text-white/80 hover:text-white transition-all shadow-sm group"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-blue-400 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-3.5 h-3.5 text-white/85 group-hover:-translate-x-0.5 transition-transform" />
             <span className="uppercase tracking-wider">{isRussian ? 'НАЗАД' : 'BACK'}</span>
           </button>
 
           {/* Operator Counter Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/90 border border-white/10 rounded-sm text-xs font-mono">
-            <User className="w-3.5 h-3.5 text-blue-400" />
+            <User className="w-3.5 h-3.5 text-white/85" />
             <span className="text-white/60 text-[11px] uppercase font-bold tracking-wider hidden sm:inline">
               {isRussian ? 'ОПЕРАТИВНИКИ:' : 'OPERATORS:'}
             </span>
@@ -397,7 +397,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isRussian ? 'Поиск оперативника...' : 'Search operator...'}
-              className="w-full bg-zinc-900/90 border border-white/10 focus:border-blue-400/80 focus:ring-1 focus:ring-blue-400/40 rounded-sm pl-8 pr-7 py-1.5 text-xs text-white placeholder-white/30 font-mono transition-all outline-none"
+              className="w-full bg-zinc-900/90 border border-white/10 focus:border-white/25 focus:ring-1 focus:ring-white/30 rounded-sm pl-8 pr-7 py-1.5 text-xs text-white placeholder-white/30 font-mono transition-all outline-none"
             />
             {searchQuery && (
               <button
@@ -414,7 +414,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
             onClick={() => setOnlyWithStories(!onlyWithStories)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono transition-all border shrink-0 ${
               onlyWithStories
-                ? 'bg-blue-600 text-white border-blue-400 font-bold shadow-md shadow-blue-600/20'
+                ? 'bg-white/20 text-white border-white/25 font-bold shadow-md shadow-white/20'
                 : 'bg-zinc-900 text-white/70 border-white/10 hover:text-white hover:border-white/20'
             }`}
             title={isRussian ? 'Показать только оперативников с историями' : 'Show only operators with stories'}
@@ -429,10 +429,10 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
           <div className="relative shrink-0" ref={sortRef}>
             <button
               onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 hover:border-blue-400/50 rounded-sm text-xs font-mono text-white/80 hover:text-white transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 hover:border-white/25 rounded-sm text-xs font-mono text-white/80 hover:text-white transition-all"
               title={isRussian ? 'Сортировка' : 'Sort'}
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-blue-400" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-white/85" />
               <span className="text-[10px] uppercase font-bold tracking-wider hidden sm:inline">
                 {currentSort === 'rarity' 
                   ? (isRussian ? 'ПО РЕДКОСТИ' : 'RARITY') 
@@ -449,40 +449,40 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                     setCurrentSort('rarity');
                     setIsSortMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'rarity' ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'rarity' ? 'text-white/85 font-bold bg-white/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
                 >
                   {isRussian ? 'По редкости (6★-1★)' : 'By Rarity (6★-1★)'}
-                  {currentSort === 'rarity' && <Check className="w-3 h-3 text-blue-400" />}
+                  {currentSort === 'rarity' && <Check className="w-3 h-3 text-white/85" />}
                 </button>
                 <button
                   onClick={() => {
                     setCurrentSort('nameAsc');
                     setIsSortMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'nameAsc' ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'nameAsc' ? 'text-white/85 font-bold bg-white/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
                 >
                   A-Z ({isRussian ? 'По алфавиту' : 'Alphabetical'})
-                  {currentSort === 'nameAsc' && <Check className="w-3 h-3 text-blue-400" />}
+                  {currentSort === 'nameAsc' && <Check className="w-3 h-3 text-white/85" />}
                 </button>
                 <button
                   onClick={() => {
                     setCurrentSort('nameDesc');
                     setIsSortMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'nameDesc' ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'nameDesc' ? 'text-white/85 font-bold bg-white/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
                 >
                   Z-A ({isRussian ? 'В обратном порядке' : 'Reverse'})
-                  {currentSort === 'nameDesc' && <Check className="w-3 h-3 text-blue-400" />}
+                  {currentSort === 'nameDesc' && <Check className="w-3 h-3 text-white/85" />}
                 </button>
                 <button
                   onClick={() => {
                     setCurrentSort('stories');
                     setIsSortMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'stories' ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors flex items-center justify-between ${currentSort === 'stories' ? 'text-white/85 font-bold bg-white/10' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
                 >
                   {isRussian ? 'По числу глав' : 'By Story Count'}
-                  {currentSort === 'stories' && <Check className="w-3 h-3 text-blue-400" />}
+                  {currentSort === 'stories' && <Check className="w-3 h-3 text-white/85" />}
                 </button>
               </div>
             )}
@@ -502,7 +502,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                 onClick={() => setSelectedClass(cls.id)}
                 className={`inline-flex items-center justify-center min-h-[44px] px-2.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider rounded-sm transition-all border shrink-0 ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-blue-400 shadow-sm'
+                    ? 'bg-white/20 text-white border-white/25 shadow-sm'
                     : 'bg-black/40 text-white/50 border-white/5 hover:text-white hover:border-white/20'
                 }`}
               >
@@ -538,7 +538,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 relative z-10">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-white/40 font-mono">
-            <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mb-3" />
+            <div className="w-8 h-8 border-2 border-white/25 border-t-transparent rounded-full animate-spin mb-3" />
             <p className="text-xs uppercase tracking-widest">
               {isRussian ? 'ЗАГРУЗКА СПИСКА ОПЕРАТИВНИКОВ...' : 'LOADING OPERATORS...'}
             </p>
@@ -562,7 +562,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                       handleSelectOperator(op);
                     }
                   }}
-                  className="group relative flex flex-col bg-zinc-900/80 border border-white/10 hover:border-blue-400/80 rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] cursor-pointer select-none aspect-[3/4.2] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:border-blue-400/80"
+                  className="group relative flex flex-col bg-zinc-900/80 border border-white/10 hover:border-white/25 rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,255,255,0.12)] cursor-pointer select-none aspect-[3/4.2] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:border-white/25"
                 >
                   {/* Portrait Cover Image */}
                   <div className="absolute inset-0 bg-zinc-950 overflow-hidden flex items-center justify-center">
@@ -587,7 +587,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                   <div className="relative z-10 p-2.5 flex items-center justify-between w-full pointer-events-none">
                     {/* Stars Badge (White & Blue) */}
                     <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-[2px] bg-black/80 border border-white/10 backdrop-blur-sm">
-                      <Sparkles className="w-2.5 h-2.5 text-blue-400 fill-blue-400" />
+                      <Sparkles className="w-2.5 h-2.5 text-white/85 fill-white/80" />
                       <span className="text-[9px] font-mono font-black text-white">
                         {op.rarity}★
                       </span>
@@ -595,7 +595,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
 
                     {/* Stories Badge */}
                     {op.hasStories && (
-                      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[2px] bg-blue-500/20 text-blue-300 border border-blue-400/40 font-mono backdrop-blur-sm flex items-center gap-1">
+                      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[2px] bg-white/10 text-white/85 border border-white/25 font-mono backdrop-blur-sm flex items-center gap-1">
                         <BookOpen className="w-2.5 h-2.5" />
                         {totalChapters} {isRussian ? (totalChapters === 1 ? 'ГЛАВА' : 'ГЛАВЫ') : 'CH'}
                       </span>
@@ -606,7 +606,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                   <div className="mt-auto relative z-10 p-3 flex flex-col gap-1">
                     {/* Class and Faction */}
                     <div className="flex items-center justify-between text-[8px] font-mono uppercase tracking-wider text-white/50">
-                      <span className="font-bold text-blue-300 truncate max-w-[65%]">
+                      <span className="font-bold text-white/85 truncate max-w-[65%]">
                         {op.professionName}
                       </span>
                       <span className="truncate text-white/40">
@@ -615,17 +615,17 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                     </div>
 
                     {/* Operator Name */}
-                    <h3 className="text-xs md:text-sm font-black text-white group-hover:text-blue-300 transition-colors leading-tight truncate uppercase tracking-tight font-mono">
+                    <h3 className="text-xs md:text-sm font-black text-white group-hover:text-white/85 transition-colors leading-tight truncate uppercase tracking-tight font-mono">
                       {op.displayName}
                     </h3>
 
                     {/* Dossier & Voice Badge Indicators */}
                     <div className="flex items-center justify-between text-[8px] font-mono text-white/40 pt-0.5">
                       <div className="flex items-center gap-1">
-                        <FileText className="w-2.5 h-2.5 text-blue-400/70" />
+                        <FileText className="w-2.5 h-2.5 text-white/85/70" />
                         <span>{isRussian ? 'ДОСЬЕ' : 'DOSSIER'}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-blue-400/70">
+                      <div className="flex items-center gap-1 text-white/85/70">
                         <Mic className="w-2.5 h-2.5" />
                         <span>{isRussian ? 'ГОЛОС' : 'VOICE'}</span>
                       </div>
@@ -633,7 +633,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                   </div>
 
                   {/* Hover Accent Line */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
               );
             })}
@@ -644,7 +644,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
             <div className="flex flex-col items-center gap-2 py-6">
               <button
                 onClick={() => setVisibleOperatorsCount((c) => Math.min(c + OPERATORS_PAGE_SIZE, filteredOperators.length))}
-                className="px-6 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 rounded-sm text-xs font-mono uppercase tracking-widest text-blue-400 transition-colors"
+                className="px-6 py-3 min-h-[44px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-sm text-xs font-mono uppercase tracking-widest text-white/85 transition-colors"
               >
                 {isRussian
                   ? `ПОКАЗАТЬ ЕЩЁ (${filteredOperators.length - visibleOperators.length})`
@@ -674,7 +674,7 @@ export const OperatorStoriesViewer: React.FC<OperatorStoriesViewerProps> = ({
                   setSelectedRarity('ALL');
                   setOnlyWithStories(false);
                 }}
-                className="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm text-xs font-mono uppercase tracking-widest text-blue-400 transition-colors"
+                className="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm text-xs font-mono uppercase tracking-widest text-white/85 transition-colors"
               >
                 {isRussian ? 'СБРОСИТЬ ВСЕ ФИЛЬТРЫ' : 'RESET ALL FILTERS'}
               </button>

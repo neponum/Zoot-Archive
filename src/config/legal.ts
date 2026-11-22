@@ -5,12 +5,9 @@
  * на странице для правообладателей. Ничего не хардкодим по компонентам.
  */
 export const LEGAL_CONFIG = {
-  projectName: 'ZOOT Archive',
-  /**
-   * Почтового ящика пока нет: домен будет rhodes.monster, но почту ещё не
-   * подключили. Все обращения идут через Discord и GitHub Issues — не
-   * добавляйте сюда адрес, который не принимает письма.
-   */
+  projectName: 'rhodes.monster',
+  /** Основной адрес для обращений по правам и вопросам проекта. */
+  email: 'contact@rhodes.monster',
   discordInvite: 'https://discord.gg/jYvWPeCjC3',
   repository: 'https://github.com/neponum/zoot-archive',
   repositoryIssues: 'https://github.com/neponum/zoot-archive/issues',

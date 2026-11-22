@@ -8,7 +8,7 @@ export const ARKNIGHTS_CANONICAL_GLOSSARY: Record<string, string> = {
   "Lungmen Guard Department": "Департамент Гвардии Лунмэня",
   "L.G.D.": "ДГЛ",
   "LGD": "ДГЛ",
-  "Penguin Logistics": "Пингвин Лоджистикс",
+  "Penguin Logistics": "Пингвин Логистикс",
   "Blacksteel": "Блэкстил",
   "Blacksteel Worldwide": "Блэкстил Ворлдвайд",
   "Rhine Lab": "Рейн Лаб",

@@ -10,6 +10,7 @@ interface StoryControlsProps {
   showSettings: boolean;
   showLog: boolean;
   showBugReport?: boolean;
+  showHelp?: boolean;
   showUI: boolean;
   isTypewriterFinished: boolean;
   setShowUI: (show: boolean) => void;
@@ -35,6 +36,7 @@ export const useStoryControls = ({
   showSettings,
   showLog,
   showBugReport,
+  showHelp,
   showUI,
   isTypewriterFinished,
   setShowUI,
@@ -66,7 +68,7 @@ export const useStoryControls = ({
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (currentDecision || showBackConfirm || showSettings || showLog || showBugReport) return;
+    if (currentDecision || showBackConfirm || showSettings || showLog || showBugReport || showHelp) return;
     
     // Ignore clicks on UI elements
     const target = e.target as HTMLElement;
@@ -86,7 +88,7 @@ export const useStoryControls = ({
       setIsSkipping(true);
       setIsAuto(false);
     }, 400); // 400ms is standard and comfortable
-  }, [currentDecision, showBackConfirm, showSettings, showLog, showBugReport, setIsHoldingSkip, setIsSkipping, setIsAuto]);
+  }, [currentDecision, showBackConfirm, showSettings, showLog, showBugReport, showHelp, setIsHoldingSkip, setIsSkipping, setIsAuto]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (pointerDownTime.current === 0) return;
@@ -120,7 +122,7 @@ export const useStoryControls = ({
       return;
     }
 
-    if (showBackConfirm || currentDecision || showSettings || showLog || showBugReport) {
+    if (showBackConfirm || currentDecision || showSettings || showLog || showBugReport || showHelp) {
       pointerDownTime.current = 0;
       return;
     }
@@ -149,7 +151,7 @@ export const useStoryControls = ({
       }
       advance();
     }
-  }, [showBackConfirm, currentDecision, showSettings, showLog, showBugReport, showUI, advance, setShowUI, isHoldingSkip, setIsHoldingSkip, setIsSkipping]);
+  }, [showBackConfirm, currentDecision, showSettings, showLog, showBugReport, showHelp, showUI, advance, setShowUI, isHoldingSkip, setIsHoldingSkip, setIsSkipping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -162,7 +164,7 @@ export const useStoryControls = ({
       // Handle Escape for modals
       if (e.code === 'Escape') {
         e.preventDefault();
-        if (showSettings || showLog || showBugReport) {
+        if (showSettings || showLog || showBugReport || showHelp) {
           onCloseModal?.();
         } else if (showBackConfirm) {
           onCloseModal?.();
@@ -173,7 +175,7 @@ export const useStoryControls = ({
       }
 
       // Modals active: block gameplay hotkeys
-      if (showBackConfirm || currentDecision || showSettings || showLog || showBugReport) return;
+      if (showBackConfirm || currentDecision || showSettings || showLog || showBugReport || showHelp) return;
       
       // Advance hotkeys: Space, Enter, ArrowRight, ArrowDown
       if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight' || e.code === 'ArrowDown') {
@@ -247,6 +249,7 @@ export const useStoryControls = ({
     showSettings, 
     showLog, 
     showBugReport, 
+    showHelp,
     showUI, 
     isAuto, 
     isHoldingSkip, 

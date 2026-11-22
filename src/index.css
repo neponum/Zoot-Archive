@@ -8,8 +8,14 @@
 
 @layer base {
   .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, 0.4) rgba(10, 10, 15, 0.5);
+    /* см. комментарий у .sm-track: webkit-правила важнее для Chromium */
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.28) rgba(10, 10, 15, 0.5);
+    }
   }
   .custom-scrollbar::-webkit-scrollbar {
     width: 7px;
@@ -19,22 +25,28 @@
     border-left: 1px solid rgba(255, 255, 255, 0.05);
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.35);
+    background: rgba(255,255,255,0.28);
     border-radius: 2px;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.24);
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.75);
-    border-color: rgba(147, 197, 253, 0.9);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(255,255,255,0.7);
+    box-shadow: 0 0 10px rgba(255,255,255,0.35);
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:active {
-    background: rgba(96, 165, 250, 0.9);
+    background: rgba(255,255,255,0.6);
   }
 
   .custom-scrollbar-horizontal {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, 0.4) rgba(10, 10, 15, 0.5);
+    /* см. комментарий у .sm-track */
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .custom-scrollbar-horizontal {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.28) rgba(10, 10, 15, 0.5);
+    }
   }
   .custom-scrollbar-horizontal::-webkit-scrollbar {
     height: 6px;
@@ -44,19 +56,25 @@
     border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
   .custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.35);
+    background: rgba(255,255,255,0.28);
     border-radius: 2px;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.24);
   }
   .custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.75);
-    border-color: rgba(147, 197, 253, 0.9);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(255,255,255,0.7);
+    box-shadow: 0 0 10px rgba(255,255,255,0.35);
   }
 
   .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, 0.4) rgba(10, 10, 15, 0.5);
+    /* см. комментарий у .sm-track */
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .scrollbar-thin {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.28) rgba(10, 10, 15, 0.5);
+    }
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -66,14 +84,22 @@
     background: rgba(10, 10, 15, 0.5);
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.35);
+    background: rgba(255,255,255,0.28);
     border-radius: 2px;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.24);
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.75);
-    border-color: rgba(147, 197, 253, 0.9);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(255,255,255,0.7);
+    box-shadow: 0 0 10px rgba(255,255,255,0.35);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-button,
+  .custom-scrollbar-horizontal::-webkit-scrollbar-button,
+  .scrollbar-thin::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -82,6 +108,51 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Базовый скроллбар сайта: тонкий, полупрозрачный, без стрелок.
+     Системный (светлый) скроллбар в дизайн не вписывается. */
+  /* В Chromium заданный `scrollbar-width`/`scrollbar-color` отключает
+     кастомные ::-webkit-scrollbar-правила и возвращает системный скроллбар
+     со стрелками. Поэтому «тонкий» режим включаем только там, где нет
+     WebKit-псевдоэлементов (Firefox). */
+  @supports not selector(::-webkit-scrollbar) {
+    html,
+    .site-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+    }
+  }
+  html::-webkit-scrollbar,
+  .site-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  html::-webkit-scrollbar-track,
+  .site-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html::-webkit-scrollbar-thumb,
+  .site-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+  }
+  html::-webkit-scrollbar-thumb:hover,
+  .site-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.42);
+  }
+  html::-webkit-scrollbar-corner,
+  .site-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* На некоторых платформах Chromium рисует стрелки на краях скроллбара. */
+  html::-webkit-scrollbar-button,
+  .site-scrollbar::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
   }
 
   /* Arknights PRTS Range Sliders */
@@ -101,7 +172,7 @@
     width: 14px;
     height: 14px;
     background: #2563eb;
-    border: 2px solid #60a5fa;
+    border: 2px solid #f2f2f2;
     border-radius: 2px;
     cursor: pointer;
     box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
@@ -109,16 +180,16 @@
   }
 
   input[type="range"]::-webkit-slider-thumb:hover {
-    background: #3b82f6;
+    background: #e6e6e6;
     transform: scale(1.15);
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.9);
+    box-shadow: 0 0 12px rgba(255,255,255,0.55);
   }
 
   input[type="range"]::-moz-range-thumb {
     width: 14px;
     height: 14px;
     background: #2563eb;
-    border: 2px solid #60a5fa;
+    border: 2px solid #f2f2f2;
     border-radius: 2px;
     cursor: pointer;
     box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
@@ -126,9 +197,592 @@
   }
 
   input[type="range"]::-moz-range-thumb:hover {
-    background: #3b82f6;
+    background: #e6e6e6;
     transform: scale(1.15);
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.9);
+    box-shadow: 0 0 12px rgba(255,255,255,0.55);
   }
+}
+
+
+/* Терминал: бетонный скроллбар из макета главного экрана */
+.scrollbar-terminal::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-terminal::-webkit-scrollbar-track {
+  background: #c4c7c7;
+  border-top: 1px solid #aeb2b2;
+}
+
+.scrollbar-terminal::-webkit-scrollbar-thumb {
+  background: #5e6060;
+  border-radius: 0px;
+}
+
+.scrollbar-terminal::-webkit-scrollbar-thumb:hover {
+  background: #383a3b;
+}
+
+.scrollbar-terminal::-webkit-scrollbar-thumb:active {
+  background: #181a1b;
+}
+
+.scrollbar-terminal::-webkit-scrollbar-corner {
+  background: #c4c7c7;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .scrollbar-terminal {
+    scrollbar-width: thin;
+    scrollbar-color: #5e6060 #c4c7c7;
+  }
+}
+
+/* ============================================================================
+   Story Map (.smap) — 1:1 with https://arknights.timo.beer/story-map
+   powered by torappu.prts.wiki/assets/mixstory/
+   ============================================================================ */
+.smap {
+  --bg: #07080a;
+  --bg-elev: #0e1014;
+  --text: #ebeae6;
+  --dim: #8d9097;
+  --faint: #565962;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --accent: #f5b400;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: block;
+  background: #07080a;
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+}
+
+.sm-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.sm-bgl {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.8) brightness(0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.sm-bgl.on {
+  opacity: 1;
+}
+.sm-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 55% 55%, transparent 25%, rgba(7, 8, 10, 0.82) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sm-view {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.sm-track {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  /* Упрощённый скроллбар: тонкая полоса без стрелок и подложки.
+     В Chromium `scrollbar-width` отключает ::-webkit-правила, поэтому
+     стандартный «тонкий» режим оставляем только для Firefox. */
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .sm-track {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  }
+}
+.sm-track::-webkit-scrollbar {
+  height: 4px;
+  background: transparent;
+}
+.sm-track::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.sm-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sm-track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+.sm-track::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+.sm-track::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.sm-track.drag {
+  cursor: grabbing;
+}
+
+.sm-row {
+  position: relative;
+  height: 100%;
+  min-height: 30rem;
+}
+.sm-wisp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 57%;
+  height: 8.75rem;
+  transform: translateY(-50%);
+  background: url('/assets/storymap/fx_curve_story.webp') repeat-x left center / auto 100%;
+  opacity: 0.75;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.35));
+}
+.sm-wisp.w2 {
+  background-image: url('/assets/storymap/fx_curve_story_3.webp');
+  top: 58%;
+  height: 6.875rem;
+  opacity: 0.45;
+}
+
+.sm-it {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition: filter 0.2s, transform 0.2s;
+}
+.sm-it.main,
+.sm-it.set {
+  cursor: pointer;
+}
+.sm-it.main:hover,
+.sm-it.set:hover {
+  transform: translate(-50%, -50%) scale(1.03);
+  z-index: 3;
+}
+.sm-it.sel {
+  z-index: 3;
+}
+
+.sm-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Main Story cards: Pure banner image without circular/oval mask or extra overlays */
+.sm-it.main .sm-card {
+  width: 17.5rem;
+  min-height: 5.6rem;
+}
+.sm-it.main .sm-art {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+  filter: drop-shadow(0 14px 32px rgba(0, 0, 0, 0.85));
+}
+
+/* Side Story cards (.set): Oval radial vignette + overlaid title logo */
+.sm-it.set .sm-card {
+  width: 23.75rem;
+  min-height: 10rem;
+}
+.sm-it.set .sm-art {
+  width: 100%;
+  display: block;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 52% 50% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+  mask-image: radial-gradient(ellipse 52% 50% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+}
+.sm-it.set .sm-ti {
+  position: absolute;
+  left: 50%;
+  bottom: 0.375rem;
+  transform: translateX(-50%);
+  width: 82%;
+  max-height: 4.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 22px rgba(0, 0, 0, 0.85));
+  pointer-events: none;
+}
+
+/* Плитки сеточного вида: те же формы, что и на карте — */
+/* чистая картинка у основной сюжетки и овальная виньетка с логотипом у сайд-историй. */
+.sm-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.sm-tile .sm-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sm-tile .sm-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+.sm-tile.main .sm-card {
+  aspect-ratio: auto;
+}
+.sm-tile.main .sm-art {
+  height: auto;
+  object-fit: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.9));
+}
+.sm-tile.set .sm-art {
+  -webkit-mask-image: radial-gradient(ellipse 52% 50% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+  mask-image: radial-gradient(ellipse 52% 50% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+}
+.sm-tile .sm-ti {
+  position: absolute;
+  left: 50%;
+  bottom: 0.375rem;
+  transform: translateX(-50%);
+  width: 82%;
+  max-height: 4.5rem;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 22px rgba(0, 0, 0, 0.85));
+}
+.sm-tile:hover .sm-art {
+  transform: scale(1.03);
+}
+
+.sm-it.cross {
+  cursor: pointer;
+  width: 17.5rem;
+  text-align: center;
+}
+.sm-cross {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+.sm-cross .sm-kick {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+}
+.sm-cross .sm-ti {
+  width: 92%;
+  max-height: 4rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.9));
+  transition: transform 0.2s;
+}
+.sm-it.cross:hover .sm-kick {
+  color: #fff;
+}
+.sm-it.cross:hover .sm-ti {
+  transform: scale(1.05);
+}
+.sm-drop {
+  width: 1px;
+  height: 8.75rem;
+  background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.05));
+  margin-top: 0.25rem;
+  position: relative;
+}
+.sm-drop::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px #fff;
+}
+
+.sm-it.split {
+  pointer-events: none;
+  z-index: 2;
+}
+.sm-split {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+}
+.sm-split img {
+  height: 3.25rem;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.8));
+}
+.sm-split b {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sm-pan {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 2.625rem;
+  height: 4.5rem;
+  background: rgba(10, 11, 14, 0.7);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 1.75rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.sm-pan:hover {
+  background: rgba(20, 22, 28, 0.9);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.sm-pan.l {
+  left: 17.5rem;
+}
+.sm-pan.r {
+  right: 0.75rem;
+}
+.sm-pan.off {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .sm-it.main .sm-card {
+    width: 13.75rem;
+  }
+  .sm-it.set .sm-card {
+    width: 18.75rem;
+  }
+  .sm-it.cross {
+    width: 13.75rem;
+  }
+  .sm-pan {
+    display: none;
+  }
+}
+
+/* Custom Sleek Tactical Scrollbar for Story Map panels */
+.smap-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #313744 rgba(8, 10, 14, 0.75);
+}
+.smap-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 6px;
+}
+.smap-scroll::-webkit-scrollbar-track {
+  background: rgba(8, 10, 14, 0.75);
+  border-radius: 2px;
+}
+.smap-scroll::-webkit-scrollbar-thumb {
+  background: #313744;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+.smap-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+
+/* ==========================================================================
+   Translation studio: CSV / spreadsheet layout (dark theme)
+   Сетка, буквы столбцов, номера строк и строка формул; цвета — тёмные.
+   ========================================================================== */
+.csv-sheet {
+  background: #050505 !important;
+  color: #e8e8e8 !important;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+
+.csv-sheet *,
+.csv-sheet *::before,
+.csv-sheet *::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.csv-sheet [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.csv-sheet [class*="bg-gradient"] {
+  background-image: none !important;
+}
+
+/* Верхняя панель — тонкая строка файла. */
+.csv-sheet .h-16 {
+  height: 48px !important;
+}
+
+/* Таблица: видимая сетка, липкая шапка. */
+.csv-sheet table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+.csv-sheet table th,
+.csv-sheet table td {
+  border: 1px solid #2a2a2a !important;
+}
+
+.csv-sheet table thead th {
+  background-color: #141414 !important;
+  color: #9d9d9d !important;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
+
+.csv-sheet table tbody tr:hover {
+  background-color: #101010 !important;
+}
+
+.csv-sheet table textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+
+/* Сетка листа: буквы столбцов, номера строк, строка формул. */
+.csv-sheet .sheet-letterhead th {
+  background: #181818 !important;
+  color: #777777 !important;
+  border: 1px solid #2a2a2a !important;
+  padding: 1px 4px !important;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.csv-sheet .sheet-rownum {
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+  padding: 2px 4px !important;
+  text-align: center;
+  vertical-align: top;
+  background: #181818 !important;
+  color: #777777 !important;
+  font-size: 9px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.csv-sheet .sheet-grid td {
+  padding: 3px 5px !important;
+  vertical-align: top;
+}
+
+.csv-sheet .sheet-grid input,
+.csv-sheet .sheet-grid textarea {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 2px 3px !important;
+  color: #e8e8e8 !important;
+}
+
+.csv-sheet .sheet-grid input:focus,
+.csv-sheet .sheet-grid textarea:focus {
+  outline: 1px solid #6f6f6f !important;
+  outline-offset: 0;
+  background: #0c0c0c !important;
+}
+
+.csv-sheet .sheet-grid textarea {
+  resize: vertical;
+  min-height: 38px;
+}
+
+.csv-sheet .sheet-formula {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2a2a2a;
+  background: #0b0b0b;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #d6d6d6;
+}
+
+.csv-sheet .sheet-cellref {
+  width: 64px;
+  flex-shrink: 0;
+  padding: 0 6px;
+  text-align: center;
+  border-right: 1px solid #2a2a2a;
+  color: #8d8d8d;
+  font-size: 10px;
+}
+
+.csv-sheet .sheet-fx {
+  padding: 0 8px;
+  border-right: 1px solid #2a2a2a;
+  color: #6f6f6f;
+  font-style: italic;
+}
+
+.csv-sheet .sheet-value {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #d6d6d6;
+}
+
+/* Вторая строка шапки не перекрывает буквы столбцов. */
+.csv-sheet table thead tr:nth-child(2) th {
+  top: 18px;
 }
 

@@ -25,6 +25,25 @@ export interface CharacterSlotData {
   isExiting?: boolean;
 }
 
+export interface StoryBgEffect {
+  id: string;
+  name: string;
+  layer: number;
+  x?: number;
+  y?: number;
+}
+
+export interface StoryActiveEffect {
+  id: string;
+  name: string;
+  layer: number;
+  x?: number;
+  y?: number;
+  xto?: number;
+  yto?: number;
+  moveTime?: number;
+}
+
 export interface StoryState {
   lines: StoryLine[];
   currentIndex: number;
@@ -46,6 +65,10 @@ export interface StoryState {
   shakeConfig: { x: number; y: number; vibrato: number } | null;
   isFlashing: { active: boolean, duration: number };
   cameraEffect: { effect: string; duration: number; amount: number } | null;
+  /** Фоновые эффекты `[bgeffect]`: на каждом слое свой. */
+  bgEffects: StoryBgEffect[];
+  /** Эффекты `[effect]` (`playeffect`), могут висеть одновременно. */
+  activeEffects: StoryActiveEffect[];
   cameraTransform: { x: number; y: number; scale: number; duration?: number; ease?: string } | null;
   characterCutin: { bodyUrl: string; faceUrl?: string; line: StoryLine } | null;
   blocker: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; tweenId?: string } | null;
@@ -92,6 +115,10 @@ export type StoryAction =
   | { type: 'SET_SHAKE'; payload: { isShaking: boolean; config?: { x: number; y: number; vibrato: number } | null; duration?: number } }
   | { type: 'SET_FLASH'; payload: { active: boolean, duration: number } }
   | { type: 'SET_CAMERA_EFFECT'; payload: { effect: string; duration: number; amount: number } | null }
+  | { type: 'SET_BG_EFFECT'; payload: StoryBgEffect | null }
+  | { type: 'ADD_EFFECT'; payload: StoryActiveEffect }
+  | { type: 'REMOVE_EFFECT'; payload: string }
+  | { type: 'CLEAR_EFFECTS' }
   | { type: 'SET_CAMERA_TRANSFORM'; payload: { x?: number; y?: number; scale?: number; duration?: number; ease?: string } | null }
   | { type: 'SET_BLOCKER'; payload: { a: number; r: number; g: number; b: number; duration: number; initr?: number; initg?: number; initb?: number; inita?: number; ease?: string; tweenId?: string } | null }
   | { type: 'SET_ANIM_TEXT'; payload: StoryLine | null }
@@ -174,6 +201,8 @@ export const initialState: StoryState = {
   shakeConfig: null,
   isFlashing: { active: false, duration: 0.5 },
   cameraEffect: null,
+  bgEffects: [],
+  activeEffects: [],
   cameraTransform: null,
   characterCutin: null,
   blocker: null,
@@ -391,6 +420,38 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
       return { ...state, isFlashing: action.payload };
     case 'SET_CAMERA_EFFECT':
       return { ...state, cameraEffect: action.payload };
+    case 'SET_BG_EFFECT': {
+      if (!action.payload) return { ...state, bgEffects: [] };
+      const next = action.payload;
+      return {
+        ...state,
+        bgEffects: [
+          ...state.bgEffects.filter((effect) => effect.layer !== next.layer),
+          next,
+        ],
+      };
+    }
+    case 'ADD_EFFECT': {
+      const key = action.payload.name.toLowerCase();
+      return {
+        ...state,
+        activeEffects: [
+          ...state.activeEffects.filter((effect) => effect.name.toLowerCase() !== key),
+          action.payload,
+        ],
+      };
+    }
+    case 'REMOVE_EFFECT': {
+      const key = action.payload.toLowerCase();
+      return {
+        ...state,
+        activeEffects: state.activeEffects.filter(
+          (effect) => effect.name.toLowerCase() !== key
+        ),
+      };
+    }
+    case 'CLEAR_EFFECTS':
+      return { ...state, activeEffects: [] };
     case 'SET_CAMERA_TRANSFORM':
       return {
         ...state,
@@ -427,13 +488,27 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
         if (existingIndex >= 0) {
           const existing = newStickers[existingIndex];
           const shouldAppend = !!(existing.text && action.payload.text && action.payload.multi);
+          // В переводах иногда теряется ведущий `\n` из оригинала.
+          // Не склеиваем конец предыдущей фразы с новым словом: ".Думаю" → ". Думаю".
+          const appendText = action.payload.text || '';
+          const needsSpace =
+            shouldAppend &&
+            appendText.length > 0 &&
+            !/^\s/.test(appendText) &&
+            !/\s$/.test(existing.text || '');
           const nextText = shouldAppend
-            ? existing.text + action.payload.text
+            ? existing.text + (needsSpace ? ' ' : '') + appendText
             : (action.payload.text !== undefined ? action.payload.text : existing.text);
           
+          // При `multi` последующие строки не содержат x/y/width/alignment.
+          // Не затираем ими уже заданную геометрию стикера, иначе текст
+          // прыгает в центр/вправо.
+          const definedPayload = Object.fromEntries(
+            Object.entries(action.payload).filter(([, value]) => value !== undefined)
+          ) as Partial<StoryLine>;
           newStickers[existingIndex] = {
             ...existing,
-            ...action.payload,
+            ...definedPayload,
             _instanceId: shouldAppend 
               ? existing._instanceId 
               : (nextText !== existing.text ? Date.now().toString() + Math.random().toString() : existing._instanceId),
@@ -495,6 +570,8 @@ export function storyReducer(state: StoryState, action: StoryAction): StoryState
         shakeConfig: state.shakeConfig,
         isFlashing: state.isFlashing,
         cameraEffect: state.cameraEffect,
+        bgEffects: state.bgEffects,
+        activeEffects: state.activeEffects,
         cameraTransform: state.cameraTransform,
         characterCutin: state.characterCutin,
         blocker: state.blocker,

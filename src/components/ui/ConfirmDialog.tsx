@@ -53,7 +53,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
   const confirmAccent = pending?.options.danger
     ? 'bg-red-500/90 hover:bg-red-500'
-    : 'bg-blue-600 hover:bg-blue-500';
+    : 'bg-white/20 hover:bg-white/15';
 
   return (
     <ConfirmContext.Provider value={confirm}>

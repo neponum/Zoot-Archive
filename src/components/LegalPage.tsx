@@ -1,15 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  ExternalLink,
-  Gavel,
-  Github,
-  Scale,
-  ShieldCheck,
-} from 'lucide-react';
-import { DiscordIcon } from './ui/Icons';
 import { LEGAL_CONFIG } from '../config/legal';
+import { StageHeader } from './StageHeader';
+import { StageFooter } from './StageFooter';
+import { useStageLanguage } from '../hooks/useStageLanguage';
+import { STAGE_COPY, type StageNavId } from '../config/stageCopy';
 
 export type LegalDoc = 'disclaimer' | 'privacy' | 'takedown';
 
@@ -21,27 +16,23 @@ interface DocMeta {
   label: string;
   title: string;
   subtitle: string;
-  icon: React.ReactNode;
 }
 
 const DOC_META: Record<LegalDoc, DocMeta> = {
   disclaimer: {
     label: '// О ПРОЕКТЕ',
-    title: 'Дисклеймер',
+    title: 'О нас',
     subtitle: 'Неофициальный некоммерческий фан-архив',
-    icon: <Scale className="w-4 h-4" />,
   },
   privacy: {
     label: '// КОНФИДЕНЦИАЛЬНОСТЬ',
     title: 'Политика конфиденциальности',
     subtitle: 'Какие данные собираются и что с ними происходит',
-    icon: <ShieldCheck className="w-4 h-4" />,
   },
   takedown: {
     label: '// ПРАВООБЛАДАТЕЛЯМ',
     title: 'Запрос на удаление',
     subtitle: 'Порядок обращения и сроки реакции',
-    icon: <Gavel className="w-4 h-4" />,
   },
 };
 
@@ -55,7 +46,7 @@ const Section: React.FC<{ index: number; title: string; children: React.ReactNod
 }) => (
   <section className="border-t border-white/5 pt-6 mt-6 first:border-t-0 first:pt-0 first:mt-0">
     <h2 className="flex items-baseline gap-3 text-[11px] md:text-xs font-black uppercase tracking-[0.18em] text-white/90 mb-3">
-      <span className="font-mono text-[#BFFF00]/70 tabular-nums">
+      <span className="font-mono text-white/25 tabular-nums">
         {String(index).padStart(2, '0')}
       </span>
       {title}
@@ -70,7 +61,7 @@ const List: React.FC<{ items: React.ReactNode[] }> = ({ items }) => (
   <ul className="space-y-1.5 pl-0">
     {items.map((item, i) => (
       <li key={i} className="flex gap-2.5">
-        <span className="text-[#BFFF00]/40 font-mono shrink-0 select-none">—</span>
+        <span className="text-white/25 font-mono shrink-0 select-none">—</span>
         <span>{item}</span>
       </li>
     ))}
@@ -82,7 +73,7 @@ const OutLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href, 
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="text-[#BFFF00]/80 hover:text-[#BFFF00] underline decoration-[#BFFF00]/25 hover:decoration-[#BFFF00]/60 underline-offset-2 transition-colors"
+    className="text-white/80 hover:text-white underline decoration-white/20 hover:decoration-white/60 underline-offset-2 transition-colors"
   >
     {children}
   </a>
@@ -118,8 +109,24 @@ const DisclaimerContent: React.FC = () => (
         items={[
           'переводим и систематизируем тексты, чтобы по ним было удобно читать сюжет;',
           'не берём плату за доступ, не показываем рекламу и не продаём данные;',
-          'не размещаем на своих серверах аудиофайлы, сканы артбуков и другие полные копии материалов;',
-          'музыкальный раздел закрыт: мы не размещаем и не раздаём аудио, а голосовые дорожки сюжета могут воспроизводиться потоком с официальных серверов правообладателя (torappu.prts.wiki).',
+          'не храним у себя аудиофайлы, сканы артбуков и другие полные копии материалов: сайт только ссылается на внешние источники;',
+          'музыкальный раздел закрыт: аудио не раздаётся, а голосовые дорожки сюжета воспроизводятся потоком со сторонних зеркал игровых ассетов.',
+        ]}
+      />
+      <p>Контент сайт не хранит — он подгружается с внешних сервисов:</p>
+      <List
+        items={[
+          <>
+            <OutLink href="https://torappu.prts.wiki">torappu.prts.wiki</OutLink> — стороннее
+            зеркало игровых ассетов: фоны, спрайты, музыка, озвучка. Не официальный ресурс
+            правообладателя;
+          </>,
+          <>
+            <OutLink href="https://github.com/neponum/zoot-data">raw.githubusercontent.com</OutLink>{' '}
+            и <OutLink href="https://www.jsdelivr.com">cdn.jsdelivr.net</OutLink> — наши
+            переводы, эффекты и таблицы игровых данных из открытых репозиториев;
+          </>,
+          'публичные зеркала и наши страницы на SKPORT — фон главного экрана и обложки статей.',
         ]}
       />
     </Section>
@@ -142,11 +149,12 @@ const DisclaimerContent: React.FC = () => (
 
     <Section index={6} title="Обращения правообладателей">
       <p>
-        Любой материал мы убираем по первому обоснованному обращению. Порядок и сроки
-        описаны на странице{' '}
+        Любой материал мы убираем по первому обоснованному обращению на{' '}
+        <OutLink href={`mailto:${LEGAL_CONFIG.email}`}>{LEGAL_CONFIG.email}</OutLink>. Порядок
+        и сроки описаны на странице{' '}
         <RouterLink
           to="/takedown"
-          className="text-[#BFFF00]/80 hover:text-[#BFFF00] underline decoration-[#BFFF00]/25 underline-offset-2 transition-colors"
+          className="text-white/80 hover:text-white underline decoration-white/20 underline-offset-2 transition-colors"
         >
           «Правообладателям»
         </RouterLink>
@@ -167,115 +175,85 @@ const PrivacyContent: React.FC = () => (
   <>
     <Section index={1} title="Коротко">
       <p>
-        На сайте нет аккаунтов, рекламы, сторонних трекеров и продажи данных. Мы сознательно
-        не собираем персональные данные: всё, что можно сохранить локально, сохраняется в
-        вашем браузере и на сервер не отправляется.
+        На сайте нет аккаунтов, рекламы, сторонних трекеров и продажи данных, и мы не строим
+        профилей пользователей. Обрабатываются только технические данные: IP-адрес в логах
+        хостинга и в ограничителе частоты запросов, а также то, что вы отправите сами через
+        форму отчёта.
       </p>
     </Section>
 
-    <Section index={2} title="Что хранится только у вас">
+    <Section index={2} title="Что остаётся в вашем браузере">
       <p>
-        Прогресс чтения, закладки, настройки интерфейса и черновики переводов сохраняются в
-        localStorage и IndexedDB на вашем устройстве. Мы к этим данным доступа не имеем. Если
-        очистить данные сайта в браузере, они удалятся безвозвратно.
+        Прогресс чтения, закладки, настройки интерфейса, состояние экранов, черновики переводов
+        и кэш скачанных ассетов и таблиц хранятся в localStorage, IndexedDB и Cache Storage на
+        вашем устройстве. Мы к этим данным доступа не имеем; если очистить данные сайта в
+        браузере, они удалятся безвозвратно.
       </p>
     </Section>
 
     <Section index={3} title="Файлы cookie">
       <p>
-        Сайт не устанавливает рекламных и аналитических cookie и не использует серверные
-        сессии. В браузере хранятся только технические настройки: выбранный язык интерфейса,
-        режим отображения и локальные профили переводчика. Их можно удалить в любой момент
-        через настройки браузера.
+        Сайт не ставит cookie: ни рекламных, ни аналитических, ни сессионных. Всё, что нужно
+        для работы, лежит в локальном хранилище браузера и на сервер не отправляется.
       </p>
     </Section>
 
-    <Section index={4} title="Вход и аккаунты">
+    <Section index={4} title="Отчёты об ошибках">
       <p>
-        Регистрации и входа через сторонние сервисы нет. Мы не запрашиваем имя, почту,
-        телефон, Discord ID, аватар или геолокацию. Всё, что вы делаете в архиве, не
-        привязано к личности.
+        Форма «Сообщить об ошибке» работает анонимно. На сервер уходят текст отчёта (до 2000
+        знаков), тип проблемы и контекст сцены: глава, номер строки, до 30 последних реплик и
+        имя переводчика — чтобы упомянуть его в Discord. Отчёт пересылается в закрытый канал
+        команды и хранится там до разбора и закрытия обращения. Пожалуйста, не указывайте в
+        отчёте личные данные: для разбора ошибки они не нужны.
       </p>
     </Section>
 
-    <Section index={5} title="Отчёты об ошибках">
+    <Section index={5} title="Ограничение частоты запросов">
       <p>
-        Форма «Сообщить об ошибке» работает анонимно. На сервер уходят только текст отчёта,
-        тип проблемы и технический контекст сцены (глава, номер строки, несколько последних
-        реплик). Эти данные пересылаются в закрытый канал команды в Discord. Пожалуйста, не
-        указывайте в отчёте личные данные — для разбора ошибки они не нужны.
+        Чтобы формы не превратились в спам-канал, сервер считает запросы с одного IP-адреса: не
+        больше 5 отчётов за 10 минут. IP используется только в памяти процесса для этой
+        проверки, не записывается в базу и не связывается с содержанием отчётов.
       </p>
     </Section>
 
-    <Section index={6} title="Ограничение частоты запросов">
+    <Section index={6} title="Аналитика и хостинг">
       <p>
-        Чтобы защитить формы и API от спама, сервер считает количество запросов с одного
-        IP-адреса за короткий промежуток времени. IP обрабатывается только в оперативной
-        памяти для этой проверки, не записывается в базу и не связывается с содержанием
-        отчётов.
+        Сайт размещён на Vercel и использует Vercel Analytics и Speed Insights: обезличенные
+        агрегированные метрики (страна, тип устройства, скорость загрузки). Они не ставят
+        cookie и не позволяют идентифицировать человека. Хостинг обрабатывает IP-адрес и
+        заголовки запросов в технических логах для защиты от атак; профили на их основе мы не
+        строим, а срок хранения логов определяется правилами Vercel.
       </p>
     </Section>
 
-    <Section index={7} title="Аналитика">
+    <Section index={7} title="Сторонние сервисы">
       <p>
-        Используются Vercel Analytics и Speed Insights: обезличенные агрегированные метрики
-        (страна, тип устройства, скорость загрузки). Они не ставят cookie для отслеживания и
-        не позволяют идентифицировать конкретного человека.
+        Картинки, звук и таблицы данных сайт запрашивает напрямую из вашего браузера — эти
+        сервисы видят ваш IP так же, как при обычном визите на их сайт. Если источник
+        недоступен, часть запросов идёт через наш прокси на Vercel: тогда запрос делает
+        сервер, а не браузер. Перечень сервисов — в разделе «Что мы делаем и чего не делаем»
+        на странице{' '}
+        <RouterLink
+          to="/disclaimer"
+          className="text-white/80 hover:text-white underline decoration-white/20 underline-offset-2 transition-colors"
+        >
+          «О нас»
+        </RouterLink>
+        .
       </p>
     </Section>
 
-    <Section index={8} title="Инфраструктура и логи">
+    <Section index={8} title="Удаление данных и изменения">
       <p>
-        Сайт размещён на Vercel. Хостинг обрабатывает IP-адрес и заголовки запроса в
-        технических логах для защиты от атак; мы не строим на их основе профили. Запросы к
-        сторонним CDN (изображения, шрифты) идут напрямую из вашего браузера — эти сервисы
-        видят ваш IP так же, как при обычном визите на их сайт.
-      </p>
-    </Section>
-
-    <Section index={9} title="Кто ещё обрабатывает данные">
-      <p>
-        Обработчики: Vercel (хостинг, аналитика, журналы запросов), Discord (приём анонимных
-        отчётов через вебхук) и Google (генерация переводов, если вы пользуетесь ИИ-помощником).
-        Обработка может происходить за пределами страны вашего проживания. Мы не продаём
-        данные и не передаём их в иных целях.
-      </p>
-    </Section>
-
-    <Section index={10} title="Сроки хранения">
-      <List
-        items={[
-          'локальные данные — пока вы сами не очистите их в браузере;',
-          'анонимные отчёты — в канале команды, до разбора и закрытия обращения;',
-          'логи хостинга — по правилам Vercel.',
-        ]}
-      />
-    </Section>
-
-    <Section index={11} title="Ваши права">
-      <p>
-        Поскольку мы не собираем персональные данные, у нас нет профиля, к которому можно
-        привязать запрос. Если вы считаете, что в отчёте или переписке остались ваши данные,
-        напишите модераторам в Discord или создайте обращение в GitHub Issues — мы удалим их в течение 30 дней.
+        Профиля, к которому можно привязать запрос, у нас нет. Удалить можно только то, что вы
+        отправили сами: если в тексте отчёта остались ваши данные, напишите в Discord или
+        создайте обращение в GitHub Issues — мы удалим их в течение 30 дней. Права
+        предоставляются в объёме, предусмотренном применимым законодательством, включая Закон
+        Республики Беларусь № 99-З и, для резидентов ЕС, GDPR.
       </p>
       <p>
-        Права предоставляются в объёме, предусмотренном применимым законодательством,
-        включая Закон Республики Беларусь № 99-З «О защите персональных данных» и, для
-        резидентов ЕС, GDPR.
-      </p>
-    </Section>
-
-    <Section index={12} title="Дети">
-      <p>
-        Сайт не предназначен для детей младше 16 лет, и мы сознательно не собираем их
-        данные.
-      </p>
-    </Section>
-
-    <Section index={13} title="Изменения">
-      <p>
-        При существенных изменениях мы обновим дату в шапке этой страницы. Продолжая
-        пользоваться сайтом после обновления, вы принимаете новую редакцию.
+        При существенных изменениях политики мы обновляем её текст на этой странице:
+        актуальная редакция всегда здесь.
       </p>
     </Section>
   </>
@@ -293,9 +271,10 @@ const TakedownContent: React.FC = () => (
 
     <Section index={2} title="Как отправить запрос">
       <p>
-        Напишите модераторам в <OutLink href={LEGAL_CONFIG.discordInvite}>Discord</OutLink>{' '}
-        или создайте обращение в{' '}
-        <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink> с пометкой
+        Напишите на{' '}
+        <OutLink href={`mailto:${LEGAL_CONFIG.email}`}>{LEGAL_CONFIG.email}</OutLink>, в{' '}
+        <OutLink href={LEGAL_CONFIG.discordInvite}>Discord</OutLink> или создайте обращение
+        в <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink> с пометкой
         «Takedown». В обращении укажите:
       </p>
       <List
@@ -320,17 +299,7 @@ const TakedownContent: React.FC = () => (
       </p>
     </Section>
 
-    <Section index={4} title="Что удаляем сразу">
-      <List
-        items={[
-          'аудиофайлы и полные копии треков;',
-          'сканы артбуков и полные галереи официального арта;',
-          'датамайн и материалы, не опубликованные официально.',
-        ]}
-      />
-    </Section>
-
-    <Section index={5} title="Если мы не согласны">
+    <Section index={4} title="Если мы не согласны">
       <p>
         Если материал используется правомерно — например, это короткая цитата, обзор или
         некоммерческий перевод, — мы ответим с обоснованием и предложим компромисс. Мы не
@@ -338,7 +307,7 @@ const TakedownContent: React.FC = () => (
       </p>
     </Section>
 
-    <Section index={6} title="Если ответа нет">
+    <Section index={5} title="Если ответа нет">
       <p>
         Продублируйте обращение во втором канале: в{' '}
         <OutLink href={LEGAL_CONFIG.repositoryIssues}>GitHub Issues</OutLink>, если писали в
@@ -348,7 +317,7 @@ const TakedownContent: React.FC = () => (
       </p>
     </Section>
 
-    <Section index={7} title="Просьба">
+    <Section index={6} title="Просьба">
       <p>
         Пожалуйста, начните с письма, а не с жалобы хостингу: удаление занимает часы, а не
         недели, и у нас нет цели обходить требования правообладателя.
@@ -363,8 +332,17 @@ const CONTENT: Record<LegalDoc, React.ReactNode> = {
   takedown: <TakedownContent />,
 };
 
+const DOC_LINK_KEY: Record<LegalDoc, 'about' | 'privacy' | 'takedown'> = {
+  disclaimer: 'about',
+  privacy: 'privacy',
+  takedown: 'takedown',
+};
+
 export const LegalPage: React.FC<LegalPageProps> = ({ doc }) => {
   const navigate = useNavigate();
+  const { locale, setLocale } = useStageLanguage();
+  const copy = STAGE_COPY[locale];
+
   const meta = DOC_META[doc];
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -373,24 +351,48 @@ export const LegalPage: React.FC<LegalPageProps> = ({ doc }) => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [doc]);
 
-  return (
-    <div ref={scrollRef} className="w-full h-full overflow-y-auto custom-scrollbar bg-black text-white/70 select-text">
-      <div className="max-w-3xl mx-auto px-5 md:px-8 py-8 md:py-14">
-        <button
-          onClick={() => navigate('/')}
-          className="group flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors cursor-pointer mb-8"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-          На главную
-        </button>
+  // Шапка общая с главной: у каждого пункта теперь свой адрес.
+  const handleNavSelect = (id: StageNavId) => {
+    const routes: Partial<Record<StageNavId, string>> = {
+      operator: '/operators',
+      terminal: '/terminal',
+      terra: '/terra',
+      translation: '/translate',
+    };
+    navigate(routes[id] ?? '/');
+  };
 
-        <header className="mb-2">
-          <div className="flex items-center gap-2 text-[#BFFF00]/80 mb-3">
-            {meta.icon}
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] font-mono">
-              {meta.label}
-            </span>
-          </div>
+  return (
+    <div
+      ref={scrollRef}
+      className="relative w-full h-full overflow-y-auto custom-scrollbar bg-[#060608] text-white select-text"
+    >
+      {/* Затемнение под шапкой: на длинном тексте навигация иначе сливается с абзацами.
+          Плотное до нижней кромки эмблемы, дальше плавно растворяется. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 z-20 h-40"
+        style={{
+          backgroundImage:
+            'linear-gradient(to bottom, #060608 0%, #060608 55%, rgba(6,6,8,0) 100%)',
+        }}
+      />
+
+      <StageHeader
+        locale={locale}
+        theme="dark"
+        onNavSelect={handleNavSelect}
+        onEmblemClick={() => navigate('/')}
+      />
+
+      {/* Тот же мягкий свет по центру, что на главной: чёрный не должен быть плоским */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(46,50,58,0.45),transparent_65%)]"
+      />
+
+      <div className="relative mx-auto w-full max-w-3xl px-5 md:px-8 pt-40 sm:pt-32 md:pt-36 pb-10 md:pb-14">
+        <header className="mb-2 text-center">
           <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
             {meta.title}
           </h1>
@@ -402,52 +404,33 @@ export const LegalPage: React.FC<LegalPageProps> = ({ doc }) => {
           </p>
         </header>
 
-        <div className="mt-8 border border-white/5 bg-zinc-950/40 rounded-sm px-4 py-5 md:px-7 md:py-6">
+        {/* Тексты документов — русские: это правовая формулировка, её не переводим
+            машинно. Атрибут lang держит скринридеры и переносы в порядке. */}
+        <article
+          lang="ru"
+          className="mt-8 border border-white/10 bg-white/[0.02] px-4 py-5 md:px-7 md:py-6"
+        >
           {CONTENT[doc]}
-        </div>
+        </article>
 
-        {/* Навигация между документами */}
-        <nav className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {/* Навигация между документами — те же текстовые ссылки, что в подвале */}
+        <nav aria-label="Документы" className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
           {DOC_ORDER.filter((d) => d !== doc).map((d) => (
-            <a
+            <RouterLink
               key={d}
-              href={`/${d}`}
-              className="flex items-center justify-between gap-2 px-3 py-2.5 border border-white/5 bg-zinc-950/60 hover:border-white/20 hover:bg-white/[0.03] rounded-sm transition-all group"
+              to={`/${d}`}
+              className="text-[10px] font-medium tracking-widest uppercase text-neutral-500 hover:text-white transition-colors cursor-pointer"
             >
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/50 group-hover:text-white/80 transition-colors">
-                {DOC_META[d].title}
-              </span>
-              <ExternalLink className="w-3 h-3 text-white/20 group-hover:text-white/50 transition-colors" />
-            </a>
+              {copy.legal[DOC_LINK_KEY[d]]}
+            </RouterLink>
           ))}
         </nav>
 
-        <footer className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-[9px] leading-relaxed uppercase tracking-[0.12em] text-white/25 max-w-md">
-            {LEGAL_CONFIG.projectName} — неофициальный фан-проект. Права на Arknights
-            принадлежат Hypergryph Co., Ltd. и Yostar.
-          </p>
-          <div className="flex items-center gap-2">
-            <a
-              href={LEGAL_CONFIG.discordInvite}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-8 w-8 flex items-center justify-center border border-white/5 hover:border-[#5865F2]/40 rounded-sm text-white/30 hover:text-[#5865F2] transition-colors"
-              title="Discord"
-            >
-              <DiscordIcon size={14} />
-            </a>
-            <a
-              href={LEGAL_CONFIG.repositoryIssues}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-8 w-8 flex items-center justify-center border border-white/5 hover:border-white/25 rounded-sm text-white/30 hover:text-white transition-colors"
-              title="GitHub Issues"
-            >
-              <Github className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </footer>
+        <StageFooter
+          locale={locale}
+          onLocaleChange={setLocale}
+          className="mt-10 border-t border-white/5 pt-8"
+        />
       </div>
     </div>
   );

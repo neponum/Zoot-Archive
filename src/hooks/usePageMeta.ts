@@ -6,24 +6,32 @@ export function usePageMeta() {
 
   useEffect(() => {
     const path = location.pathname;
-    let pageTitle = 'ZOOT Archive — Arknights Story Reader & Translation Archive | Читалка Arknights';
+    let pageTitle = 'rhodes.monster — Arknights Story Reader & Translation Archive | Читалка Arknights';
 
-    if (path.startsWith('/story/')) {
+    if (path === '/story/map' || path === '/maps') {
+      pageTitle = 'Карта сюжета Arknights | Story Map — rhodes.monster';
+    } else if (path === '/story/grid' || path === '/story/grid/lines' || path === '/grid') {
+      pageTitle = 'Сетка глав Arknights | Story Grid — rhodes.monster';
+    } else if (path === '/story') {
+      pageTitle = 'Карта сюжета Arknights | Story Map — rhodes.monster';
+    } else if (path === '/terminal') {
+      pageTitle = 'Терминал | Terminal — rhodes.monster';
+    } else if (path.startsWith('/story/')) {
       const storyName = path.replace('/story/', '').replace(/\.txt$/, '').split('/').pop() || 'Story';
-      pageTitle = `${storyName} — Arknights Story Viewer | ZOOT Archive`;
-    } else if (path.startsWith('/translate')) {
-      pageTitle = 'Студия перевода Arknights | Translation Studio — ZOOT Archive';
+      pageTitle = `${storyName} — Arknights Story Viewer | rhodes.monster`;
     } else if (path.startsWith('/event/')) {
       const eventId = path.replace('/event/', '');
-      pageTitle = `Эпизод ${eventId} — Сюжет Arknights | ZOOT Archive`;
+      pageTitle = `Эпизод ${eventId} — Сюжет Arknights | rhodes.monster`;
+    } else if (path.startsWith('/translate') || path.startsWith('/export')) {
+      pageTitle = 'Перевод | Translation — rhodes.monster';
     } else if (path.startsWith('/operators')) {
-      pageTitle = 'Оперативники и личные истории | Operators — ZOOT Archive';
+      pageTitle = 'Оперативники и личные истории | Operators — rhodes.monster';
     } else if (path.startsWith('/privacy')) {
-      pageTitle = 'Политика конфиденциальности — ZOOT Archive';
+      pageTitle = 'Политика конфиденциальности — rhodes.monster';
     } else if (path.startsWith('/takedown')) {
-      pageTitle = 'Правообладателям — ZOOT Archive';
+      pageTitle = 'Правообладателям — rhodes.monster';
     } else if (path.startsWith('/disclaimer')) {
-      pageTitle = 'Дисклеймер — ZOOT Archive';
+      pageTitle = 'О нас — rhodes.monster';
     }
 
     document.title = pageTitle;

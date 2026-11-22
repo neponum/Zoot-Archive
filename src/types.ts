@@ -53,6 +53,7 @@ export type StoryLineType =
   | 'hideimage'
   | 'clearimage'
   | 'cameraeffect' 
+  | 'bgeffect'
   | 'animtext' 
   | 'animtextclean' 
   | 'sticker'
@@ -92,6 +93,8 @@ export interface StoryLine {
   text?: string;
   assetName?: string;
   assetName2?: string;
+  /** Слой фонового эффекта (`bgeffect`): 1 — за персонажами, 2 — поверх. */
+
   actionType?: string;
   xpos?: number;
   ypos?: number;
@@ -142,6 +145,8 @@ export interface StoryLine {
   yFrom?: number;
   yTo?: number;
   effect?: string;
+  /** Время перелёта эффекта `[effect]` от (x,y) к (xTo,yTo), сек. */
+  moveTime?: number;
   tiled?: boolean;
   keep?: boolean;
   screenadapt?: boolean;

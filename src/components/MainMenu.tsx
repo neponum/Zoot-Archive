@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Settings, Mail, Calendar, Edit2, Plus, X, Search, ChevronLeft, 
-  Trash2, Play, BookOpen, AlertTriangle, Award, Layers, 
+import {
+  Settings, Mail, Calendar, Edit2, Plus, X, Search, ChevronLeft,
+  Trash2, Play, BookOpen, AlertTriangle, Award, Layers,
   Database, RefreshCw, Check, ArrowRight, Heart, Star, Compass,
   Languages, Github, AlertCircle, Volume2, Type, RotateCcw, History,
-  Newspaper, Send, MessageSquare, Lock
+  Newspaper, Send, MessageSquare, Download
 } from 'lucide-react';
 import { getLanguage, fetchChapterList, wrapUrlWithProxy } from '../services/storyService';
 import { Language, StoryEpisode } from '../types';
@@ -18,6 +18,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { CacheService } from '../services/cacheService';
 import { CUSTOM_QUOTES } from '../config/customQuotes';
 import { useToast } from './ui/Toast';
+import { getStorylineIconUrl } from '../utils/assetUrls';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 export interface NewsItem {
   id: string;
@@ -35,7 +37,7 @@ export const NEWS_ITEMS: NewsItem[] = [
   },
   {
     id: 'skport-2060309488366579949',
-    
+
     image: 'https://static.skport.com/image/item/20260529/9963327784768/6a196b3b9650be73424f40d8_3e93bcde.webp',
     link: 'https://www.skport.com/article?id=2060309488366579949',
     title: 'SKPORT Post #2'
@@ -43,6 +45,33 @@ export const NEWS_ITEMS: NewsItem[] = [
 ];
 
 export const NEWS_BANNERS = NEWS_ITEMS.map(item => item.image);
+
+/**
+ * Печать реплики помощника. Живёт в собственном состоянии, чтобы каждый
+ * символ не перерисовывал всё главное меню (ощутимо на слабых машинах).
+ */
+const TypingDialogue: React.FC<{ text: string }> = ({ text }) => {
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    setShown(0);
+    if (!text) return;
+    let index = 0;
+    const timer = setInterval(() => {
+      index += 1;
+      setShown(index);
+      if (index >= text.length) clearInterval(timer);
+    }, 24);
+    return () => clearInterval(timer);
+  }, [text]);
+
+  return (
+    <>
+      {text.slice(0, shown)}
+      <span className="inline-block w-1.5 h-3 bg-white ml-1 animate-pulse" />
+    </>
+  );
+};
 
 // Operator definitions
 const LANGUAGES: { id: Language; label: string; isOfficial: boolean }[] = [
@@ -73,7 +102,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '阿米娅',
     rarity: 5,
     profession: 'Caster',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/RI_arc.webp',
+    avatar: getStorylineIconUrl('RI_arc'),
     splash: 'https://torappu.prts.wiki/assets/char_arts/char_002_amiya_1.png',
     description: 'The public leader of Rhodes Island. A young Caster who stands on the frontlines of the struggle for Infected rights.',
     stats: { hp: 1520, atk: 642, def: 120, res: 20 },
@@ -85,7 +114,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '塑心',
     rarity: 6,
     profession: 'Supporter',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/LE_arc.webp',
+    avatar: getStorylineIconUrl('LE_arc'),
     splash: 'https://torappu.prts.wiki/assets/char_arts/char_002_amiya_1.png',
     description: 'A Sarkaz musician from Laterano. Plays the cello to play a melody of souls, forcing listeners to face their inner emotions.',
     stats: { hp: 1650, atk: 680, def: 220, res: 20 },
@@ -97,7 +126,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '维什戴尔',
     rarity: 6,
     profession: 'Sniper',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/LA_arc.webp',
+    avatar: getStorylineIconUrl('LA_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/main_15.png',
     description: 'A legendary Sarkaz mercenary formerly known as W. Equipped with custom explosive launchers, ready to cause absolute havoc.',
     stats: { hp: 1950, atk: 1010, def: 185, res: 10 },
@@ -109,7 +138,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '特蕾西娅',
     rarity: 6,
     profession: 'Supporter',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/TS_arc.webp',
+    avatar: getStorylineIconUrl('TS_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/main_12.png',
     description: 'The former Queen of Sarkaz and co-founder of Rhodes Island. Her gentle light guide the lost spirits of Terra.',
     stats: { hp: 1580, atk: 625, def: 150, res: 25 },
@@ -121,7 +150,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '银灰',
     rarity: 6,
     profession: 'Guard',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/KJ_arc.webp',
+    avatar: getStorylineIconUrl('KJ_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_雪山怀景.png',
     description: 'The warlord of Kjerag and Karlan Trade leader. Master of the greatsword, capable of revealing hidden threats.',
     stats: { hp: 2560, atk: 795, def: 410, res: 15 },
@@ -133,7 +162,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '缄默德克萨斯',
     rarity: 6,
     profession: 'Specialist',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/SI_arc.webp',
+    avatar: getStorylineIconUrl('SI_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_叙拉古人.png',
     description: 'A Siracusan mobster returning to her origins. Strikes silently with dual energy blades, resetting enemies with fatal speed.',
     stats: { hp: 1610, atk: 660, def: 315, res: 0 },
@@ -145,7 +174,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '能天使',
     rarity: 6,
     profession: 'Sniper',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/LA_arc.webp',
+    avatar: getStorylineIconUrl('LA_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_十字路口.png',
     description: 'A cheerful angel from Laterano working for Penguin Logistics. Armed with a vector submachine gun, dispensing apple pie.',
     stats: { hp: 1670, atk: 540, def: 160, res: 0 },
@@ -157,7 +186,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '凯尔希',
     rarity: 6,
     profession: 'Medic',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/RI_arc.webp',
+    avatar: getStorylineIconUrl('RI_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_孤星.png',
     description: 'Head of the Rhodes Island medical department. Summons Mon3tr on the battlefield to tear down armored defenses.',
     stats: { hp: 2010, atk: 490, def: 250, res: 10 },
@@ -169,7 +198,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '塞雷娅',
     rarity: 6,
     profession: 'Defender',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/RH_arc.webp',
+    avatar: getStorylineIconUrl('RH_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_不义之财.png',
     description: 'Former chief researcher of Rhine Lab. Shields allies and heals their wounds with calcareous control.',
     stats: { hp: 3150, atk: 585, def: 645, res: 10 },
@@ -181,7 +210,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '史尔特尔',
     rarity: 6,
     profession: 'Guard',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/ST_arc.webp',
+    avatar: getStorylineIconUrl('ST_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/main_07.png',
     description: 'A mysterious girl with severe amnesia. Wields a colossal blazing sword of giants, leaving ashes in her wake.',
     stats: { hp: 2430, atk: 810, def: 355, res: 15 },
@@ -193,7 +222,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '艾雅法拉',
     rarity: 6,
     profession: 'Caster',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/ST_arc.webp',
+    avatar: getStorylineIconUrl('ST_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_火山旅梦.png',
     description: 'A Leithanian volcanologist. Inflicts immense fire damage on multiple enemies with molten surges.',
     stats: { hp: 1740, atk: 765, def: 125, res: 20 },
@@ -205,7 +234,7 @@ const OPERATORS_LIST: Operator[] = [
     chineseName: '德克萨斯',
     rarity: 5,
     profession: 'Vanguard',
-    avatar: 'https://raw.githubusercontent.com/neponum/zoot-data/main/icons/SI_arc.webp',
+    avatar: getStorylineIconUrl('SI_arc'),
     splash: 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners/情报处理室_叙拉古人.png',
     description: 'A quiet driver for Penguin Logistics. Deals area tactical stuns while recovering sanity and DP for the team.',
     stats: { hp: 1980, atk: 540, def: 290, res: 0 },
@@ -237,12 +266,12 @@ interface StorySettings {
   skipSpeed: number;
 }
 
-export const MainMenu: React.FC<MainMenuProps> = ({ 
-  onOpenTerminal, 
-  onOpenArchive, 
-  onOpenOperators, 
-  lang, 
-  setLang, 
+export const MainMenu: React.FC<MainMenuProps> = ({
+  onOpenTerminal,
+  onOpenArchive,
+  onOpenOperators,
+  lang,
+  setLang,
   readChaptersCount,
   readChapters,
   episodes = []
@@ -251,6 +280,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const t = UI_STRINGS[lang];
   const isRussian = lang === 'ru_RU' || lang === 'ru_RU_CN';
   const toast = useToast();
+  const { canInstall, installed, install } = useInstallPrompt();
 
   // Reading progress stats calculation for the Terminal button
   const readingStats = useMemo(() => {
@@ -337,7 +367,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     if (type === 'bgm') nextSettings.bgmVolume = value;
     if (type === 'sfx') nextSettings.sfxVolume = value;
     if (type === 'voice') nextSettings.voiceVolume = value;
-    
+
     setSettings(nextSettings);
     localStorage.setItem('ak-story-settings', JSON.stringify(nextSettings));
     audioManager.setVolumes(nextSettings.bgmVolume, nextSettings.sfxVolume, nextSettings.voiceVolume);
@@ -378,11 +408,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   });
   const [isEditingName, setIsEditingName] = useState(false);
   const [docLevel, setDocLevel] = useState(() => parseInt(localStorage.getItem('ak-doc-level') || '83'));
-  
+
   // Sanity state
-  const [sanity, setSanity] = useState(() => parseInt(localStorage.getItem('ak-res-sanity') || '124'));
-  const [maxSanity, setMaxSanity] = useState(135);
-  const [sanityCountdown, setSanityCountdown] = useState(359); // countdown from 5:59 (seconds)
+  const [sanity] = useState(() => parseInt(localStorage.getItem('ak-res-sanity') || '124'));
 
   // Doctor resources states
   const [orundum, setOrundum] = useState(() => parseInt(localStorage.getItem('ak-res-orundum') || '17535'));
@@ -400,8 +428,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   });
   const [dialogueText, setDialogueText] = useState('');
   const [isChangingAssistant, setIsChangingAssistant] = useState(false);
-  const dialogueIntervalRef = useRef<any>(null);
-  
+
   // UI Modals state
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMailOpen, setIsMailOpen] = useState(false);
@@ -478,7 +505,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       }
     } catch {}
   }, [docName]);
-  
+
   useEffect(() => {
     localStorage.setItem('ak-doc-level', docLevel.toString());
   }, [docLevel]);
@@ -491,29 +518,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     localStorage.setItem('ak-res-permits', permits.toString());
   }, [orundum, prime, lmd, permits]);
 
-  // Persist Sanity and Tick Recovery
+  // Persist Sanity
   useEffect(() => {
     localStorage.setItem('ak-res-sanity', sanity.toString());
   }, [sanity]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSanityCountdown(prev => {
-        if (prev <= 1) {
-          setSanity(s => Math.min(s + 1, maxSanity));
-          return 359; // reset to 5:59 minutes (359 seconds)
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [maxSanity]);
-
-  const formatCountdown = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Persist assistant
   useEffect(() => {
@@ -568,12 +576,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     } else {
       setDialogueText('');
     }
-
-    return () => {
-      if (dialogueIntervalRef.current) {
-        clearInterval(dialogueIntervalRef.current);
-      }
-    };
   }, [assistant.id]);
 
   // Auto-rotate news banners every 5 seconds
@@ -603,9 +605,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       const res = await fetch('/api/bug-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          type: reportType, 
-          description: reportDescription, 
+        body: JSON.stringify({
+          type: reportType,
+          description: reportDescription,
           context: {
             chapter: 'Главное меню / Main Menu',
             line: 0,
@@ -628,21 +630,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   const triggerDialogue = (text: string) => {
-    if (dialogueIntervalRef.current) {
-      clearInterval(dialogueIntervalRef.current);
-    }
-    setDialogueText('');
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        setDialogueText(text.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(interval);
-        dialogueIntervalRef.current = null;
-      }
-    }, 20);
-    dialogueIntervalRef.current = interval;
+    setDialogueText(text);
   };
 
   const handleAssistantClick = () => {
@@ -704,7 +692,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     for (let i = 0; i < count; i++) {
       const rand = Math.random() * 100;
       let selectedOp: Operator;
-      
+
       if (rand < 2) { // 2% chance for 6 star
         const pool = OPERATORS_LIST.filter(op => op.rarity === 6);
         selectedOp = pool[Math.floor(Math.random() * pool.length)];
@@ -741,9 +729,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     <div className="w-full h-full relative overflow-hidden bg-[#0c0c0e] text-white flex flex-col font-sans select-none">
       {/* Arknights Background Image */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <img 
-          src={wrapUrlWithProxy('https://arknights.wiki.gg/images/Home_Screen_background-Vision.png?c1feee')} 
-          alt="Arknights Background" 
+        <img
+          src={wrapUrlWithProxy('https://arknights.wiki.gg/images/Home_Screen_background-Vision.png?c1feee')}
+          alt="Arknights Background"
           className="w-full h-full object-cover opacity-100 scale-100 select-none pointer-events-none"
           referrerPolicy="no-referrer"
         />
@@ -751,17 +739,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
       {/* Background Grids & Artwork */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:32px_32px]" />
-      
+
       {/* Ambient gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#0c0c0e]/90 via-[#0c0c0e]/30 to-[#0c0c0e]/95 z-0 pointer-events-none" />
 
       {/* --- MAIN INTERACTIVE WRAPPER --- */}
       <div className="flex-1 relative z-20 overflow-hidden">
         <AnimatePresence mode="wait">
-          
+
           {/* ================= MAIN DASHBOARD VIEW ================= */}
           {activePanel === 'main' && (
-            <motion.div 
+            <motion.div
               key="main-dash"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -770,14 +758,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             >
               {/* Assistant Illustration - Center-bottom on mobile, left-aligned on desktop & mobile landscape */}
               <div className="absolute inset-y-0 left-0 right-0 md:right-auto md:left-[0%] md:w-[60%] max-lg:landscape:right-auto max-lg:landscape:left-0 max-lg:landscape:w-[60%] flex items-end justify-center pointer-events-none z-10 overflow-hidden opacity-80 md:opacity-100 max-lg:landscape:opacity-100">
-                <img 
-                  src={wrapUrlWithProxy(`https://torappu.prts.wiki/assets/char_arts/${assistant.id}_1.png`)} 
+                <img
+                  src={wrapUrlWithProxy(`https://torappu.prts.wiki/assets/char_arts/${assistant.id}_1.png`)}
                   alt={assistant.name}
                   className="h-[105%] md:h-[112%] max-lg:landscape:h-[112%] translate-x-0 md:translate-x-[8%] max-lg:landscape:translate-x-[8%] translate-y-[8%] md:translate-y-[14%] max-lg:landscape:translate-y-[14%] max-w-none object-contain object-bottom select-none transition-all duration-500 drop-shadow-[0_0_50px_rgba(0,0,0,0.8)]"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    const fallback = assistant.splash && !assistant.splash.includes('banners/') 
-                      ? assistant.splash 
+                    const fallback = assistant.splash && !assistant.splash.includes('banners/')
+                      ? assistant.splash
                       : 'https://torappu.prts.wiki/assets/char_arts/char_002_amiya_1.png';
                     if (e.currentTarget.src !== fallback) {
                       e.currentTarget.src = fallback;
@@ -788,10 +776,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
               {/* LEFT SIDE: Doctor Profile, Dialogue, Assistant, Circular Quick Buttons */}
               <div className="flex flex-col w-full md:w-[35%] lg:w-[25%] max-lg:landscape:w-[35%] shrink-0 gap-3 md:gap-4 relative z-20 justify-start">
-                
+
                 {/* Utilities / Settings / Mail (Top Left) */}
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => setIsSettingsOpen(true)}
                     className="h-10 w-10 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-white/30 rounded-sm flex items-center justify-center transition-all group cursor-pointer"
                     title="Settings"
@@ -799,28 +787,28 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <Settings className="w-4 h-4 text-white/50 group-hover:text-white" />
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMailOpen(true);
                       setIsMailRead(true);
                       localStorage.setItem('ak-mail-read', 'true');
                     }}
-                    className="h-10 w-10 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-blue-500/50 rounded-sm flex items-center justify-center transition-all group relative shrink-0 cursor-pointer"
+                    className="h-10 w-10 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-white/25 rounded-sm flex items-center justify-center transition-all group relative shrink-0 cursor-pointer"
                     title="Mail"
                   >
                     <Mail className="w-4 h-4 text-white/50 group-hover:text-white" />
                     {!isMailRead && (
                       <>
-                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping" />
-                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-white/20 rounded-full animate-ping" />
+                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-white/20 rounded-full" />
                       </>
                     )}
                   </button>
 
                   {/* News Button for vertical mobile / portrait view */}
-                  <button 
+                  <button
                     onClick={() => setIsNewsOpen(true)}
-                    className="flex md:hidden portrait:flex h-10 px-3 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-blue-500/50 rounded-sm items-center gap-1.5 transition-all group relative shrink-0 cursor-pointer"
+                    className="flex md:hidden portrait:flex h-10 px-3 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-white/25 rounded-sm items-center gap-1.5 transition-all group relative shrink-0 cursor-pointer"
                     title="News"
                   >
                     <Newspaper className="w-4 h-4 text-white/50 group-hover:text-white" />
@@ -828,8 +816,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'НОВОСТИ' : 'NEWS'}
                     </span>
                     <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/20 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white/15"></span>
                     </span>
                   </button>
                 </div>
@@ -840,9 +828,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 {/* Dialogue Bubble Area */}
                 {dialogueText && (
                   <div className="hidden md:flex max-lg:landscape:flex flex-col gap-2">
-                    <div 
+                    <div
                       onClick={handleAssistantClick}
-                      className="bg-zinc-950/85 backdrop-blur-xl border border-white/10 p-3.5 md:p-4 max-lg:landscape:p-3 rounded-sm shadow-2xl relative group cursor-pointer transition-all duration-300"
+                      className="bg-zinc-950/90 border border-white/10 p-3.5 md:p-4 max-lg:landscape:p-3 rounded-sm shadow-2xl relative group cursor-pointer transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-8 h-8 pointer-events-none opacity-20">
                         <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-white rounded-full" />
@@ -855,8 +843,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       </div>
 
                       <p className="text-[11px] md:text-xs max-lg:landscape:text-[11px] text-white/90 leading-relaxed font-medium uppercase tracking-wide min-h-[30px] text-justify font-mono">
-                        {dialogueText}
-                        <span className="inline-block w-1.5 h-3 bg-white ml-1 animate-pulse" />
+                        <TypingDialogue text={dialogueText} />
                       </p>
                     </div>
                   </div>
@@ -867,17 +854,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   href={NEWS_ITEMS[currentNewsIndex]?.link || 'https://www.skport.com'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden md:flex max-lg:landscape:flex portrait:hidden bg-zinc-950/80 border border-white/10 hover:border-blue-500/50 rounded-sm shadow-2xl w-full aspect-[2/1] relative overflow-hidden group cursor-pointer transition-all duration-300"
+                  className="hidden md:flex max-lg:landscape:flex portrait:hidden bg-zinc-950/80 border border-white/10 hover:border-white/25 rounded-sm shadow-2xl w-full aspect-[2/1] relative overflow-hidden group cursor-pointer transition-all duration-300"
                 >
                   <div className="absolute inset-0">
-                    <img 
-                      src={wrapUrlWithProxy(NEWS_BANNERS[currentNewsIndex])} 
-                      alt="Breaking News" 
+                    <img
+                      src={wrapUrlWithProxy(NEWS_BANNERS[currentNewsIndex])}
+                      alt="Breaking News"
                       className="w-full h-full object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  
+
                   {/* Subtle dark gradient overlay at top and bottom */}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
 
@@ -889,7 +876,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   {/* Image Switcher / Minimalist indicator dots */}
                   <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5 z-30 select-none">
                     {NEWS_BANNERS.map((_, idx) => (
-                      <button 
+                      <button
                         key={idx}
                         onClick={(e) => {
                           e.preventDefault();
@@ -897,8 +884,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                           setCurrentNewsIndex(idx);
                         }}
                         className={`h-1 transition-all duration-300 cursor-pointer ${
-                          idx === currentNewsIndex 
-                            ? 'w-6 md:w-8 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' 
+                          idx === currentNewsIndex
+                            ? 'w-6 md:w-8 bg-white/15 shadow-[0_0_8px_rgba(255,255,255,0.35)]'
                             : 'w-2 md:w-3 bg-white/30 hover:bg-white/60'
                         }`}
                         title={`News ${idx + 1}`}
@@ -911,7 +898,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
               {/* RIGHT SIDE: Action grid of cards */}
               <div className="w-full md:flex-1 max-lg:landscape:flex-1 flex flex-col justify-start md:pt-[10%] max-lg:landscape:pt-[2%] gap-2.5 md:gap-3 max-w-[550px] md:ml-auto max-lg:landscape:ml-auto items-center md:items-end max-lg:landscape:items-end pr-0 lg:pr-4 relative z-10 mt-auto md:mt-0 max-lg:landscape:mt-0">
-                
+
                 {/* 1. TERMINAL WITH FULL READING TELEMETRY */}
                 <div className="w-full max-w-[440px] flex flex-col gap-1">
                   <div className="flex items-center justify-between px-1">
@@ -922,10 +909,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   </div>
                   <button
                     onClick={onOpenTerminal}
-                    className="group w-full bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-2xl transition-all duration-300 overflow-hidden text-left flex flex-col cursor-pointer p-3.5 md:p-4"
+                    className="group w-full bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-white/25 rounded-sm relative shadow-2xl transition-all duration-300 overflow-hidden text-left flex flex-col cursor-pointer p-3.5 md:p-4"
                   >
-                  <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  
+                  <div className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
                   {/* Top Row: Title + Circular Progress Ring (Left) + Last Played Episode (Right) */}
                   <div className="flex items-center justify-between relative z-10 w-full mb-3">
                     <div className="flex items-center gap-3 md:gap-4">
@@ -949,14 +936,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                           />
                           <defs>
                             <linearGradient id="terminal-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#3b82f6" />
-                              <stop offset="50%" stopColor="#38bdf8" />
-                              <stop offset="100%" stopColor="#60a5fa" />
+                              <stop offset="0%" stopColor="#e6e6e6" />
+                              <stop offset="50%" stopColor="#ffffff" />
+                              <stop offset="100%" stopColor="#f2f2f2" />
                             </linearGradient>
                           </defs>
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                          <span className="text-[10px] md:text-[11px] font-mono font-black text-blue-400 drop-shadow-[0_0_6px_rgba(59,130,246,0.8)] leading-none">
+                          <span className="text-[10px] md:text-[11px] font-mono font-black text-white/85 drop-shadow-[0_0_6px_rgba(255,255,255,0.35)] leading-none">
                             {readingStats.pct}%
                           </span>
                         </div>
@@ -968,19 +955,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                         </h3>
                       </div>
                     </div>
-                    
+
                     {/* Last Episode Thumbnail (RIGHT) */}
                     {lastEpisode && lastEpisode.storyEntryPicId ? (
-                      <div className="h-11 md:h-13 aspect-video relative rounded-sm overflow-hidden border border-white/10 group-hover:border-blue-500/50 transition-colors shrink-0 shadow-lg ml-3 hidden xs:block">
-                        <img 
-                          src={`https://raw.githubusercontent.com/neponum/zoot-data/main/story_pic/${lastEpisode.storyEntryPicId}.png`} 
+                      <div className="h-11 md:h-13 aspect-video relative rounded-sm overflow-hidden border border-white/10 group-hover:border-white/25 transition-colors shrink-0 shadow-lg ml-3 hidden xs:block">
+                        <img
+                          src={`https://raw.githubusercontent.com/neponum/zoot-data/main/story_pic/${lastEpisode.storyEntryPicId}.png`}
                           alt={lastEpisode.name}
                           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] via-transparent to-transparent opacity-80" />
                         <div className="absolute bottom-1 left-1.5 right-1.5 flex flex-col">
-                          <span className="text-[5px] font-black tracking-widest text-blue-400 uppercase">
+                          <span className="text-[5px] font-black tracking-widest text-white/85 uppercase">
                             {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ПОСЛЕДНИЙ' : 'LAST'}
                           </span>
                           <span className="text-[8px] font-bold text-white truncate max-w-[70px]">
@@ -1010,16 +997,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </button>
               </div>
 
-                {/* 2. OPERATIVES & 3. ARCHIVE (ROW) */}
-                <div className="w-full max-w-[440px] flex items-center gap-2 md:gap-3">
-                  {/* OPERATIVES */}
+                {/* OPERATIVES */}
+                <div className="w-full max-w-[440px] flex items-center">
                   <button
                     onClick={onOpenOperators}
-                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-pointer transition-all duration-300"
+                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 hover:border-white/25 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-pointer transition-all duration-300"
                   >
-                    <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     <div className="flex-1 px-3 md:px-4 flex flex-col justify-center relative z-10 h-full overflow-hidden">
-                      <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-wider font-mono truncate">
+                      <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white group-hover:text-white/85 transition-colors uppercase tracking-wider font-mono truncate">
                         {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ОПЕРАТИВНИКИ' : 'OPERATIVES'}
                       </span>
                       <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/40 group-hover:text-white/60 uppercase tracking-widest font-mono mt-0.5 transition-colors truncate">
@@ -1027,32 +1013,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       </span>
                     </div>
                   </button>
-
-                  {/* ARCHIVE (LOCKED) */}
-                  <div
-                    className="group flex-1 h-12 md:h-16 max-lg:landscape:h-12 bg-zinc-950/60 border border-white/5 opacity-50 rounded-sm relative shadow-xl overflow-hidden text-left flex select-none cursor-not-allowed"
-                    title={lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'Раздел в разработке' : 'Under development'}
-                  >
-                    <div className="flex-1 px-3 md:px-4 flex flex-col justify-center relative z-10 h-full overflow-hidden">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[10px] sm:text-[11px] md:text-[13px] font-black text-white/50 uppercase tracking-wider font-mono truncate">
-                          {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'АРХИВ' : 'ARCHIVE'}
-                        </span>
-                        <Lock className="w-3 h-3 text-white/30 shrink-0" />
-                      </div>
-                      <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/30 uppercase tracking-widest font-mono mt-0.5 truncate">
-                        {lang === 'ru_RU' || lang === 'ru_RU_CN' ? '// В РАЗРАБОТКЕ' : '// COMING SOON'}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
               </div>
-              
+
               {/* Social Links & Disclaimer (Bottom Right) */}
               <div className="relative md:absolute max-lg:landscape:absolute mt-4 md:mt-0 max-lg:landscape:mt-0 md:bottom-8 max-lg:landscape:bottom-3 md:right-8 max-lg:landscape:right-3 flex flex-col items-center md:items-end max-lg:landscape:items-end gap-2.5 md:gap-3 w-full md:max-w-[420px] max-lg:landscape:max-w-[360px] z-50 pb-6 md:pb-0 max-lg:landscape:pb-0">
                 {/* Disclaimer Block */}
-                <div id="disclaimer-block" className="bg-zinc-950/80 border border-white/10 backdrop-blur-md p-2.5 md:p-3 rounded-sm text-[8px] leading-[1.3] text-white/40 tracking-wider text-center md:text-right max-lg:landscape:text-right uppercase select-none w-full max-w-[330px]">
+                <div id="disclaimer-block" className="bg-zinc-950/85 border border-white/10 p-2.5 md:p-3 rounded-sm text-[8px] leading-[1.3] text-white/40 tracking-wider text-center md:text-right max-lg:landscape:text-right uppercase select-none w-full max-w-[330px]">
                   {lang === 'ru_RU'
                     ? "Данный проект является некоммерческим фан-архивом. Все права на персонажей, оригинальный сюжет, графику и звуковые материалы принадлежат Hypergryph и Yostar."
                     : "This project is a non-commercial fan-made archive. All rights to characters, story, graphics, and audio assets belong to Hypergryph Co., Ltd., Yostar, and their respective owners."}
@@ -1081,8 +1049,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </div>
 
                 {/* Social Buttons & Report Issue Button Row */}
-                <div className="flex items-center gap-2">
-                  <a 
+                <div className="flex flex-wrap items-center justify-center md:justify-end gap-2">
+                  <a
                     href="https://discord.gg/jYvWPeCjC3"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1092,7 +1060,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <DiscordIcon size={18} className="text-white/40 group-hover:text-[#5865F2] transition-colors" />
                   </a>
 
-                  <a 
+                  <a
                     href="https://github.com/neponum/zoot-archive"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1102,7 +1070,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <Github className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
                   </a>
 
-                  <a 
+                  <a
                     href="https://www.skport.com/profile?id=9963327784768"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1112,18 +1080,34 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <SkportIcon size={18} className="opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-300" />
                   </a>
 
+                  {/* Install PWA — только если браузер реально поддерживает установку */}
+                  {canInstall && !installed && (
+                    <button
+                      type="button"
+                      onClick={() => install()}
+                      className="h-10 px-3 bg-zinc-950/90 border border-white/5 hover:border-white/30 hover:bg-white/10 transition-all rounded-sm text-[9px] font-black tracking-widest uppercase flex items-center gap-2 cursor-pointer group"
+                      title={isRussian ? 'Установить приложение' : 'Install app'}
+                    >
+                      <Download className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+                      <span className="text-white/40 group-hover:text-white transition-colors">
+                        {isRussian ? 'Установить' : 'Install'}
+                      </span>
+                    </button>
+                  )}
+
                   {/* Report Issue Button (On the level of social buttons) */}
                   <button
                     onClick={() => setIsReportOpen(true)}
-                    className="h-10 px-4 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all rounded-sm text-[9px] font-black tracking-widest uppercase flex items-center gap-2 cursor-pointer group"
+                    className="h-10 px-4 bg-zinc-950/90 hover:bg-zinc-900 border border-white/5 hover:border-white/25 hover:bg-white/10 transition-all rounded-sm text-[9px] font-black tracking-widest uppercase flex items-center gap-2 cursor-pointer group"
                     title={t.report_issue || 'REPORT ISSUE'}
                   >
-                    <AlertCircle className="w-4 h-4 text-white/40 group-hover:text-blue-400 transition-colors" />
+                    <AlertCircle className="w-4 h-4 text-white/40 group-hover:text-white/85 transition-colors" />
                     <span className="text-white/40 group-hover:text-white transition-colors">
                       {lang === 'ru_RU' ? 'Сообщить об ошибке' : (t.report_issue || 'REPORT ISSUE')}
                     </span>
                   </button>
                 </div>
+
               </div>
 
             </motion.div>
@@ -1131,7 +1115,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
           {/* ================= SQUADS BUILDER VIEW ================= */}
           {activePanel === 'squad' && (
-            <motion.div 
+            <motion.div
               key="squad-panel"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1140,21 +1124,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 shrink-0">
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => { setActivePanel('main'); setActiveSquadSlot(null); }}
                     className="w-9 h-9 border border-white/10 hover:bg-white/5 transition-all flex items-center justify-center rounded-sm"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND SQUAD VANGUARD</span>
+                    <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND SQUAD VANGUARD</span>
                     <h2 className="text-xl font-black uppercase tracking-tight">КОНФИГУРАЦИЯ ОТРЯДА / SQUAD BUILDER</h2>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setSquad(['', '', '', '', '', '', '', '', '', '', '', ''])}
-                  className="flex items-center gap-1 text-[9px] font-black text-blue-400 hover:text-blue-300 border border-blue-500/10 hover:border-blue-500/30 px-3 py-1.5 rounded-sm transition-all"
+                  className="flex items-center gap-1 text-[9px] font-black text-white/85 hover:text-white/85 border border-white/25 hover:border-white/25 px-3 py-1.5 rounded-sm transition-all"
                 >
                   <Trash2 className="w-3 h-3" />
                   DISBAND SQUAD
@@ -1168,10 +1152,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   const isSlotActive = activeSquadSlot === idx;
 
                   return (
-                    <div 
+                    <div
                       key={idx}
                       className={`h-40 rounded-sm border relative overflow-hidden transition-all duration-300 ${
-                        isSlotActive ? 'border-blue-500 bg-blue-950/10 ring-1 ring-blue-500' :
+                        isSlotActive ? 'border-white/25 bg-white/[0.04] ring-1 ring-white/30' :
                         opObj ? 'border-white/10 bg-zinc-950/80 hover:border-white/30' : 'border-dashed border-white/10 bg-black/40 hover:bg-white/[0.02]'
                       }`}
                     >
@@ -1185,7 +1169,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                               updated[idx] = '';
                               setSquad(updated);
                             }}
-                            className="absolute right-2 top-2 w-5 h-5 bg-black/60 border border-white/10 text-white/40 hover:text-blue-400 hover:border-blue-500/20 rounded-sm flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-20"
+                            className="absolute right-2 top-2 w-5 h-5 bg-black/60 border border-white/10 text-white/40 hover:text-white/85 hover:border-white/25 rounded-sm flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-20"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -1202,8 +1186,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                           {/* Avatar Crop inside slot */}
                           <div className="w-14 h-14 mx-auto rounded-sm overflow-hidden border border-white/10 flex items-center justify-center bg-white/5 my-1.5 shrink-0">
-                            <img 
-                              src={opObj.avatar} 
+                            <img
+                              src={opObj.avatar}
                               alt=""
                               className="w-full h-full object-contain"
                               referrerPolicy="no-referrer"
@@ -1242,7 +1226,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               {/* Bottom: Operator Picker popup if slot is active */}
               {activeSquadSlot !== null && (
                 <div className="mt-4 border border-white/10 bg-zinc-950 p-4 rounded-sm shadow-2xl relative shrink-0 animate-in slide-in-from-bottom-5 duration-300">
-                  <button 
+                  <button
                     onClick={() => setActiveSquadSlot(null)}
                     className="absolute right-3 top-3 text-white/40 hover:text-white"
                   >
@@ -1271,8 +1255,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                         className="flex items-center gap-2 border border-white/5 hover:border-amber-500/40 bg-white/5 hover:bg-white/10 py-1.5 px-3.5 rounded-sm shrink-0 transition-all cursor-pointer"
                       >
                         <div className="w-6 h-6 rounded-sm bg-white/5 flex items-center justify-center">
-                          <img 
-                            src={op.avatar} 
+                          <img
+                            src={op.avatar}
                             alt=""
                             className="w-full h-full object-contain"
                             referrerPolicy="no-referrer"
@@ -1296,7 +1280,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
           {/* ================= GACHA HEADHUNTING SIMULATOR ================= */}
           {activePanel === 'gacha' && (
-            <motion.div 
+            <motion.div
               key="gacha-panel"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1306,7 +1290,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               {/* Header */}
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 shrink-0">
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => {
                       setActivePanel('main');
                       setIsZipping(false);
@@ -1318,7 +1302,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND RECRUITMENT AGENCY</span>
+                    <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND RECRUITMENT AGENCY</span>
                     <h2 className="text-xl font-black uppercase tracking-tight">СИМУЛЯТОР СИГНАЛОВ ПРИЗЫВА / HEADHUNT SIM</h2>
                   </div>
                 </div>
@@ -1327,17 +1311,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <span className="text-[8px] font-bold text-white/40 tracking-wider uppercase">AVAILABLE PERMITS:</span>
                   <span className="text-sm font-black text-cyan-400 font-mono">{permits}</span>
                   <span className="text-[8px] font-bold text-white/40 tracking-wider uppercase ml-2">ORUNDUM:</span>
-                  <span className="text-sm font-black text-blue-500 font-mono">{orundum}</span>
+                  <span className="text-sm font-black text-white/85 font-mono">{orundum}</span>
                 </div>
               </div>
 
               {/* Recruitment Screen Body */}
               <div className="flex-1 flex flex-col justify-center items-center relative overflow-hidden">
                 <AnimatePresence mode="wait">
-                  
+
                   {/* Pull Animation Overlay (The Arknights Zipper Glow) */}
                   {isZipping && (
-                    <motion.div 
+                    <motion.div
                       key="gacha-zipper"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1358,10 +1342,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                             }}
                             className={`w-16 h-80 border rounded-full relative flex items-center justify-center cursor-pointer transition-all duration-700 shadow-2xl ${
                               gachaMaxRarity === 6 ? 'border-orange-500 shadow-orange-500/20 bg-orange-950/5 text-orange-500' :
-                              gachaMaxRarity === 5 ? 'border-purple-500 shadow-purple-500/20 bg-purple-950/5 text-purple-500' : 'border-blue-400 shadow-blue-400/20 bg-blue-950/5 text-blue-400'
+                              gachaMaxRarity === 5 ? 'border-purple-500 shadow-purple-500/20 bg-purple-950/5 text-purple-500' : 'border-white/25 shadow-white/20 bg-white/[0.04] text-white/85'
                             }`}
                           >
-                            <motion.div 
+                            <motion.div
                               animate={{ y: [0, 40, 0] }}
                               transition={{ repeat: Infinity, duration: 2 }}
                               className="absolute top-10 flex flex-col items-center"
@@ -1374,7 +1358,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       ) : (
                         /* Individual card reveal panel */
                         currentGachaIndex >= 0 && currentGachaIndex < gachaPullResults.length && (
-                          <motion.div 
+                          <motion.div
                             key={currentGachaIndex}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1391,8 +1375,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                               </span>
 
                               <div className="w-48 h-48 bg-white/5 border border-white/5 rounded-sm overflow-hidden flex items-center justify-center my-4 relative">
-                                <img 
-                                  src={gachaPullResults[currentGachaIndex].splash} 
+                                <img
+                                  src={gachaPullResults[currentGachaIndex].splash}
                                   alt=""
                                   className="w-full h-full object-cover"
                                   referrerPolicy="no-referrer"
@@ -1447,7 +1431,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                   {/* Standard recruitment portal graphics */}
                   {!isZipping && (
-                    <motion.div 
+                    <motion.div
                       key="gacha-home"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1497,7 +1481,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
           {/* ================= MISSIONS PANEL ================= */}
           {activePanel === 'mission' && (
-            <motion.div 
+            <motion.div
               key="mission-panel"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1506,14 +1490,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 shrink-0">
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => setActivePanel('main')}
                     className="w-9 h-9 border border-white/10 hover:bg-white/5 transition-all flex items-center justify-center rounded-sm"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND OPERATION REGISTRY</span>
+                    <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND OPERATION REGISTRY</span>
                     <h2 className="text-xl font-black uppercase tracking-tight">ЕЖЕДНЕВНЫЕ ЗАДАНИЯ // DAILY OPERATIONS</h2>
                   </div>
                 </div>
@@ -1523,7 +1507,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-3 py-2">
                 {missions.map(m => {
                   return (
-                    <div 
+                    <div
                       key={m.id}
                       className={`p-4 rounded-sm border flex items-center justify-between transition-all duration-300 ${
                         m.claimed ? 'border-white/5 bg-zinc-950/40 opacity-40' : 'border-white/10 bg-zinc-950/80 hover:border-white/25 shadow-md'
@@ -1533,7 +1517,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                         <span className="text-[11px] font-black text-white uppercase tracking-wide">
                           {m.text}
                         </span>
-                        
+
                         {/* Rewards display */}
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="text-[7.5px] font-bold text-white/30 tracking-wider uppercase">REWARDS:</span>
@@ -1567,7 +1551,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
           {/* ================= DEPOT INVENTORY VIEW ================= */}
           {activePanel === 'depot' && (
-            <motion.div 
+            <motion.div
               key="depot-panel"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1576,14 +1560,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 shrink-0">
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => setActivePanel('main')}
                     className="w-9 h-9 border border-white/10 hover:bg-white/5 transition-all flex items-center justify-center rounded-sm"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND COMBAT LOGISTICS</span>
+                    <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND COMBAT LOGISTICS</span>
                     <h2 className="text-xl font-black uppercase tracking-tight">СКЛАД СНАРЯЖЕНИЯ // DEPOT INVENTORY</h2>
                   </div>
                 </div>
@@ -1592,14 +1576,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               {/* Depot Materials list */}
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 py-4">
                 {[
-                  { name: 'Orundum Crystals', code: 'ORUNDUM', amount: orundum, color: 'text-blue-500 bg-blue-500/5 border-blue-500/20', desc: 'Sarkaz volcanic crystals used for recruiting elite operators.' },
+                  { name: 'Orundum Crystals', code: 'ORUNDUM', amount: orundum, color: 'text-white/85 bg-white/10 border-white/25', desc: 'Sarkaz volcanic crystals used for recruiting elite operators.' },
                   { name: 'Originite Prime', code: 'ORIGINITE', amount: prime, color: 'text-amber-500 bg-amber-500/5 border-amber-500/20', desc: 'Rare crystalline mineral used to purchase elite skins or restore energy.' },
                   { name: 'Lungmen Credits', code: 'LMD_CRED', amount: lmd, color: 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20', desc: 'Official currency of Lungmen, utilized for training and operator upgrades.' },
                   { name: 'Headhunt Permits', code: 'PERMITS', amount: permits, color: 'text-cyan-400 bg-cyan-500/5 border-cyan-500/20', desc: 'Rhodes Island official permits that clear deployment of elite operators.' },
                   { name: 'Volcanic Ore', code: 'VOLC_ORE', amount: 84, color: 'text-white/40 bg-white/5 border-white/10', desc: 'Industrial ore harvested from Leithanien volcanoes. Used in high-tech material processing.' },
                   { name: 'Lop-ear Token', code: 'LOP_TOKN', amount: 12, color: 'text-white/40 bg-white/5 border-white/10', desc: 'Special security token representing Amiya\'s clearance inside Rhodes Island core system.' }
                 ].map((item, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     className={`p-4 rounded-sm border flex flex-col justify-between ${item.color} shadow-sm h-36`}
                   >
@@ -1629,21 +1613,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {isChangingAssistant && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
           <div className="w-full max-w-xl bg-zinc-950 border border-white/10 p-6 shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
-            <button 
+            <button
               onClick={() => setIsChangingAssistant(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="border-b border-white/5 pb-3 mb-4">
-              <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND ASSISTANT ROSTER</span>
+              <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND ASSISTANT ROSTER</span>
               <h3 className="text-lg font-black uppercase tracking-tight text-white">ВЫБОР ПОМОЩНИКА // CHOOSE ASSISTANT</h3>
             </div>
 
             <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 pr-2 custom-scrollbar">
               {OPERATORS_LIST.map(op => {
                 const isActive = assistantId === op.id;
-                
+
                 return (
                   <button
                     key={op.id}
@@ -1657,13 +1641,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       }
                     }}
                     className={`w-full p-3 border rounded-sm text-left flex items-center gap-4 transition-all duration-300 ${
-                      isActive ? 'border-blue-600 bg-blue-950/10' : 'border-white/5 bg-white/[0.01] hover:border-white/15 hover:bg-white/[0.04]'
+                      isActive ? 'border-white/25 bg-white/[0.04]' : 'border-white/5 bg-white/[0.01] hover:border-white/15 hover:bg-white/[0.04]'
                     }`}
                   >
                     {/* Portrait Crop */}
                     <div className="w-10 h-10 bg-white/5 border border-white/10 flex items-center justify-center shrink-0 rounded-sm">
-                      <img 
-                        src={op.avatar} 
+                      <img
+                        src={op.avatar}
                         alt=""
                         className="w-full h-full object-contain"
                         referrerPolicy="no-referrer"
@@ -1684,7 +1668,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     </div>
 
                     {isActive && (
-                      <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
                         <Check className="w-3.5 h-3.5" />
                       </div>
                     )}
@@ -1700,21 +1684,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {isMailOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
           <div className="w-full max-w-xl bg-zinc-950 border border-white/10 p-6 shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
-            <button 
+            <button
               onClick={() => setIsMailOpen(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="border-b border-white/5 pb-3 mb-4">
-              <span className="text-[9px] text-blue-500 font-black tracking-widest uppercase">RHODES ISLAND INBOX</span>
+              <span className="text-[9px] text-white/85 font-black tracking-widest uppercase">RHODES ISLAND INBOX</span>
               <h3 className="text-lg font-black uppercase tracking-tight text-white">ВХОДЯЩИЕ // MAIL</h3>
             </div>
-            
+
             <div className="flex flex-col gap-3">
-              <div className="p-4 border border-blue-500/30 bg-blue-950/10 rounded-sm">
+              <div className="p-4 border border-white/25 bg-white/[0.04] rounded-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black tracking-widest uppercase text-blue-400">SYS_NOTICE</span>
+                  <span className="text-[10px] font-black tracking-widest uppercase text-white/85">SYS_NOTICE</span>
                   <span className="text-[9px] text-white/40 font-mono">JUST NOW</span>
                 </div>
                 <h4 className="text-sm font-black text-white uppercase tracking-wide mb-1">Установка веб-приложения</h4>
@@ -1731,19 +1715,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {isNewsOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
           <div className="w-full max-w-xl bg-zinc-950 border border-white/10 p-6 shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 rounded-sm">
-            <button 
+            <button
               onClick={() => setIsNewsOpen(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="border-b border-white/5 pb-3 mb-4">
-              <span className="text-[9px] text-blue-500 font-black tracking-[0.2em] uppercase font-mono">BREAKING NEWS</span>
+              <span className="text-[9px] text-white/85 font-black tracking-[0.2em] uppercase font-mono">BREAKING NEWS</span>
               <h3 className="text-lg font-black uppercase tracking-tight text-white">
                 {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ОБЪЯВЛЕНИЯ // NEWS' : 'ANNOUNCEMENTS // NEWS'}
               </h3>
             </div>
-            
+
             <div className="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-1 custom-scrollbar">
               {NEWS_ITEMS.map((item, idx) => (
                 <a
@@ -1752,19 +1736,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   target="_blank"
                   rel="noreferrer"
                   className={`w-full aspect-[2/1] bg-zinc-950/80 border rounded-sm shadow-2xl relative overflow-hidden group transition-all duration-300 block cursor-pointer ${
-                    idx === currentNewsIndex ? 'border-blue-500/80 shadow-blue-500/10' : 'border-white/10 hover:border-blue-500/40'
+                    idx === currentNewsIndex ? 'border-white/25 shadow-white/20' : 'border-white/10 hover:border-white/25'
                   }`}
                   onClick={() => setCurrentNewsIndex(idx)}
                 >
                   <div className="absolute inset-0">
-                    <img 
-                      src={wrapUrlWithProxy(item.image)} 
-                      alt={item.title || 'Breaking News'} 
+                    <img
+                      src={wrapUrlWithProxy(item.image)}
+                      alt={item.title || 'Breaking News'}
                       className="w-full h-full object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  
+
                   {/* Subtle dark gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80 pointer-events-none" />
 
@@ -1785,17 +1769,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           {/* Header */}
           <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 shrink-0 bg-zinc-950/50">
             <div className="flex items-center gap-3">
-              <Settings className="w-5 h-5 text-blue-500 animate-[spin_8s_linear_infinite]" />
+              <Settings className="w-5 h-5 text-white/85 animate-[spin_8s_linear_infinite]" />
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-white">
                   {t.system_configuration || 'SYSTEM CONFIGURATION'}
                 </h3>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setIsSettingsOpen(false)}
-              className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 hover:border-blue-500/60 rounded-sm text-blue-500 text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-white/15 hover:bg-white/15 border border-white/25 hover:border-white/25 rounded-sm text-white/85 text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>{t.close || 'CLOSE'}</span>
@@ -1804,22 +1788,22 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 max-w-4xl mx-auto w-full">
-            
+
             {/* 1. Language Settings */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-3 font-mono">
-                <Languages className="w-4 h-4 text-blue-500" />
+                <Languages className="w-4 h-4 text-white/85" />
                 {lang === 'ru_RU' || lang === 'ru_RU_CN' ? 'ЯЗЫК ИНТЕРФЕЙСА // LANGUAGE' : 'INTERFACE LANGUAGE'}
               </h3>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {LANGUAGES.map((l) => (
                   <button
                     key={l.id}
                     onClick={() => setLang(l.id)}
                     className={`p-3.5 rounded-sm border text-left flex items-center justify-between transition-all duration-200 cursor-pointer ${
-                      lang === l.id 
-                        ? 'bg-blue-500/10 border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)]' 
+                      lang === l.id
+                        ? 'bg-white/10 border-white/25 text-white/85 shadow-[0_0_15px_rgba(255,255,255,0.1)]'
                         : 'bg-zinc-950/60 border-white/10 text-white/60 hover:bg-zinc-900 hover:text-white hover:border-white/20'
                     }`}
                   >
@@ -1829,7 +1813,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                         {l.isOfficial ? 'OFFICIAL' : 'COMMUNITY'}
                       </span>
                     </div>
-                    {lang === l.id && <Check className="w-3.5 h-3.5 text-blue-500 font-bold" />}
+                    {lang === l.id && <Check className="w-3.5 h-3.5 text-white/85 font-bold" />}
                   </button>
                 ))}
               </div>
@@ -1838,25 +1822,25 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             {/* 2. Sound Settings */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-3 font-mono">
-                <Volume2 className="w-4 h-4 text-blue-500" />
+                <Volume2 className="w-4 h-4 text-white/85" />
                 {t.sound_settings || 'SOUND SETTINGS'}
               </h3>
-              
+
               <div className="space-y-4 bg-zinc-950/40 p-4 border border-white/5 rounded-sm">
                 {/* BGM Volume */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.bgm_volume || 'BGM VOLUME'}</span>
-                    <span className="font-mono text-blue-500">{Math.round(settings.bgmVolume * 100)}%</span>
+                    <span className="font-mono text-white/85">{Math.round(settings.bgmVolume * 100)}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="1" 
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
                     step="0.05"
-                    value={settings.bgmVolume} 
+                    value={settings.bgmVolume}
                     onChange={(e) => handleVolumeChange('bgm', parseFloat(e.target.value))}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
@@ -1864,16 +1848,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.sfx_volume || 'SFX VOLUME'}</span>
-                    <span className="font-mono text-blue-500">{Math.round(settings.sfxVolume * 100)}%</span>
+                    <span className="font-mono text-white/85">{Math.round(settings.sfxVolume * 100)}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="1" 
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
                     step="0.05"
-                    value={settings.sfxVolume} 
+                    value={settings.sfxVolume}
                     onChange={(e) => handleVolumeChange('sfx', parseFloat(e.target.value))}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
@@ -1881,16 +1865,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.voice_volume || 'VOICE VOLUME'}</span>
-                    <span className="font-mono text-blue-500">{Math.round(settings.voiceVolume * 100)}%</span>
+                    <span className="font-mono text-white/85">{Math.round(settings.voiceVolume * 100)}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="1" 
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
                     step="0.05"
-                    value={settings.voiceVolume} 
+                    value={settings.voiceVolume}
                     onChange={(e) => handleVolumeChange('voice', parseFloat(e.target.value))}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
               </div>
@@ -1899,7 +1883,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             {/* 3. Text Speed & Auto Delay Settings */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-3 font-mono">
-                <Play className="w-4 h-4 text-blue-500" />
+                <Play className="w-4 h-4 text-white/85" />
                 {t.auto_play_settings || 'AUTO-MODE SETTINGS'}
               </h3>
 
@@ -1908,16 +1892,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="space-y-2 bg-zinc-950/40 p-4 border border-white/5 rounded-sm">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.text_speed || 'TEXT SPEED'}</span>
-                    <span className="font-mono text-blue-500">{settings.textSpeed}ms</span>
+                    <span className="font-mono text-white/85">{settings.textSpeed}ms</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="10" 
-                    max="100" 
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
                     step="5"
-                    value={settings.textSpeed} 
+                    value={settings.textSpeed}
                     onChange={(e) => handleUpdateSettings({ textSpeed: parseInt(e.target.value) })}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-[8px] text-white/30 font-mono">
                     <span>{t.fast || 'INSTANT'} (10ms)</span>
@@ -1929,16 +1913,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="space-y-2 bg-zinc-950/40 p-4 border border-white/5 rounded-sm">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.auto_delay || 'AUTO DELAY'}</span>
-                    <span className="font-mono text-blue-500">{(settings.autoDelay / 1000).toFixed(1)}s</span>
+                    <span className="font-mono text-white/85">{(settings.autoDelay / 1000).toFixed(1)}s</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="500" 
-                    max="5000" 
+                  <input
+                    type="range"
+                    min="500"
+                    max="5000"
                     step="250"
-                    value={settings.autoDelay} 
+                    value={settings.autoDelay}
                     onChange={(e) => handleUpdateSettings({ autoDelay: parseInt(e.target.value) })}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-[8px] text-white/30 font-mono">
                     <span>{t.short || 'SHORT'} (0.5s)</span>
@@ -1951,7 +1935,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             {/* 4. Display Settings */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-white/10 pb-3 font-mono">
-                <Type className="w-4 h-4 text-blue-500" />
+                <Type className="w-4 h-4 text-white/85" />
                 {t.display_settings || 'DISPLAY SETTINGS'}
               </h3>
 
@@ -1960,22 +1944,22 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-white/60">
                     <span className="uppercase">{t.font_size || 'FONT SIZE'}</span>
-                    <span className="font-mono text-blue-500">{settings.fontSize}%</span>
+                    <span className="font-mono text-white/85">{settings.fontSize}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="75" 
-                    max="150" 
+                  <input
+                    type="range"
+                    min="75"
+                    max="150"
                     step="5"
-                    value={settings.fontSize} 
+                    value={settings.fontSize}
                     onChange={(e) => handleUpdateSettings({ fontSize: parseInt(e.target.value) })}
-                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-white bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Font Preview Block */}
                 <div className="p-4 bg-black/60 border border-white/10 rounded-sm text-center">
-                  <p 
+                  <p
                     className="text-white/80 transition-all duration-200"
                     style={{ fontSize: `${settings.fontSize}%`, fontFamily: settings.fontFamily }}
                   >
@@ -2004,7 +1988,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {isReportOpen && (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto" onClick={() => setIsReportOpen(false)}>
           <div className="w-full max-w-4xl bg-[#0a0a0a] border border-white/10 shadow-2xl p-6 md:p-8 animate-in zoom-in-95 duration-300 relative my-auto max-h-[95vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={() => setIsReportOpen(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors cursor-pointer"
             >
@@ -2013,11 +1997,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
               <span className="text-xs font-black tracking-widest text-white uppercase">{t.report_issue || 'REPORT ISSUE'}</span>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column: Anonymous Bug Report */}
               <div className="flex flex-col border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-8">
-                <span className="text-[10px] font-black tracking-[0.2em] text-blue-500 uppercase font-mono mb-4 block">
+                <span className="text-[10px] font-black tracking-[0.2em] text-white/85 uppercase font-mono mb-4 block">
                   {isRussian ? 'АНОНИМНЫЙ ОТЧЁТ' : 'ANONYMOUS REPORT'}
                 </span>
 
@@ -2058,21 +2042,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                           type="button"
                           onClick={() => setReportType('translation')}
                           className={`flex items-center justify-center gap-2 py-2.5 rounded-sm border transition-all text-[9px] font-black uppercase tracking-widest cursor-pointer ${
-                            reportType === 'translation' 
-                              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' 
+                            reportType === 'translation'
+                              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
                               : 'border-white/5 bg-white/5 text-white/40 hover:bg-white/10'
                           }`}
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           {isRussian ? 'Текст / Перевод' : 'Text / Translation'}
                         </button>
-                        
+
                         <button
                           type="button"
                           onClick={() => setReportType('player')}
                           className={`flex items-center justify-center gap-2 py-2.5 rounded-sm border transition-all text-[9px] font-black uppercase tracking-widest cursor-pointer ${
-                            reportType === 'player' 
-                              ? 'border-red-500 bg-red-500/10 text-red-400' 
+                            reportType === 'player'
+                              ? 'border-red-500 bg-red-500/10 text-red-400'
                               : 'border-white/5 bg-white/5 text-white/40 hover:bg-white/10'
                           }`}
                         >
@@ -2127,17 +2111,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <span className="text-[10px] font-black tracking-[0.2em] text-[#BFFF00] uppercase font-mono mb-4 block">
                     SKPORT PROFILE
                   </span>
-                  
+
                   <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-wider mb-3">
                     {t.found_error || 'FOUND AN ERROR OR TYPO?'}
                   </p>
                   <p className="text-[10px] text-white/70 font-bold leading-relaxed uppercase tracking-tight mb-4">
                     {t.report_description || 'YOU CAN DIRECTLY REPORT THE WRITING ISSUES OR SUBMIT SOURCE TRANSLATIONS THROUGH SKPORT MESSAGES.'}
                   </p>
-                  
+
                   <div className="flex flex-col items-center py-4 bg-white/5 border border-white/10 rounded-sm mb-4">
                     <div className="p-3 bg-white rounded-sm shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                      <QRCodeSVG 
+                      <QRCodeSVG
                         value="https://www.skport.com/profile?id=9963327784768"
                         size={120}
                         level="H"
@@ -2151,10 +2135,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                       />
                     </div>
                   </div>
-                  
-                  <a 
-                    href="https://www.skport.com/profile?id=9963327784768" 
-                    target="_blank" 
+
+                  <a
+                    href="https://www.skport.com/profile?id=9963327784768"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 py-3 px-4 bg-white/5 border border-white/10 text-[10px] font-black text-white hover:bg-white/10 hover:border-white/30 transition-all uppercase tracking-[0.2em] text-center justify-center rounded-sm"
                   >

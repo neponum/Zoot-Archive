@@ -14,6 +14,7 @@ import { MainMenu } from './MainMenu';
 import { ErrorBoundary } from './ErrorBoundary';
 
 import { extractOperatorKey, getOperatorDetails, getCleanOperatorName, isOperatorEpisode } from '../utils/operatorUtils';
+import { getAssistantAvatarUrl, getMixstoryKvUrl, getMixstoryStoryBgUrl, getStorylineIconUrl } from '../utils/assetUrls';
 
 interface ChapterSelectorProps {
   onSelect: (chapter: StoryChapter) => void;
@@ -66,7 +67,44 @@ const CHRONO_ORDER: Record<string, number> = {
   'main_15': 500, 'main_16': 501, 'main_17': 502,
 };
 
-const BANNERS_BASE_URL = 'https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/banners';
+// jsDelivr больше не отдаёт файлы из этого репозитория (лимит 50 МБ),
+// поэтому баннеры берём с raw GitHub.
+const BANNERS_BASE_URL = 'https://raw.githubusercontent.com/neponum/zoot-data/main/banners';
+
+function sanitizeBannerPart(value: string): string {
+  return value.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+}
+
+function getLegacyBannerUrl(episode: StoryEpisode): string {
+  const imageId = episode.storyEntryPicId || episode.id;
+  const chineseName = episode.chineseName || episode.name;
+  const safeImageId = sanitizeBannerPart(imageId);
+  const safeChineseName = sanitizeBannerPart(chineseName);
+
+  if (episode.id.startsWith('main_')) {
+    const num = episode.id.replace('main_', '');
+    const paddedNum = num.length === 1 ? `0${num}` : num;
+    return `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
+  }
+  if (episode.id.startsWith('is_')) {
+    return `${BANNERS_BASE_URL}/IS_${episode.id.replace('is_', '')}.png`;
+  }
+  if (episode.id.startsWith('ra_')) {
+    return `${BANNERS_BASE_URL}/RA_${episode.id.replace('ra_', '')}.png`;
+  }
+  if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
+    return `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
+  }
+  return `${BANNERS_BASE_URL}/${safeImageId}.png`;
+}
+
+function getPreferredBannerUrl(episode: StoryEpisode): string {
+  if (!episode.id.startsWith('is_') && !episode.id.startsWith('ra_')) {
+    const kvUrl = getMixstoryKvUrl(episode.id, episode.englishName);
+    if (kvUrl) return kvUrl;
+  }
+  return getLegacyBannerUrl(episode);
+}
 
 const EpisodeGrid = React.memo(({ 
   filteredEpisodes, 
@@ -114,6 +152,18 @@ const EpisodeGrid = React.memo(({
                     
                     const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
                     const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+
+                    if (decodedSrc.includes('/assets/mixstory/kv/')) {
+                      const legacySrc = getLegacyBannerUrl(episode);
+                      if (legacySrc && legacySrc !== currentSrc) {
+                        CacheService.getCachedBlobUrl(legacySrc).then((cached: any) => {
+                          img.src = cached || legacySrc;
+                        });
+                        return;
+                      }
+                      setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                      return;
+                    }
                     
                     // Fallback chain logic
                     let nextSrc = '';
@@ -165,9 +215,11 @@ const EpisodeGrid = React.memo(({
                   }}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 border border-white/10">
-                  <AlertCircle className="w-8 h-8 text-white/5 mb-2" />
-                  <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">No Visual Data</span>
+                <div className="relative h-full w-full overflow-hidden border border-white/10 bg-white/[0.03]">
+                  <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.02)_0%,rgba(255,255,255,0.09)_50%,rgba(255,255,255,0.02)_100%)]" />
+                  <div className="relative flex h-full items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-white/25" />
+                  </div>
                 </div>
               )}
               
@@ -176,9 +228,14 @@ const EpisodeGrid = React.memo(({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               )}
               
-              {/* Technical ID Badge - Always visible */}
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
-                <span>{episode.id}</span>
+              {/* Technical ID + title badge - always visible for side stories */}
+              <div className="absolute top-2 left-2 max-w-[calc(100%-3.5rem)] px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
+                <span className="block">{episode.id}</span>
+                {!isMainline && (
+                  <span className="block mt-0.5 font-sans text-[10px] font-bold normal-case tracking-normal text-white/90 leading-tight line-clamp-2">
+                    {episode.name}
+                  </span>
+                )}
               </div>
 
               {/* Read Status Badge */}
@@ -209,7 +266,7 @@ const EpisodeGrid = React.memo(({
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
                         {translatorDiscovery[episode.id] && (
-                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-blue-400 bg-blue-500/10'}`}>
+                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-white/85 bg-white/10'}`}>
                             <span>{getTranslatorDisplayName(translatorDiscovery[episode.id])}</span>
                           </span>
                         )}
@@ -362,6 +419,18 @@ const EpisodeHorizontalList = React.memo(({
                     
                     const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
                     const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
+
+                    if (decodedSrc.includes('/assets/mixstory/kv/')) {
+                      const legacySrc = getLegacyBannerUrl(episode);
+                      if (legacySrc && legacySrc !== currentSrc) {
+                        CacheService.getCachedBlobUrl(legacySrc).then((cached: any) => {
+                          img.src = cached || legacySrc;
+                        });
+                        return;
+                      }
+                      setFailedImages((prev: any) => ({ ...prev, [episode.id]: true }));
+                      return;
+                    }
                     
                     // Fallback chain logic
                     let nextSrc = '';
@@ -410,9 +479,11 @@ const EpisodeHorizontalList = React.memo(({
                   }}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 border border-white/10">
-                  <AlertCircle className="w-8 h-8 text-white/5 mb-2" />
-                  <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">No Visual Data</span>
+                <div className="relative h-full w-full overflow-hidden border border-white/10 bg-white/[0.03]">
+                  <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.02)_0%,rgba(255,255,255,0.09)_50%,rgba(255,255,255,0.02)_100%)]" />
+                  <div className="relative flex h-full items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-white/25" />
+                  </div>
                 </div>
               )}
               
@@ -421,9 +492,14 @@ const EpisodeHorizontalList = React.memo(({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               )}
               
-              {/* Technical ID Badge - Always visible */}
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
-                <span>{episode.id}</span>
+              {/* Technical ID + title badge - always visible for side stories */}
+              <div className="absolute top-2 left-2 max-w-[calc(100%-3.5rem)] px-1.5 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm text-[8px] font-mono text-white/60 uppercase z-20 pointer-events-none shadow-lg">
+                <span className="block">{episode.id}</span>
+                {!isMainline && (
+                  <span className="block mt-0.5 font-sans text-[10px] font-bold normal-case tracking-normal text-white/90 leading-tight line-clamp-2">
+                    {episode.name}
+                  </span>
+                )}
               </div>
 
               {/* Read Status Badge */}
@@ -454,7 +530,7 @@ const EpisodeHorizontalList = React.memo(({
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-black text-white/60 tracking-widest uppercase italic">YEAR.{episode.year}</span>
                         {translatorDiscovery[episode.id] && (
-                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-blue-400 bg-blue-500/10'}`}>
+                          <span className={`text-[7px] font-black tracking-tighter uppercase px-1 rounded-sm flex items-center gap-1 ${isAITranslator(translatorDiscovery[episode.id]) ? 'text-purple-300 bg-purple-500/10' : 'text-white/85 bg-white/10'}`}>
                             <span>{getTranslatorDisplayName(translatorDiscovery[episode.id])}</span>
                           </span>
                         )}
@@ -925,36 +1001,11 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
               charName = ep.id.replace(/^(operator_|or_|story_|set_)/, '').split('_')[0];
             }
             const charId = mapping[charName.toLowerCase()] || `char_${charName}`;
-            const avatarUrl = `https://raw.githubusercontent.com/fexli/ArknightsResource/main/avatar/ASSISTANT/${charId}_2.png`;
+            const avatarUrl = getAssistantAvatarUrl(charId);
             initialImages[ep.id] = avatarUrl;
             initialImages[`operator_${charName.toLowerCase()}`] = avatarUrl;
           } else {
-            const imageId = ep.storyEntryPicId || ep.id;
-            const chineseName = ep.chineseName || ep.name;
-            
-            // Sanitize names for file paths (remove invalid characters like colon)
-            const safeImageId = imageId.replace(/[:：\s<>"/\\|?*]/g, '').trim();
-            const safeChineseName = chineseName.replace(/[:：\s<>"/\\|?*]/g, '').trim();
-            
-            let url = '';
-            // Try to guess the most likely filename based on what the user added
-            if (ep.id.startsWith('main_')) {
-              const num = ep.id.replace('main_', '');
-              const paddedNum = num.length === 1 ? `0${num}` : num;
-              url = `${BANNERS_BASE_URL}/main_${paddedNum}.png`;
-            } else if (ep.id.startsWith('is_')) {
-              const num = ep.id.replace('is_', '');
-              url = `${BANNERS_BASE_URL}/IS_${num}.png`;
-            } else if (ep.id.startsWith('ra_')) {
-              const num = ep.id.replace('ra_', '');
-              url = `${BANNERS_BASE_URL}/RA_${num}.png`;
-            } else if (safeChineseName && !/[\u4e00-\u9fa5]/.test(safeImageId)) {
-              // If we have a Chinese name and the ID is just a code, try the Chinese name format first
-              url = `${BANNERS_BASE_URL}/情报处理室_${safeChineseName}.png`;
-            } else {
-              url = `${BANNERS_BASE_URL}/${safeImageId}.png`;
-            }
-            initialImages[ep.id] = url;
+            initialImages[ep.id] = getPreferredBannerUrl(ep);
           }
         }
         
@@ -978,12 +1029,12 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
       const currentUrl = prev[id];
       if (!currentUrl) return prev;
       
-      if (currentUrl.includes('/avatar/ASSISTANT/')) {
+      if (currentUrl.includes('/assets/char_avatar/')) {
         if (currentUrl.endsWith('_2.png')) {
           return { ...prev, [id]: currentUrl.replace('_2.png', '.png') };
-        } else if (currentUrl.endsWith('.png') && !currentUrl.endsWith('_1.png')) {
-          return { ...prev, [id]: currentUrl.replace('.png', '_1.png') };
         }
+        setFailedImages(f => ({ ...f, [id]: true }));
+        return prev;
       }
       
       setFailedImages(f => ({ ...f, [id]: true }));
@@ -1085,6 +1136,10 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
     }
   }, [selectedEpisode, lang, translatorDiscovery]);
 
+  const selectedStoryBgUrl = selectedEpisode
+    ? getMixstoryStoryBgUrl(selectedEpisode.id, selectedEpisode.englishName)
+    : null;
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-[#1a1a1a] text-white">
@@ -1112,17 +1167,27 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-black text-white relative overflow-hidden font-sans">
-      {/* Background Layer - Blurred Episode Art */}
+      {/* Background Layer - Story art, with legacy banner fallback */}
       <div className="absolute inset-0 z-0 transition-all duration-1000">
-        {selectedEpisode && episodeImages[selectedEpisode.id] ? (
+        {selectedStoryBgUrl ? (
+          <div className="absolute inset-0">
+            <img
+              src={selectedStoryBgUrl}
+              alt=""
+              className="w-full h-full object-cover opacity-70 transition-opacity duration-1000"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+        ) : selectedEpisode && episodeImages[selectedEpisode.id] ? (
           <div className="absolute inset-0">
             <img 
               src={episodeImages[selectedEpisode.id]!} 
               alt="" 
-              className="w-full h-full object-cover blur-xl scale-110 opacity-55 transition-opacity duration-1000"
+              className="w-full h-full object-cover blur-sm scale-105 opacity-75 transition-opacity duration-1000"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-black/70" />
+            <div className="absolute inset-0 bg-black/35" />
           </div>
         ) : selectedStoryLine && getStoryLineBg(selectedStoryLine) ? (
           <div className="absolute inset-0">
@@ -1365,7 +1430,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                         setSelectedEpisode(episode);
                         onSelect(chapter);
                       }}
-                      onOpenTranslation={onOpenTranslation}
                       onBack={() => {
                         setActiveTab('HOME');
                         navigate('/');
@@ -1416,7 +1480,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                 {/* Storyline Logo */}
                                 <div className={`w-8 h-8 ml-6 shrink-0 flex items-center justify-center p-0.5 rounded-sm bg-black/40 border border-white/5 transition-all duration-300 ${isSelected ? 'scale-110 opacity-100 border-white/20 shadow-[0_0_8px_rgba(255,255,255,0.1)]' : 'opacity-25 group-hover:opacity-65'}`}>
                                   <img 
-                                    src={`https://raw.githubusercontent.com/neponum/zoot-data/main/icons/${line.logo}.webp`} 
+                                    src={getStorylineIconUrl(line.logo)}
                                     alt=""
                                     className="max-w-full max-h-full object-contain filter drop-shadow-md"
                                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1745,7 +1809,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
           </div>
         ) : (
           // Chapter Selection View (when an episode is clicked)
-          <div className="flex-1 flex flex-col p-4 md:p-16 pt-24 md:pt-16 animate-in fade-in zoom-in-95 duration-500 overflow-hidden h-full bg-black/80">
+          <div className="flex-1 flex flex-col p-4 md:p-16 pt-24 md:pt-16 animate-in fade-in zoom-in-95 duration-500 overflow-hidden h-full bg-black/15">
             <div className="flex items-center gap-4 md:gap-8 mb-6 md:mb-12">
               <button 
                 onClick={() => setSelectedEpisode(null)}
@@ -1754,7 +1818,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <div className="flex flex-col">
-                <h2 className="text-xl sm:text-2xl md:text-5xl font-black tracking-tighter uppercase line-clamp-2">{selectedEpisode.name}</h2>
+                <h2 className="text-xl sm:text-2xl md:text-5xl font-black tracking-tighter uppercase line-clamp-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">{selectedEpisode.name}</h2>
                 {(() => {
                   const currentLangObj = LANGUAGES.find(l => l.id === lang);
                   if (currentLangObj && !currentLangObj.isOfficial) {
@@ -1802,7 +1866,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                           localStorage.setItem('ak-selected-translator', translatorName);
                                         }}
                                         className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center justify-between ${
-                                          isActive ? 'text-blue-400' : 'text-white/60'
+                                          isActive ? 'text-white/85' : 'text-white/60'
                                         }`}
                                       >
                                         <div className="flex flex-col">
@@ -1812,7 +1876,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                                             </span>
                                           </div>
                                           {translatorDiscovery[selectedEpisode.id] === translatorName && (
-                                            <span className="text-[7px] text-blue-500/60 lowercase italic tracking-normal">{t.translation} found</span>
+                                            <span className="text-[7px] text-white/85/60 lowercase italic tracking-normal">{t.translation} found</span>
                                           )}
                                         </div>
                                         {isActive && <Check className="w-3 h-3" />}
@@ -1846,7 +1910,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                   const isEnd = chapter.id.toLowerCase().includes('_end');
                   const isSt = chapter.id.toLowerCase().includes('_st_') || chapter.id.toLowerCase().startsWith('level_st');
                   const typeLabel = isBeg ? 'BEG' : isMid ? 'MID' : isEnd ? 'END' : isSt ? 'STORY' : 'RECORD';
-                  const typeColor = isBeg ? 'text-blue-400' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : isSt ? 'text-green-400' : 'text-white/40';
+                  const typeColor = isBeg ? 'text-white/85' : isMid ? 'text-yellow-400' : isEnd ? 'text-red-400' : isSt ? 'text-green-400' : 'text-white/40';
                   
                   let displayCode = getChapterDisplayCode(chapter);
 
@@ -2002,22 +2066,6 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
                             <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent opacity-0 group-hover/play:opacity-100 transition-opacity" />
                           </button>
                           
-                          {/* Translate / Interactive Toggle Button */}
-                          {!LANGUAGES.find(l => l.id === lang)?.isOfficial && (
-                            <button 
-                              onClick={(e) => {
-                                 e.stopPropagation();
-                                 onOpenTranslation?.(chapter, selectedEpisode);
-                              }}
-                              className="flex-1 min-h-0 flex flex-col items-center justify-center gap-1 hover:bg-blue-500/15 transition-colors text-white group/trans bg-white/[0.02] relative overflow-hidden"
-                              title="Открыть инструмент перевода"
-                            >
-                              <Languages className="w-3.5 h-3.5 text-white/80 group-hover/trans:scale-110 group-hover/trans:text-blue-400 transition-all z-10" />
-                              <span className="text-[6.5px] font-black uppercase tracking-[0.2em] text-white/50 group-hover/trans:text-blue-400 z-10">
-                                {t.translate || 'TRANS'}
-                              </span>
-                            </button>
-                          )}
                         </div>
 
                       </div>
