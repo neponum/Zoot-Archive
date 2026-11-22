@@ -43,10 +43,11 @@ export function getTranslatorSuffix(translator?: string | null): string {
 }
 
 /**
- * Candidate URLs for a translated story chapter, most specific layout first.
- * Callers must treat a 404 as "try the next candidate".
+ * URL-ы одного конкретного файла сцены (`<base><suffix>.csv`) по раскладкам
+ * репозитория, от новой к старой. Перебора авторов здесь нет: имя файла
+ * известно из `episodes.json` (карта `scenes`).
  */
-export function getTranslationCsvCandidates(
+export function getExactTranslationCsvCandidates(
   lang: Language,
   baseName: string,
   translatorSuffix: string
@@ -58,20 +59,35 @@ export function getTranslationCsvCandidates(
   if (episode) {
     // Основной layout с 2026-11-19: эпизоды сгруппированы в `story/`.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${file}`);
-    // Старый плоский layout — у ботов и старых загрузок.
+    // Старый layout: папка эпизода прямо в translation/<lang>/.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${file}`);
   }
+  // Самый старый плоский layout — загрузки Discord-бота.
   candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${file}`);
 
-  // Community translations have no translator suffix at all.
-  if (translatorSuffix) {
-    const communityFile = `${baseName}.csv`;
-    if (episode) {
-      candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${communityFile}`);
-      candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${communityFile}`);
-    }
-    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${communityFile}`);
-  }
-
   return candidates;
+}
+
+/**
+ * Все кандидаты для сцены: точный файл автора, затем (если он именованный)
+ * community-файл без суффикса. Используется инструментами перевода, которым
+ * нужно искать существующие файлы.
+ */
+export function getTranslationCsvCandidates(
+  lang: Language,
+  baseName: string,
+  translatorSuffix: string
+): string[] {
+  const candidates = getExactTranslationCsvCandidates(lang, baseName, translatorSuffix);
+  if (!translatorSuffix) return candidates;
+
+  const episode = getEpisodeFolderForStory(baseName);
+  const communityFile = `${baseName}.csv`;
+  if (episode) {
+    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${communityFile}`);
+    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${communityFile}`);
+  }
+  candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${communityFile}`);
+
+  return Array.from(new Set(candidates));
 }

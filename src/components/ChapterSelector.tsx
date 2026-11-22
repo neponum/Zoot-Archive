@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { fetchChapterList, fetchCharacterMapping, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists, fetchStoryScript } from '../services/storyService';
+import { fetchChapterList, fetchCharacterMapping, getImageUrl, setLanguage, getLanguage, checkImageExists, checkScriptExists, fetchStoryScript, getStorySceneTranslator } from '../services/storyService';
 import { CacheService } from '../services/cacheService';
 import { StoryChapter, StoryEpisode, Language } from '../types';
 import { getChapterDisplayCode, cn } from '../lib/utils';
@@ -8,7 +8,7 @@ import { ChevronRight, Loader2, AlertCircle, BookOpen, BookOpenText, ArrowLeft, 
 import { UI_STRINGS } from '../translations';
 import { OperatorStoriesViewer } from './OperatorStoriesViewer';
 import { STORY_LINES_DATA, STORY_LINE_FILTERS } from '../config/storylines';
-import { TRANSLATION_REGISTRY, isAITranslator, getTranslatorDisplayName, sortTranslators, getDefaultTranslator } from '../config/translationsRegistry';
+import { TRANSLATION_REGISTRY, COMMUNITY_TRANSLATOR_LABEL, isAITranslator, getTranslatorDisplayName, sortTranslators, getDefaultTranslator } from '../config/translationsRegistry';
 import { QRCodeSVG } from 'qrcode.react';
 import { MainMenu } from './MainMenu';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -1075,21 +1075,16 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
         const images: Record<string, string | null> = {};
         const existence: Record<string, boolean> = {};
         
-        // 1. Compute available translators first for this selected episode
-        const registry = TRANSLATION_REGISTRY[lang];
-        const avail: string[] = [];
-        if (registry && registry.translators.length > 0) {
-          await Promise.all(registry.translators.map(async (translator) => {
-            if (selectedEpisode.chapters.length > 0) {
-              const firstExists = await checkScriptExists(selectedEpisode.chapters[0].storyTxt, lang, translator);
-              if (firstExists) {
-                avail.push(translator);
-              }
-            }
-          }));
-        }
-        
-        const sortedAvail = sortTranslators(registry?.translators.filter(t => avail.includes(t)) || []);
+        // 1. В папке сцены лежит ровно один перевод. Автор известен из
+        //    `episodes.json`, поэтому доступность определяется чтением
+        //    индекса, без перебора переводчиков и HEAD-запросов.
+        const sceneTranslator = selectedEpisode.chapters.length > 0
+          ? await getStorySceneTranslator(selectedEpisode.chapters[0].storyTxt, lang)
+          : undefined;
+        const actualTranslator = sceneTranslator === undefined
+          ? null
+          : sceneTranslator || COMMUNITY_TRANSLATOR_LABEL;
+        const sortedAvail = actualTranslator ? [actualTranslator] : [];
         setAvailableTranslators(sortedAvail);
 
         // 2. Adjust selectedTranslator if currently selected one is not available or if human translation is available
@@ -1109,12 +1104,9 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
           }
         }
 
-        // 3. Load chapters data with final effective translator
+        // 3. Проверяем наличие перевода каждой сцены по её точному файлу.
         await Promise.all(selectedEpisode.chapters.map(async (chapter) => {
-          const defaultTranslator = (registry && registry.translators.length > 0) ? getDefaultTranslator(registry.translators) : undefined;
-          const effectiveTranslator = finalTranslator || defaultTranslator;
-          const exists = await checkScriptExists(chapter.storyTxt, lang, effectiveTranslator);
-          existence[chapter.id] = exists;
+          existence[chapter.id] = await checkScriptExists(chapter.storyTxt, lang);
         }));
         
         setChapterImages({});

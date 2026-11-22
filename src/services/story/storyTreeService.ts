@@ -1,7 +1,6 @@
 import Papa from 'papaparse';
 import { StoryChapter, StoryEpisode, Language } from '../../types';
 import { CacheService } from '../cacheService';
-import { TRANSLATION_REGISTRY, getDefaultTranslator, sortTranslators, COMMUNITY_TRANSLATOR_LABEL } from '../../config/translationsRegistry';
 import { UI_STRINGS } from '../../translations';
 import { platform } from '../../platform';
 import { TranslationRow } from './storyTypes';
@@ -9,7 +8,7 @@ import { EXTRA_STORIES } from '../../data/extraStories';
 import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../../utils/operatorUtils';
 import {
   getEpisodeFolderForStory,
-  getTranslationCsvCandidates,
+  getExactTranslationCsvCandidates,
   getTranslatorSuffix,
 } from '../../utils/translationPaths';
 
@@ -468,43 +467,36 @@ export function normalizeStoryPath(storyPath: string): string {
 
 const scriptExistenceCache: Record<string, boolean> = {};
 
-export async function checkScriptExists(storyPath: string, lang: Language, translator?: string): Promise<boolean> {
+export async function checkScriptExists(
+  storyPath: string,
+  lang: Language,
+  _translator?: string
+): Promise<boolean> {
   const normalizedPath = normalizeStoryPath(storyPath);
   const isOfficial = ['zh_CN', 'en_US', 'ja_JP', 'ko_KR'].includes(lang);
-  
+
   if (isOfficial) {
     return true;
   }
 
-  const cacheKey = `${lang}_${normalizedPath}_${translator || 'default'}`;
+  // В папке сцены лежит ровно один перевод, его автор известен из индекса.
+  const sceneTranslator = await sceneTranslatorForStoryPath(normalizedPath, lang);
+  const cacheKey = `${lang}_${normalizedPath}_scene:${sceneTranslator ?? 'unknown'}`;
   if (cacheKey in scriptExistenceCache) {
     return scriptExistenceCache[cacheKey];
   }
-  
+
   const baseName = normalizedPath.split('/').pop() || '';
-  const registry = TRANSLATION_REGISTRY[lang];
-  const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
-  const defaultTranslator =
-    knownTranslators && knownTranslators.length > 0
-      ? getDefaultTranslator(knownTranslators)
-      : registry && registry.translators.length > 0
-        ? getDefaultTranslator(registry.translators)
-        : undefined;
-  const candidates = buildTranslationCandidates(
-    lang,
-    baseName,
-    translator || defaultTranslator,
-    knownTranslators
-  );
-  
-  const probeKey = `${lang}:${baseName}:${translator || defaultTranslator || 'default'}`;
+  const suffix = getTranslatorSuffix(sceneTranslator ?? '');
+  const candidates = getExactTranslationCsvCandidates(lang, baseName, suffix);
+  const probeKey = `${lang}:${baseName}:${sceneTranslator ?? 'unknown'}`;
   const probed = readProbe(probeKey);
   if (probed !== null) {
     scriptExistenceCache[cacheKey] = probed;
     return probed;
   }
 
-  const found = await firstWorking(candidates, 4, async (urlStr) => {
+  const found = await firstWorking(candidates, 1, async (urlStr) => {
     try {
       const response = await fetchWithTimeout(urlStr, { method: 'HEAD' }, 3000);
       if (!response.ok) return null;
@@ -540,76 +532,18 @@ export function findStoryTranslator(
   const cached = storyTranslatorCache.get(cacheKey);
   if (cached) return cached;
 
+  // Автор уже записан в `episodes.json`, поэтому подпись появляется без
+  // единого сетевого запроса. `null` — community-файл или сцена вне индекса.
   const request = (async (): Promise<string | null> => {
     const baseName = normalizedPath.split('/').pop() || '';
-    // Личные дела (obt/memory/story_*) лежат в story/memory без суффикса
-    // автора — это community-переводы. Не перебираем всех переводчиков:
-    // иначе на каждую сцену уходит десяток заведомо пустых HEAD-запросов.
     if (getEpisodeFolderForStory(baseName) === 'memory') return null;
-    const registry = TRANSLATION_REGISTRY[lang];
-    const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
-    const translators = sortTranslators(knownTranslators ?? registry?.translators ?? []);
-
-    // Собираем URL по «слоям»: сначала новый layout story/<episode>, затем
-    // старые. Внутри слоя все переводчики проверяются параллельно, поэтому
-    // для основной массы сцен хватает одного короткого раунда HEAD-запросов.
-    const perTranslator = translators
-      .map((translator) => {
-        const suffix = getTranslatorSuffix(translator);
-        if (!suffix) return null;
-        const urls = getTranslationCsvCandidates(lang, baseName, suffix).filter(
-          (url) => url.endsWith(`${suffix}.csv`)
-        );
-        return urls.length > 0 ? { translator, urls } : null;
-      })
-      .filter((entry): entry is { translator: string; urls: string[] } => entry !== null);
-
-    const layers = Math.max(0, ...perTranslator.map((entry) => entry.urls.length));
-    const ordered: Array<{ url: string; translator: string }> = [];
-    for (let layer = 0; layer < layers; layer += 1) {
-      for (const entry of perTranslator) {
-        const url = entry.urls[layer];
-        if (url) ordered.push({ url, translator: entry.translator });
-      }
-    }
-
-    const probeUrl = async (url: string) => {
-      try {
-        const response = await fetchWithTimeout(url, { method: 'HEAD' }, 2500);
-        if (!response.ok) return null;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) return null;
-        return true;
-      } catch {
-        return null;
-      }
-    };
-
-    if (ordered.length > 0) {
-      const byUrl = new Map(ordered.map((entry) => [entry.url, entry.translator]));
-      const found = await firstWorking(
-        ordered.map((entry) => entry.url),
-        6,
-        probeUrl
-      );
-      if (found) return byUrl.get(found.url) ?? null;
-    }
-
-    // Именованного файла нет — возможно, сцена переведена старой загрузкой
-    // Discord-бота без суффикса автора. Тогда честно подписываем «Сообщество».
-    const communityUrls = getTranslationCsvCandidates(lang, baseName, '');
-    if (communityUrls.length > 0) {
-      const community = await firstWorking(communityUrls, 3, probeUrl);
-      if (community) return COMMUNITY_TRANSLATOR_LABEL;
-    }
-
-    return null;
+    const sceneTranslator = await sceneTranslatorForStoryPath(normalizedPath, lang);
+    return sceneTranslator || null;
   })().catch(() => null);
 
   storyTranslatorCache.set(cacheKey, request);
   return request;
 }
-
 
 /**
  * Кэш «есть ли перевод этой главы».
@@ -725,6 +659,12 @@ function isBadScriptText(text: string): boolean {
 interface EpisodeTranslationInfo {
   files: number;
   translators: string[];
+  /**
+   * Точный автор каждой сцены: `<базовое имя> → <ник>`.
+   * Пустая строка — community-файл без суффикса. В папке эпизода на сцену
+   * лежит ровно один перевод, поэтому перебирать авторов не нужно.
+   */
+  scenes?: Record<string, string>;
 }
 
 const episodeIndexPromises = new Map<
@@ -732,9 +672,12 @@ const episodeIndexPromises = new Map<
   Promise<Record<string, EpisodeTranslationInfo> | null>
 >();
 
+// Карта `scenes` обновляется вместе с переводами, а jsDelivr кэширует ветку
+// `main` и может отдавать старый episodes.json без неё. Поэтому сначала
+// читаем raw (всегда свежий), а CDN оставляем запасным зеркалом.
 const EPISODE_INDEX_URLS = (lang: Language) => [
-  `https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/translation/${lang}/episodes.json`,
   `https://raw.githubusercontent.com/neponum/zoot-data/main/translation/${lang}/episodes.json`,
+  `https://fastly.jsdelivr.net/gh/neponum/zoot-data@main/translation/${lang}/episodes.json`,
 ];
 
 function loadEpisodeTranslationIndex(
@@ -745,7 +688,7 @@ function loadEpisodeTranslationIndex(
   if (existing) return existing;
 
   const task = (async () => {
-    const cacheKey = `translation-index:${lang}:v1`;
+    const cacheKey = `translation-index:${lang}:v4`;
     try {
       const cached = await CacheService.getCachedJson<Record<string, EpisodeTranslationInfo>>(cacheKey);
       if (cached && typeof cached === 'object') return cached;
@@ -754,8 +697,15 @@ function loadEpisodeTranslationIndex(
     }
 
     for (const url of EPISODE_INDEX_URLS(lang)) {
+      // Идём напрямую: fetchWithTimeout для raw-URL сначала пробует jsDelivr,
+      // а тот кэширует ветку main и отдаёт устаревший индекс без `scenes`.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
       try {
-        const response = await fetchWithTimeout(url, { cache: 'no-cache' }, 8000);
+        const response = await platform.fetch(url, {
+          cache: 'no-cache',
+          signal: controller.signal,
+        });
         if (!response.ok) continue;
         const data = (await response.json()) as Record<string, EpisodeTranslationInfo>;
         if (!data || typeof data !== 'object') continue;
@@ -763,6 +713,8 @@ function loadEpisodeTranslationIndex(
         return data;
       } catch {
         /* пробуем следующий адрес */
+      } finally {
+        clearTimeout(timer);
       }
     }
     return null;
@@ -796,68 +748,52 @@ function chapterIdFromStoryPath(normalizedPath: string): string | null {
   return null;
 }
 
-/** Список переводчиков главы из индекса; `null` — индекс не знает главу. */
-async function translatorsForStoryPath(
+/**
+ * Точный автор сцены из `episodes.json`.
+ *
+ * `undefined` — индекс не знает сцену (новая загрузка или нет сети);
+ * `''` — community-файл без суффикса; иначе — ник автора.
+ * Личные дела (`obt/memory/story_*`) в индекс не входят и всегда community.
+ */
+async function sceneTranslatorForStoryPath(
   normalizedPath: string,
   lang: Language
-): Promise<string[] | null> {
-  if (lang !== 'ru_RU') return null;
+): Promise<string | undefined> {
+  if (lang !== 'ru_RU') return undefined;
+  const baseName = normalizedPath.split('/').pop() || '';
+  if (!baseName) return undefined;
+  if (getEpisodeFolderForStory(baseName) === 'memory') return '';
   const chapterId = chapterIdFromStoryPath(normalizedPath);
-  if (!chapterId) return null;
+  if (!chapterId) return undefined;
   const index = await loadEpisodeTranslationIndex(lang).catch(() => null);
-  const info = index?.[chapterId];
-  if (!info || !Array.isArray(info.translators) || info.translators.length === 0) {
-    return null;
-  }
-  return info.translators;
+  const scenes = index?.[chapterId]?.scenes;
+  if (!scenes || typeof scenes !== 'object') return undefined;
+  const value = scenes[baseName];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** Публичный доступ к автору сцены без сетевых проверок. */
+export function getStorySceneTranslator(
+  storyPath: string,
+  lang: Language = 'ru_RU'
+): Promise<string | undefined> {
+  return sceneTranslatorForStoryPath(normalizeStoryPath(storyPath), lang);
 }
 
 /**
- * Кандидаты CSV-перевода: сначала выбранный (или дефолтный) переводчик,
- * затем остальные авторы и в конце — общий файл без суффикса.
+ * Кандидаты CSV-перевода: ровно один файл сцены (автор из `scenes`), но
+ * в нескольких раскладках путей. Перебора переводчиков нет.
  *
- * `availableOverride` ограничивает перебор авторами, которые реально
- * переводили эту главу (из `episodes.json`).
+ * `sceneTranslator`: `undefined` — сцена вне индекса, читаем community-файл;
+ * `''` — community; иначе — ник автора.
  */
 function buildTranslationCandidates(
   lang: Language,
   baseName: string,
-  translator?: string,
-  availableOverride?: string[] | null
+  sceneTranslator?: string
 ): string[] {
-  const registry = TRANSLATION_REGISTRY[lang];
-  const available = sortTranslators(availableOverride ?? registry?.translators ?? []);
-  const ordered = translator
-    ? [translator, ...available.filter((name) => name !== translator)]
-    : available;
-
-  const urls: string[] = [];
-  const seen = new Set<string>();
-  const push = (url: string) => {
-    if (seen.has(url)) return;
-    seen.add(url);
-    urls.push(url);
-  };
-
-  // Личные дела хранятся в story/memory единым community-файлом без
-  // суффикса переводчика. Пробуем его первым, иначе до него доходит
-  // только после перебора всех авторов и старых путей.
-  if (getEpisodeFolderForStory(baseName) === 'memory') {
-    for (const url of getTranslationCsvCandidates(lang, baseName, '')) push(url);
-  }
-
-  for (const name of ordered) {
-    const suffix = getTranslatorSuffix(name);
-    if (!suffix) continue;
-    for (const url of getTranslationCsvCandidates(lang, baseName, suffix)) {
-      // Файл без суффикса (community) добавляем один раз в конце.
-      if (url.endsWith(`/${baseName}.csv`)) continue;
-      push(url);
-    }
-  }
-
-  for (const url of getTranslationCsvCandidates(lang, baseName, '')) push(url);
-  return urls;
+  const suffix = getTranslatorSuffix(sceneTranslator ?? '');
+  return getExactTranslationCsvCandidates(lang, baseName, suffix);
 }
 
 export async function fetchStoryScript(storyPath: string, langOverride?: Language, noFallback?: boolean, translator?: string): Promise<string> {
@@ -942,26 +878,12 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
         return originalScript;
       }
 
-      const registry = TRANSLATION_REGISTRY[lang];
-      // Авторы, которые реально переводили эту главу. Раньше здесь
-      // перебирались все семь переводчиков реестра — это давало десятки
-      // 404 и 403 на каждую сцену и задерживало старт на 2–4 секунды.
-      const knownTranslators = await translatorsForStoryPath(normalizedPath, lang);
-      const defaultTranslator =
-        knownTranslators && knownTranslators.length > 0
-          ? getDefaultTranslator(knownTranslators)
-          : registry && registry.translators.length > 0
-            ? getDefaultTranslator(registry.translators)
-            : undefined;
-      const effectiveTranslator = translator || defaultTranslator;
+      // Автор сцены известен из `episodes.json`: в папке лежит ровно один
+      // перевод, поэтому запрашиваем точный файл, а не перебираем всех.
+      const sceneTranslator = await sceneTranslatorForStoryPath(normalizedPath, lang);
       const baseName = normalizedPath.split('/').pop() || '';
-      const csvUrls = buildTranslationCandidates(
-        lang,
-        baseName,
-        effectiveTranslator,
-        knownTranslators
-      );
-      const probeKey = `${lang}:${baseName}:${effectiveTranslator || 'default'}`;
+      const csvUrls = buildTranslationCandidates(lang, baseName, sceneTranslator);
+      const probeKey = `${lang}:${baseName}:${sceneTranslator ?? 'unknown'}`;
 
       let csvText: string | null = null;
 
@@ -976,10 +898,10 @@ export async function fetchStoryScript(storyPath: string, langOverride?: Languag
           }
         }
 
-        // 2. Параллельно, но не больше четырёх: один переводчик обычно
-        //    отвечает быстро, остальные нужны только как запасные.
+        // 2. Раскладки проверяем по очереди: актуальная почти всегда первая,
+        //    остальные нужны только для старых загрузок Discord-бота.
         if (!csvText) {
-          const found = await firstWorking(csvUrls, 4, async (csvUrl) => {
+          const found = await firstWorking(csvUrls, 1, async (csvUrl) => {
             const response = await fetchWithTimeout(csvUrl, { cache: 'no-cache' }, 8000);
             if (!response.ok) return null;
             const fresh = await response.text();
