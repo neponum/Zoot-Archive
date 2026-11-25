@@ -1,5 +1,5 @@
 {
-  "cleanUrls": true,
+  "trailingSlash": false,
   "builds": [
     {
       "src": "server.ts",
@@ -80,6 +80,58 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/terminal",
+      "destination": "/terminal/index.html"
+    },
+    {
+      "source": "/story/map",
+      "destination": "/story/map/index.html"
+    },
+    {
+      "source": "/story/grid",
+      "destination": "/story/grid/index.html"
+    },
+    {
+      "source": "/chapters",
+      "destination": "/chapters/index.html"
+    },
+    {
+      "source": "/operators",
+      "destination": "/operators/index.html"
+    },
+    {
+      "source": "/translate",
+      "destination": "/translate/index.html"
+    },
+    {
+      "source": "/integrated-strategies",
+      "destination": "/integrated-strategies/index.html"
+    },
+    {
+      "source": "/reclamation-algorithm",
+      "destination": "/reclamation-algorithm/index.html"
+    },
+    {
+      "source": "/terra",
+      "destination": "/terra/index.html"
+    },
+    {
+      "source": "/storage",
+      "destination": "/storage/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy/index.html"
+    },
+    {
+      "source": "/disclaimer",
+      "destination": "/disclaimer/index.html"
+    },
+    {
+      "source": "/takedown",
+      "destination": "/takedown/index.html"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/server.ts"

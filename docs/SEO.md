@@ -14,24 +14,26 @@ SPA отдаёт один HTML на все адреса, поэтому до з�
 страницы из `dist/index.html`:
 
 ```
-dist/operators.html
-dist/story/map.html
-dist/story/grid.html
-dist/terminal.html
-dist/chapters.html
-dist/translate.html
-dist/integrated-strategies.html
-dist/reclamation-algorithm.html
-dist/terra.html
-dist/storage.html
-dist/privacy.html
-dist/disclaimer.html
-dist/takedown.html
+dist/operators/index.html
+dist/story/map/index.html
+dist/story/grid/index.html
+dist/terminal/index.html
+dist/chapters/index.html
+dist/translate/index.html
+dist/integrated-strategies/index.html
+dist/reclamation-algorithm/index.html
+dist/terra/index.html
+dist/storage/index.html
+dist/privacy/index.html
+dist/disclaimer/index.html
+dist/takedown/index.html
 ```
 
 В каждой — свой `title`, `description`, `canonical`, Open Graph и видимая
-текстовая оболочка. `vercel.json` включает `cleanUrls`, поэтому они
-открываются как `/operators`, `/story/map` и т.д. Глубокие ссылки
+текстовая оболочка. В `vercel.json` для этих путей прописаны явные rewrites
+на `index.html`, поэтому они открываются как `/operators`, `/story/map` и
+т.д. `cleanUrls` намеренно выключен: иначе Vercel убирает `.html` и ломает
+прямую ссылку на файл подтверждения Яндекса. Глубокие ссылки
 (`/operators/char_002_amiya`, `/story/event/...`) по-прежнему отдают общий
 `index.html`, а мета обновляет `usePageMeta` уже в браузере.
 

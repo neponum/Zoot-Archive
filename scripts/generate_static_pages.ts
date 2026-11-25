@@ -158,7 +158,10 @@ function main() {
   for (const routePath of PRERENDER_PATHS) {
     const seo = STATIC_ROUTE_SEO[routePath];
     if (!seo) continue;
-    writeFile(`${routePath.replace(/^\//, '')}.html`, buildPage(baseHtml, routePath, seo));
+    // Именно `<раздел>/index.html`, а не `<раздел>.html`: Vercel отдаёт
+    // директорию по адресу без слэша сам, и при этом не нужен cleanUrls,
+    // который ломал прямую ссылку на файл подтверждения Яндекса.
+    writeFile(`${routePath.replace(/^\//, '')}/index.html`, buildPage(baseHtml, routePath, seo));
   }
 
   writeFile(
