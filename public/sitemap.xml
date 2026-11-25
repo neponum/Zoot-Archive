@@ -1,56 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <!-- Main Hub / Chapters & Stories -->
   <url>
     <loc>https://rhodes.monster/</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>daily</changefreq>
-    <priority>1.0</priority>
+    <priority>1.00</priority>
     <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/"/>
   </url>
-
-  <!-- Operators & Dossiers -->
+  <url>
+    <loc>https://rhodes.monster/terminal</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://rhodes.monster/story/map</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
   <url>
     <loc>https://rhodes.monster/operators</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://rhodes.monster/story/grid</loc>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/operators"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/operators"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/operators"/>
   </url>
-
-  <!-- Community Translation Workbench -->
+  <url>
+    <loc>https://rhodes.monster/chapters</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
   <url>
     <loc>https://rhodes.monster/translate</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://rhodes.monster/translate"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rhodes.monster/translate"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhodes.monster/translate"/>
+    <priority>0.80</priority>
   </url>
-
-  <!-- Legal / Fan-project Disclosures -->
+  <url>
+    <loc>https://rhodes.monster/integrated-strategies</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://rhodes.monster/reclamation-algorithm</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
   <url>
     <loc>https://rhodes.monster/disclaimer</loc>
-    <lastmod>2026-10-30</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.50</priority>
   </url>
   <url>
     <loc>https://rhodes.monster/privacy</loc>
-    <lastmod>2026-10-30</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.40</priority>
   </url>
   <url>
     <loc>https://rhodes.monster/takedown</loc>
-    <lastmod>2026-10-30</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.40</priority>
   </url>
 </urlset>

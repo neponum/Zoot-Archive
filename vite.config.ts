@@ -68,7 +68,10 @@ export default defineConfig(({mode}) => {
           globIgnores: ['**/vendor/**'],
           skipWaiting: true,
           clientsClaim: true,
-          navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+          // Удаляем precache прошлых сборок: иначе старые чанки занимают место
+          // и могут быть отданы, если новая установка оборвалась.
+          cleanupOutdatedCaches: true,
+          navigateFallbackDenylist: [/^\/api\//, /^\/auth\//, /^\/version\.json$/],
           // Арт глав и событий лежит на внешнем зеркале и не меняется —
           // держим его в кэше браузера, чтобы карта и панель главы
           // открывались мгновенно при повторных заходах.

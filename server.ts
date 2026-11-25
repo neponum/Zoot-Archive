@@ -100,8 +100,25 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     console.log("Production build detected. Serving static assets from dist...");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      // `extensions` нужен, чтобы локальный сервер, как и Vercel, отдавал
+      // статические разделы из `dist/operators.html`, а не общий index.html.
+      extensions: ['html'],
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (filePath.endsWith(`${path.sep}sw.js`) || filePath.endsWith(`${path.sep}version.json`)) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    }));
     app.get('*', (req, res) => {
+      // SPA-фолбэк: глубокие ссылки отдают оболочку приложения. Её нельзя
+      // кэшировать надолго, иначе после деплоя пользователь застрянет на
+      // старой версии.
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

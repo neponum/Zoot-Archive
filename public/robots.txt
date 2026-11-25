@@ -1,16 +1,20 @@
-# Robots.txt for rhodes.monster
+# robots.txt for rhodes.monster
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /storage
+Disallow: /*?_v=
 
-# Yandex Specific Rules
+# Yandex
 User-agent: Yandex
 Allow: /
 Disallow: /api/
-Clean-param: ref
+Disallow: /storage
+Clean-param: ref&_v
 
-# Googlebot Specific Rules
+# Googlebot
 User-agent: Googlebot
 Allow: /
 
+Host: https://rhodes.monster
 Sitemap: https://rhodes.monster/sitemap.xml

@@ -6,6 +6,7 @@ import { maybeAutoStartStoryTextSync } from './services/storyTextSync';
 import { initNativeShell, applyNativeViewport } from './platform/nativeShell';
 import { platform } from './platform';
 import { applySubdomainRedirect } from './utils/subdomains';
+import { attachServiceWorker, startUpdateWatcher } from './utils/appUpdate';
 
 // Поддомены operators/terminal/terra/translation открывают свой раздел
 // ещё до монтирования React — без вспышки главной страницы.
@@ -32,10 +33,23 @@ if ('serviceWorker' in navigator && platform.kind === 'web') {
 
   import('virtual:pwa-register')
     .then(({ registerSW }) => {
-      registerSW({ immediate: true });
+      registerSW({
+        immediate: true,
+        // Браузер сам проверяет обновление service worker не чаще раза в сутки.
+        // После регистрации просим проверить сразу и дальше следим за версией
+        // сборки через /version.json (см. utils/appUpdate.ts).
+        onRegisteredSW(_swUrl, registration) {
+          attachServiceWorker(registration ?? null);
+          registration?.update().catch(() => {});
+        },
+      });
     })
     .catch(() => {});
 }
+
+// Проверка версии не зависит от того, успел ли зарегистрироваться SW:
+// если он завис или недоступен, старый HTTP-кэш всё равно должен обновиться.
+startUpdateWatcher();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
