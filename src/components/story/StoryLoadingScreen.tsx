@@ -464,8 +464,8 @@ export const StoryLoadingScreen: React.FC<StoryLoadingScreenProps> = ({
         {isOriginalScript && (
           <p className="px-1 text-center text-[10px] leading-snug text-amber-200/80">
             {isRu
-              ? 'Русского перевода этой главы пока нет — показан оригинал (китайский).'
-              : 'There is no Russian translation for this chapter yet — the original (Chinese) is shown.'}
+              ? 'Русского перевода этой сцены пока нет — показан оригинал (китайский).'
+              : 'There is no Russian translation for this scene yet — the original (Chinese) is shown.'}
           </p>
         )}
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useReducer, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { FileWarning } from 'lucide-react';
 import { fetchStoryScript, parseStoryScript, getImageUrl, preloadAssets, prefetchStoryImages, prefetchStoryAudio, getLanguage, setLanguage, getCharacterAssetInfo, warmCharacterData, clearPreloadedImages, releasePreloadedMedia, clearUrlCache, AudioSnapshot, checkScriptExists } from '../services/storyService';
 import { audioManager } from '../services/audioManager';
 import { CacheService } from '../services/cacheService';
@@ -188,12 +189,36 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   const [scriptContent, setScriptContent] = React.useState<string | null>(null);
   /** Русского перевода главы нет — показываем оригинал и честно об этом говорим. */
   const [isOriginalScript, setIsOriginalScript] = React.useState(false);
+  /** Проверка перевода ещё до старта: предупреждаем на экране загрузки. */
+  const [translationPreviewMissing, setTranslationPreviewMissing] = React.useState(false);
   const [isHoldingSkip, setIsHoldingSkip] = React.useState(false);
   const [activeVideo, setActiveVideo] = React.useState<string | null>(null);
   const [videoPaused, setVideoPaused] = React.useState(false);
   const [videoProgress, setVideoProgress] = React.useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoNextIndexRef = useRef(0);
+
+  // Проверяем перевод заранее, чтобы читатель увидел предупреждение на экране
+  // загрузки, а не после десяти реплик на китайском. Результат кэшируется
+  // в storyTreeService, поэтому повторные открытия бесплатны.
+  React.useEffect(() => {
+    let cancelled = false;
+    if (lang !== 'ru_RU' && lang !== 'ru_RU_CN') {
+      setTranslationPreviewMissing(false);
+      return;
+    }
+    setTranslationPreviewMissing(false);
+    checkScriptExists(activeStoryTxt, 'ru_RU', translator)
+      .then((exists) => {
+        if (!cancelled) setTranslationPreviewMissing(!exists);
+      })
+      .catch(() => {
+        /* сеть недоступна — не пугаем ложным предупреждением */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeStoryTxt, lang, translator]);
 
   const processToken = useRef({});
   const currentIndexRef = useRef(0);
@@ -2005,7 +2030,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         lang={lang}
         uiLang={uiLang}
         t={t}
-        isOriginalScript={isOriginalScript}
+        isOriginalScript={isOriginalScript || translationPreviewMissing}
         operation={operation}
         onSelectLang={handleSelectLang}
         settings={settings}
@@ -2276,6 +2301,30 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         />
 
         <AnimatePresence>
+          {isOriginalScript && !isSkipping && !isCinematic && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              onClick={() =>
+                toast.info(
+                  isRuUi
+                    ? 'Русского перевода этой сцены пока нет — показан китайский оригинал. Это не сбой настроек: вводные и финальные story-сцены глав ещё не переведены.'
+                    : 'This scene has no Russian translation yet, so the Chinese original is shown. This is not a settings problem: story-only intro and outro scenes are still untranslated.'
+                )
+              }
+              title={
+                isRuUi
+                  ? 'Перевода этой сцены нет — открыть пояснение'
+                  : 'No translation for this scene — show explanation'
+              }
+              className="absolute top-3 left-1/2 z-[85] flex -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-full border border-amber-400/45 bg-black/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-amber-200/95 backdrop-blur-sm transition-colors hover:border-amber-300/70 hover:text-amber-100 sm:top-4 sm:text-[10px]"
+            >
+              <FileWarning className="h-3.5 w-3.5" />
+              {isRuUi ? 'Оригинал · перевода нет' : 'Original · untranslated'}
+            </motion.button>
+          )}
           {isSkipping && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
