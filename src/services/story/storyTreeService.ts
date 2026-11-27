@@ -801,11 +801,17 @@ async function sceneTranslatorForStoryPath(
   if (!baseName) return undefined;
   const folder = getEpisodeFolderForStory(baseName);
   if (folder === 'memory') return '';
-  // UI-сцены (`ui_act3d0_campselect`) лежат в общем индексе `ui`, а не в
-  // индексе события: вход в ивент иначе показывался на китайском.
-  const chapterId = folder === 'ui' ? 'ui' : chapterIdFromStoryPath(normalizedPath);
-  if (!chapterId) return undefined;
+
   const index = await loadEpisodeTranslationIndex(lang).catch(() => null);
+  // Сначала смотрим папку сцены (`st`, `ui`, `main`, `act3d0`), потом —
+  // главу из пути. Переводы story-only сцен лежат в общем индексе `st`,
+  // а не в `main`: из-за этого 5-11 и другие `level_st_*` показывались
+  // на китайском, хотя русский CSV существовал.
+  const indexKeys = [folder, chapterIdFromStoryPath(normalizedPath)].filter(
+    (value): value is string => Boolean(value)
+  );
+  const chapterId = indexKeys.find((key) => index?.[key]?.scenes);
+  if (!chapterId) return undefined;
   const scenes = index?.[chapterId]?.scenes;
   if (!scenes || typeof scenes !== 'object') return undefined;
   const value = scenes[baseName];
