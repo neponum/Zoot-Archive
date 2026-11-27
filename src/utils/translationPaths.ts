@@ -3,16 +3,32 @@ import { Language } from '../types';
 const ZOOT_DATA_RAW_BASE = 'https://raw.githubusercontent.com/neponum/zoot-data/main';
 
 /**
- * Translation CSVs live in the zoot-data repo grouped by episode:
+ * Куда физически кладётся CSV перевода.
+ *
+ * Актуальная раскладка:
+ *   translation/<lang>/story/main/main_<N>/<storyBaseName>_<translator>.csv
  *   translation/<lang>/story/<episode>/<storyBaseName>_<translator>.csv
- * Older revisions kept episodes directly under `translation/<lang>/<episode>/`
- * and even older ones kept every CSV flat in `translation/<lang>/`, so both
- * stay as fallbacks — the Discord bot still uploads new translations there.
+ *
+ * Основная линия разложена по папкам эпизодов (`main_0`…`main_17`), включая
+ * вводные и финальные сцены `level_st_*`. Старые раскладки (`story/main`
+ * плоско, `story/st`, папка эпизода в корне языка) остаются фолбэками.
  */
+export function getMainEpisodeFolder(baseName: string): string | null {
+  const match = baseName.match(/^level_(?:main|st)_(\d{1,2})(?:-|_)/i);
+  if (match) return `main_${Number(match[1])}`;
+  // Единственная сцена без номера главы в имени; по метаданным CSV — EP 17.
+  if (baseName.startsWith('level_main_tr28_')) return 'main_17';
+  return null;
+}
+
 export function getEpisodeFolderForStory(baseName: string): string | null {
   if (!baseName) return null;
 
-  // level_<episode>_<part...> — main, a001, act47side, act15d5, act10mini, st, spst
+  // Основная линия: main/main_5, включая level_st_05-01 (вводная сцена).
+  const mainEpisode = getMainEpisodeFolder(baseName);
+  if (mainEpisode) return `main/${mainEpisode}`;
+
+  // level_<episode>_<part...> — a001, act47side, act15d5, act10mini, spst
   if (baseName.startsWith('level_')) {
     const episode = baseName.slice('level_'.length).split('_', 1)[0];
     return episode || null;
@@ -34,6 +50,17 @@ export function getEpisodeFolderForStory(baseName: string): string | null {
   return null;
 }
 
+/**
+ * Ключ эпизода в `episodes.json`. Для разложенной по папкам основной линии
+ * это по-прежнему `main`: индексу нужен автор сцены, а не путь файла.
+ */
+export function getTranslationIndexKey(baseName: string): string | null {
+  const folder = getEpisodeFolderForStory(baseName);
+  if (!folder) return null;
+  if (folder.startsWith('main/')) return 'main';
+  return folder;
+}
+
 /** Suffix used by the repo for a given translator profile. */
 export function getTranslatorSuffix(translator?: string | null): string {
   if (!translator) return '';
@@ -47,25 +74,41 @@ export function getTranslatorSuffix(translator?: string | null): string {
  * репозитория, от новой к старой. Перебора авторов здесь нет: имя файла
  * известно из `episodes.json` (карта `scenes`).
  */
-export function getExactTranslationCsvCandidates(
+function layoutCandidates(
   lang: Language,
   baseName: string,
-  translatorSuffix: string
+  file: string
 ): string[] {
   const episode = getEpisodeFolderForStory(baseName);
-  const file = `${baseName}${translatorSuffix}.csv`;
   const candidates: string[] = [];
 
   if (episode) {
-    // Основной layout с 2026-11-19: эпизоды сгруппированы в `story/`.
+    // Актуальная раскладка: story/<episode>/ или story/main/main_<N>/.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${file}`);
-    // Старый layout: папка эпизода прямо в translation/<lang>/.
+    const parent = episode.split('/')[0];
+    if (parent && parent !== episode) {
+      // Прежняя плоская раскладка основной линии: story/main/.
+      candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${parent}/${file}`);
+    }
+    if (baseName.startsWith('level_st_')) {
+      // Прежняя отдельная папка story/st/.
+      candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/st/${file}`);
+    }
+    // Раскладка до 2026-11-19: папка эпизода прямо в корне языка.
     candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${file}`);
   }
   // Самый старый плоский layout — загрузки Discord-бота.
   candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${file}`);
 
   return candidates;
+}
+
+export function getExactTranslationCsvCandidates(
+  lang: Language,
+  baseName: string,
+  translatorSuffix: string
+): string[] {
+  return layoutCandidates(lang, baseName, `${baseName}${translatorSuffix}.csv`);
 }
 
 /**
@@ -81,13 +124,7 @@ export function getTranslationCsvCandidates(
   const candidates = getExactTranslationCsvCandidates(lang, baseName, translatorSuffix);
   if (!translatorSuffix) return candidates;
 
-  const episode = getEpisodeFolderForStory(baseName);
-  const communityFile = `${baseName}.csv`;
-  if (episode) {
-    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/story/${episode}/${communityFile}`);
-    candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${episode}/${communityFile}`);
-  }
-  candidates.push(`${ZOOT_DATA_RAW_BASE}/translation/${lang}/${communityFile}`);
+  candidates.push(...layoutCandidates(lang, baseName, `${baseName}.csv`));
 
   return Array.from(new Set(candidates));
 }

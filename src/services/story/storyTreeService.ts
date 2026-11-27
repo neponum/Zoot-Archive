@@ -9,6 +9,7 @@ import { extractOperatorKey, getOperatorDetails, isOperatorEpisode } from '../..
 import {
   getEpisodeFolderForStory,
   getExactTranslationCsvCandidates,
+  getTranslationIndexKey,
   getTranslatorSuffix,
 } from '../../utils/translationPaths';
 
@@ -803,13 +804,15 @@ async function sceneTranslatorForStoryPath(
   if (folder === 'memory') return '';
 
   const index = await loadEpisodeTranslationIndex(lang).catch(() => null);
-  // Сначала смотрим папку сцены (`st`, `ui`, `main`, `act3d0`), потом —
-  // главу из пути. Переводы story-only сцен лежат в общем индексе `st`,
-  // а не в `main`: из-за этого 5-11 и другие `level_st_*` показывались
-  // на китайском, хотя русский CSV существовал.
-  const indexKeys = [folder, chapterIdFromStoryPath(normalizedPath)].filter(
-    (value): value is string => Boolean(value)
-  );
+  // Сначала ключ эпизода (`main`, `ui`, `act3d0`), затем — прежний `st`
+  // и глава из пути. После переезда `level_st_*` в папки эпизодов их автор
+  // лежит в индексе `main`; старый индекс `st` оставлен фолбэком.
+  const indexKeys = [
+    getTranslationIndexKey(baseName),
+    baseName.startsWith('level_st_') ? 'st' : null,
+    folder,
+    chapterIdFromStoryPath(normalizedPath),
+  ].filter((value): value is string => Boolean(value));
   const chapterId = indexKeys.find((key) => index?.[key]?.scenes);
   if (!chapterId) return undefined;
   const scenes = index?.[chapterId]?.scenes;
