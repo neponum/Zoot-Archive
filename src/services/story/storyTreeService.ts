@@ -799,8 +799,11 @@ async function sceneTranslatorForStoryPath(
   if (lang !== 'ru_RU') return undefined;
   const baseName = normalizedPath.split('/').pop() || '';
   if (!baseName) return undefined;
-  if (getEpisodeFolderForStory(baseName) === 'memory') return '';
-  const chapterId = chapterIdFromStoryPath(normalizedPath);
+  const folder = getEpisodeFolderForStory(baseName);
+  if (folder === 'memory') return '';
+  // UI-сцены (`ui_act3d0_campselect`) лежат в общем индексе `ui`, а не в
+  // индексе события: вход в ивент иначе показывался на китайском.
+  const chapterId = folder === 'ui' ? 'ui' : chapterIdFromStoryPath(normalizedPath);
   if (!chapterId) return undefined;
   const index = await loadEpisodeTranslationIndex(lang).catch(() => null);
   const scenes = index?.[chapterId]?.scenes;

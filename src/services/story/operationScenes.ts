@@ -36,10 +36,16 @@ let payloadPromise: Promise<StoryOperationsPayload | null> | null = null;
  */
 export function fetchStoryOperations(): Promise<StoryOperationsPayload | null> {
   if (!payloadPromise) {
-    payloadPromise = fetch(platform.dataUrl(OPERATIONS_URL))
+    // Без таймаута запрос мог висеть вечно, а маршрут читалки в это время
+    // показывал бесконечный чёрный экран.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    payloadPromise = platform
+      .fetch(platform.dataUrl(OPERATIONS_URL), { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
       .catch(() => null)
       .then((payload: StoryOperationsPayload | null) => {
+        clearTimeout(timer);
         // Не кэшируем пустой ответ: сеть могла отвалиться, и повторный
         // переход должен попробовать снова.
         if (!payload) payloadPromise = null;

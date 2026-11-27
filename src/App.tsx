@@ -276,6 +276,57 @@ function StoryViewerRoute({
   );
 }
 
+/** Экран вместо чёрной бесконечности, пока грузится карта операций. */
+function OperationSceneStatus({
+  loading,
+  onRetry,
+  onBack,
+}: {
+  loading: boolean;
+  onRetry: () => void;
+  onBack: () => void;
+}) {
+  const uiLang = getUiLanguage();
+  const isRu = uiLang === 'ru_RU' || uiLang === 'ru_RU_CN';
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
+      {loading ? (
+        <>
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
+          <p className="text-sm text-white/60">
+            {isRu ? 'Загружаем карту операций…' : 'Loading the operation map…'}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="max-w-md text-sm leading-relaxed text-white/75">
+            {isRu
+              ? 'Не удалось открыть сцену этой операции: у неё может не быть сюжета или карта операций не загрузилась.'
+              : 'Could not open this operation scene: it may have no story, or the operation map failed to load.'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="cursor-pointer border border-white/25 bg-white/[0.04] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/80 transition-colors hover:border-white/50 hover:text-white"
+            >
+              {isRu ? 'Повторить' : 'Retry'}
+            </button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="cursor-pointer border border-white/15 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/55 transition-colors hover:border-white/40 hover:text-white"
+            >
+              {isRu ? 'К главе' : 'Back to chapter'}
+            </button>
+          </div>
+          <span className="sr-only">operation scene unavailable</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
  * Канонические ссылки истории: `/story/event/<chapter>` — выбор операции,
  * `/story/event/<chapter>/<operation>[/end]` — сразу нужная сцена.
@@ -311,6 +362,7 @@ function StoryEventRoute({
     scenes: { beg?: string | null; end?: string | null };
   } | null>(null);
   const [missingOperation, setMissingOperation] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const scenes =
     loadedScenes && loadedScenes.key === operationKey ? loadedScenes.scenes : null;
   const missing = Boolean(operationKey) && missingOperation === operationKey;
@@ -337,7 +389,7 @@ function StoryEventRoute({
     return () => {
       cancelled = true;
     };
-  }, [operation, chapter, operationKey]);
+  }, [operation, chapter, operationKey, reloadToken]);
 
   if (!operation) {
     return (
@@ -349,10 +401,23 @@ function StoryEventRoute({
     );
   }
   if (missing) {
-    return <Navigate to={`/story/event/${encodeURIComponent(chapter)}`} replace />;
+    return (
+      <OperationSceneStatus
+        loading={false}
+        onRetry={() => {
+          setMissingOperation(null);
+          setReloadToken((value) => value + 1);
+        }}
+        onBack={() =>
+          navigate(`/story/event/${encodeURIComponent(chapter)}`, {
+            replace: true,
+          })
+        }
+      />
+    );
   }
   if (!scenes) {
-    return <div className="h-full w-full bg-black" />;
+    return <OperationSceneStatus loading onRetry={() => {}} onBack={() => {}} />;
   }
 
   const scenePart: 'beg' | 'end' | 'both' =
@@ -364,7 +429,20 @@ function StoryEventRoute({
     ? scenes.end || scenes.beg
     : scenes.beg || scenes.end;
   if (!scene) {
-    return <Navigate to={`/story/event/${encodeURIComponent(chapter)}`} replace />;
+    return (
+      <OperationSceneStatus
+        loading={false}
+        onRetry={() => {
+          setMissingOperation(null);
+          setReloadToken((value) => value + 1);
+        }}
+        onBack={() =>
+          navigate(`/story/event/${encodeURIComponent(chapter)}`, {
+            replace: true,
+          })
+        }
+      />
+    );
   }
 
   return (
