@@ -12,7 +12,37 @@ const READ_KEY = 'ak-read-chapters';
  * общим доменом переносит прогресс на новый хост.
  */
 const PROGRESS_COOKIE = 'ak_read_progress';
+/** Время последней записи прогресса — чтобы более свежая копия побеждала. */
+const PROGRESS_COOKIE_AT = 'ak_read_progress_at';
+const READ_UPDATED_KEY = 'ak-read-chapters-updated';
 const COOKIE_LIMIT = 3800;
+
+function readCookieValue(name: string): string | null {
+  try {
+    const row = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith(`${name}=`));
+    return row ? decodeURIComponent(row.slice(name.length + 1)) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCookieValue(name: string, value: string, maxAge: number): void {
+  try {
+    const host = window.location.hostname;
+    const domain =
+      host === 'rhodes.monster' || host.endsWith('.rhodes.monster')
+        ? '; domain=.rhodes.monster'
+        : '';
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(
+      value
+    )}; path=/; max-age=${maxAge}; SameSite=Lax${secure}${domain}`;
+  } catch {
+    /* cookie запрещены — остаётся localStorage */
+  }
+}
 
 function loadSavedRead(): Set<string> {
   try {
@@ -25,16 +55,14 @@ function loadSavedRead(): Set<string> {
 }
 
 function readProgressCookie(): string[] {
-  try {
-    const row = document.cookie
-      .split('; ')
-      .find((item) => item.startsWith(`${PROGRESS_COOKIE}=`));
-    if (!row) return [];
-    const raw = decodeURIComponent(row.slice(PROGRESS_COOKIE.length + 1));
-    return raw.split('|').filter(Boolean);
-  } catch {
-    return [];
-  }
+  const raw = readCookieValue(PROGRESS_COOKIE);
+  return raw ? raw.split('|').filter(Boolean) : [];
+}
+
+function readProgressCookieAt(): number {
+  const raw = readCookieValue(PROGRESS_COOKIE_AT);
+  const value = raw ? Number(raw) : 0;
+  return Number.isFinite(value) ? value : 0;
 }
 
 function writeProgressCookie(keys: Set<string>): void {
@@ -55,15 +83,8 @@ function writeProgressCookie(keys: Set<string>): void {
       if (!fits([...chosen, operations[i]])) break;
       chosen.push(operations[i]);
     }
-    const host = window.location.hostname;
-    const domain =
-      host === 'rhodes.monster' || host.endsWith('.rhodes.monster')
-        ? '; domain=.rhodes.monster'
-        : '';
-    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    document.cookie = `${PROGRESS_COOKIE}=${encodeURIComponent(
-      chosen.join('|')
-    )}; path=/; max-age=31536000; SameSite=Lax${secure}${domain}`;
+    writeCookieValue(PROGRESS_COOKIE, chosen.join('|'), 31536000);
+    writeCookieValue(PROGRESS_COOKIE_AT, String(Date.now()), 31536000);
   } catch {
     /* cookie могут быть запрещены — остаётся localStorage */
   }
@@ -72,14 +93,29 @@ function writeProgressCookie(keys: Set<string>): void {
 export function useReadingProgress(setTranslationEpisode?: (ep: StoryEpisode | null) => void) {
   const [readChapters, setReadChapters] = useState<Set<string>>(() => {
     const local = loadSavedRead();
-    if (local.size > 0) return local;
-
-    // На этом хосте отметок ещё нет — забираем их из общей cookie.
     const fromCookie = readProgressCookie();
-    if (fromCookie.length > 0) {
+
+    // Cookie считаем свежее, если она записана позже локальной копии.
+    // Так прогресс переезжает между rhodes.monster / www / поддоменами
+    // вместе со снятыми отметками, а не только с новыми.
+    let localUpdated = 0;
+    try {
+      localUpdated = Number(localStorage.getItem(READ_UPDATED_KEY) || 0) || 0;
+    } catch {
+      /* приватный режим */
+    }
+    const cookieUpdated = readProgressCookieAt();
+    const cookieWins =
+      fromCookie.length > 0 &&
+      (local.size === 0 || cookieUpdated > localUpdated);
+
+    if (cookieWins) {
       const restored = new Set(fromCookie);
       try {
         localStorage.setItem(READ_KEY, JSON.stringify(Array.from(restored)));
+        if (cookieUpdated) {
+          localStorage.setItem(READ_UPDATED_KEY, String(cookieUpdated));
+        }
       } catch {
         /* приватный режим */
       }
@@ -102,6 +138,7 @@ export function useReadingProgress(setTranslationEpisode?: (ep: StoryEpisode | n
   useEffect(() => {
     try {
       localStorage.setItem(READ_KEY, JSON.stringify(Array.from(readChapters)));
+      localStorage.setItem(READ_UPDATED_KEY, String(Date.now()));
     } catch {
       /* приватный режим */
     }
