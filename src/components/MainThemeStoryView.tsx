@@ -27,6 +27,7 @@ import { getTranslatorDisplayName } from '../config/translationsRegistry';
 import { STORY_LINE_ID_BY_NAME } from '../config/storylines';
 import { UI_STRINGS } from '../translations';
 import { getUiLanguage } from '../utils/uiLanguage';
+import { useToast } from './ui/Toast';
 import {
   fetchStoryOperations,
   resolveOperationScenes,
@@ -658,10 +659,12 @@ const StoryOperationGradients: React.FC = () => (
     className="absolute pointer-events-none"
   >
     <defs>
+      {/* Плотный синий градиент: раньше середина была почти прозрачной,
+          и отмеченный куб просвечивал сквозь катушку — выглядел «сломанным». */}
       <linearGradient id="hexCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
-        <stop offset="55%" stopColor="rgba(255,255,255,0.12)" />
-        <stop offset="100%" stopColor="#0072bd" />
+        <stop offset="0%" stopColor="#f2fbff" stopOpacity="0.98" />
+        <stop offset="45%" stopColor="#4aa8d8" stopOpacity="0.98" />
+        <stop offset="100%" stopColor="#0066a8" stopOpacity="0.98" />
       </linearGradient>
       <linearGradient id="hexGrayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#d8dbe0" />
@@ -715,6 +718,7 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
 }) => {
   const uiLang = getUiLanguage();
   const t = UI_STRINGS[uiLang];
+  const toast = useToast();
   // Русские описания и названия — оверлей поверх английской базы из
   // STORYMAP_DATA/index.json. На других языках сайта он не применяется,
   // иначе английский интерфейс показывает русский текст.
@@ -826,15 +830,34 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
   useEffect(() => {
     if (storyOps !== null) return;
     let cancelled = false;
-    fetchStoryOperations()
-      .then((payload) => {
-        if (!cancelled) setStoryOps(payload ?? {});
-      })
-      .catch(() => {
-        if (!cancelled) setStoryOps({});
-      });
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    // Один неудачный запрос не должен навсегда оставлять панель без карты
+    // сцен: тогда показываются все операции, включая TR/ST без сюжета,
+    // а клик по ним уводит обратно в главу.
+    const load = (attempt: number) => {
+      fetchStoryOperations()
+        .then((payload) => {
+          if (cancelled) return;
+          if (payload) {
+            setStoryOps(payload);
+            return;
+          }
+          if (attempt < 2) {
+            timer = setTimeout(() => load(attempt + 1), 1200 * (attempt + 1));
+          } else {
+            setStoryOps({});
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setStoryOps({});
+        });
+    };
+
+    load(0);
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, [storyOps]);
 
@@ -1472,17 +1495,37 @@ export const MainThemeStoryView: React.FC<MainThemeStoryViewProps> = ({
     // из статического набора нет, поэтому подпись вообще не появлялась.
     const overviewStoryPath = storyPathForEpisode(visibleEpisodes[0]);
 
-    const openOperation = (
+    const openOperation = async (
       ep: (typeof selectedSet.episodes)[number],
       idx: number
     ) => {
       setSelectedEpIdx(idx);
       if (!onOpenChapter) return;
-      const scenes = resolveOperationScenes(
+
+      let scenes = resolveOperationScenes(
         storyOps,
         selectedSet.group,
         ep.code
       );
+
+      // Карта сцен ещё не загрузилась или первый запрос сорвался — пробуем
+      // ещё раз прямо по клику. Иначе маршрут читалки не находит сцену и
+      // молча возвращает пользователя в главу.
+      if (!scenes) {
+        const payload = await fetchStoryOperations().catch(() => null);
+        if (payload) {
+          setStoryOps(payload);
+          scenes = resolveOperationScenes(payload, selectedSet.group, ep.code);
+        }
+      }
+      if (!scenes) {
+        toast.info(
+          isRussianUi
+            ? 'У этой операции нет сюжетной сцены — открывать нечего.'
+            : 'This operation has no story scene to open.'
+        );
+        return;
+      }
 
       // Без тега и с двумя сценами — даём выбрать «до боя» или «после боя».
       if (!ep.tag && scenes?.beg && scenes?.end && !onOpenEvent) {
